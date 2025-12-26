@@ -64,7 +64,7 @@ else:
         if host not in ("*", "localhost", "127.0.0.1"):
             # Adicionar https:// para cada host válido
             CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
-    
+
     # Se não houver hosts válidos, usar lista vazia (não recomendado)
     if not CSRF_TRUSTED_ORIGINS:
         # Fallback: tentar usar ALLOWED_HOSTS mesmo com wildcard

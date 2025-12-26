@@ -27,7 +27,18 @@ else:
     load_dotenv()
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-change-me-in-production")
+# Trata SECRET_KEY removendo aspas se presentes (compatibilidade com CapRover/containers)
+secret_key_raw = os.environ.get("SECRET_KEY", "django-insecure-change-me-in-production")
+# Remove aspas simples ou duplas do início e fim (se presentes)
+# Isso permite usar aspas no CapRover sem problemas
+if secret_key_raw:
+    secret_key_raw = secret_key_raw.strip()
+    # Remove aspas se estiverem no início e fim
+    if (secret_key_raw.startswith("'") and secret_key_raw.endswith("'")) or (
+        secret_key_raw.startswith('"') and secret_key_raw.endswith('"')
+    ):
+        secret_key_raw = secret_key_raw[1:-1]
+SECRET_KEY = secret_key_raw
 
 # Application definition
 INSTALLED_APPS = [

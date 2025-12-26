@@ -68,6 +68,11 @@ O projeto inclui arquivos `captain-definition` prontos para uso:
 
 4. **Variáveis de ambiente:**
    - Configure as variáveis de ambiente necessárias em cada app (veja seção abaixo)
+   - **IMPORTANTE**: Para `SECRET_KEY` com caracteres especiais, use aspas duplas no CapRover:
+     ```
+     SECRET_KEY="i8(!a7@87k(9p5@_#9l33b%ephvrlzntr3dsp89q-4a!84$mq-"
+     ```
+     O código remove automaticamente as aspas se presentes.
 
 ### Usando Dockerfile (Alternativa)
 
