@@ -69,7 +69,7 @@ except Exception as e:
         except Exception:
             # Se não conseguir enviar para Sentry, apenas logar
             pass
-    
+
     # Re-raise o erro para que o Gunicorn veja e reporte nos logs
     raise
 
