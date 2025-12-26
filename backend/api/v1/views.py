@@ -162,3 +162,103 @@ def api_info(request: Request) -> Response:
     )
 
 
+@extend_schema(
+    summary="Test Sentry/GlitchTip",
+    description="Endpoint de teste para verificar se Sentry/GlitchTip está configurado e funcionando. Envia uma mensagem e uma exceção de teste.",
+    tags=["Health"],
+)
+@api_view(["GET", "POST"])
+@permission_classes([AllowAny])
+def test_sentry(request: Request) -> Response:
+    """Endpoint de teste para Sentry/GlitchTip.
+
+    Verifica se Sentry/GlitchTip está configurado e envia mensagens de teste.
+    Útil para validar que erros estão sendo enviados corretamente.
+    """
+    import os
+    from django.conf import settings
+
+    # Verificar configuração
+    use_sentry = os.environ.get("USE_SENTRY", "false").lower() == "true"
+    sentry_dsn = os.environ.get("SENTRY_DSN", "")
+    sentry_configured = use_sentry and bool(sentry_dsn)
+
+    result = {
+        "sentry_configured": sentry_configured,
+        "use_sentry": use_sentry,
+        "sentry_dsn_configured": bool(sentry_dsn),
+        "sentry_initialized": False,
+        "test_message_sent": False,
+        "test_exception_sent": False,
+    }
+
+    if not sentry_configured:
+        return Response(
+            {
+                **result,
+                "message": "Sentry/GlitchTip não está configurado. Configure USE_SENTRY=true e SENTRY_DSN no ambiente.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    # Verificar se Sentry SDK está instalado e inicializado
+    try:
+        import sentry_sdk
+
+        result["sentry_initialized"] = sentry_sdk.is_initialized()
+
+        if not sentry_sdk.is_initialized():
+            return Response(
+                {
+                    **result,
+                    "message": "Sentry SDK não está inicializado. Verifique a configuração em wsgi.py.",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # Enviar mensagem de teste
+        try:
+            sentry_sdk.capture_message(
+                "Teste de conexão GlitchTip - Mensagem de teste",
+                level="info",
+            )
+            result["test_message_sent"] = True
+        except Exception as e:
+            result["test_message_error"] = str(e)
+
+        # Enviar exceção de teste
+        try:
+            try:
+                raise ValueError("Teste de conexão GlitchTip - Exceção de teste")
+            except Exception as e:
+                sentry_sdk.capture_exception(e)
+            result["test_exception_sent"] = True
+        except Exception as e:
+            result["test_exception_error"] = str(e)
+
+        # Flush para garantir envio
+        try:
+            sentry_sdk.flush(timeout=2)
+        except Exception:
+            pass
+
+        return Response(
+            {
+                **result,
+                "message": "Teste enviado com sucesso! Verifique o dashboard do GlitchTip.",
+                "environment": os.environ.get("ENVIRONMENT", "unknown"),
+                "release": os.environ.get("RELEASE", None),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except ImportError:
+        return Response(
+            {
+                **result,
+                "message": "sentry-sdk não está instalado. Instale com: pip install sentry-sdk[django]",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+

@@ -46,9 +46,20 @@ if USE_SENTRY and SENTRY_DSN:
             server_name=server_name,
             before_send=add_sentry_tags,
         )
+        # Log para confirmar inicialização (apenas em produção, não aparece em dev)
+        print(f"[Sentry] ✅ Sentry/GlitchTip inicializado - Environment: {environment}")
     except ImportError:
         # Sentry SDK não instalado - continuar sem Sentry
-        pass
+        print("[Sentry] ⚠️  sentry-sdk não está instalado")
+    except Exception as e:
+        # Erro ao inicializar Sentry - logar mas continuar
+        print(f"[Sentry] ❌ Erro ao inicializar Sentry: {e}")
+else:
+    # Log quando Sentry não está configurado (apenas em produção)
+    if not USE_SENTRY:
+        print("[Sentry] ⚠️  USE_SENTRY não está configurado como 'true'")
+    if not SENTRY_DSN:
+        print("[Sentry] ⚠️  SENTRY_DSN não está configurado")
 
 from django.core.wsgi import get_wsgi_application
 

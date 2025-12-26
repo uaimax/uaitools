@@ -7,7 +7,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-from api.v1.views import api_info, dashboard_stats_view, health_check
+from api.v1.views import api_info, dashboard_stats_view, health_check, test_sentry
 
 app_name = "api_v1"
 
@@ -16,6 +16,7 @@ urlpatterns = [
     # Health check e info
     path("health/", health_check, name="health"),
     path("info/", api_info, name="info"),
+    path("test-sentry/", test_sentry, name="test-sentry"),
     # Dashboard
     path("dashboard/stats/", dashboard_stats_view, name="dashboard-stats"),
     # Apps
