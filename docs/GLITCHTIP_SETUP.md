@@ -105,6 +105,62 @@ Após configurar:
 2. **Frontend**: Erros JavaScript serão enviados para GlitchTip
 3. **Dashboard**: Acesse seu GlitchTip para ver os logs
 
+## Identificação de Ambiente (Produção vs Desenvolvimento)
+
+O sistema adiciona automaticamente tags e contexto para facilitar a filtragem de erros por ambiente no GlitchTip.
+
+### Tags Automáticas
+
+Cada erro enviado para o GlitchTip inclui as seguintes tags:
+
+- **`environment`**: Ambiente do deploy (`production`, `staging`, `development`)
+- **`is_production`**: `true` ou `false` - facilita filtragem rápida
+- **`deployment_type`**: Tipo de deploy (`docker`, `kubernetes`, `caprover`, etc.)
+
+### Configuração Recomendada para Produção
+
+**Backend `.env` (produção):**
+```bash
+USE_SENTRY=true
+SENTRY_DSN=http://xxx@seu-glitchtip.com/1
+ENVIRONMENT=production
+RELEASE=v1.0.0                    # Versão do deploy (opcional, mas recomendado)
+SERVER_NAME=backend-prod-1        # Nome da instância (opcional)
+DEPLOYMENT_TYPE=caprover           # Tipo de deploy (opcional)
+```
+
+**Frontend `.env` (produção):**
+```bash
+VITE_SENTRY_DSN=http://xxx@seu-glitchtip.com/1
+VITE_ENVIRONMENT=production
+VITE_RELEASE=v1.0.0               # Versão do deploy (opcional)
+VITE_DEPLOYMENT_TYPE=caprover     # Tipo de deploy (opcional)
+```
+
+### Filtrando Erros no GlitchTip
+
+No dashboard do GlitchTip, você pode filtrar erros usando:
+
+1. **Filtro por ambiente**: Use a tag `environment:production` para ver apenas erros de produção
+2. **Filtro por produção**: Use `is_production:true` para ver apenas erros de produção
+3. **Filtro por versão**: Use `release:v1.0.0` para ver erros de uma versão específica
+4. **Filtro por tipo de deploy**: Use `deployment_type:caprover` para ver erros de um tipo específico de deploy
+
+### Exemplo de Uso no CapRover
+
+Ao configurar variáveis de ambiente no CapRover:
+
+**App Backend:**
+- `ENVIRONMENT=production`
+- `RELEASE=$(git rev-parse --short HEAD)` (ou versão manual)
+- `SERVER_NAME=backend-1`
+- `DEPLOYMENT_TYPE=caprover`
+
+**App Frontend:**
+- `VITE_ENVIRONMENT=production`
+- `VITE_RELEASE=$(git rev-parse --short HEAD)` (ou versão manual)
+- `VITE_DEPLOYMENT_TYPE=caprover`
+
 ## Comparação: Sentry vs GlitchTip
 
 | Aspecto | Sentry SaaS | GlitchTip Self-Hosted |

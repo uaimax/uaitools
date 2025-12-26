@@ -126,7 +126,7 @@ Sempre que precisar investigar erros ou problemas reportados, consulte diretamen
 
 Para orquestrar múltiplos agentes @007 em uma tarefa complexa:
 
-1. **Comando direto**: `@007orchestrator [tarefa] → [agente1] → [agente2] ...`
+1. **Comando direto**: `@007orch [tarefa] → [agente1] → [agente2] ...`
 2. **Formato sequencial**: Listar agentes na ordem de execução
 3. **Formato paralelo**: Usar `+` para agentes paralelos: `@007backend + @007frontend`
 

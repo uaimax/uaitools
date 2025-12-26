@@ -5,6 +5,9 @@
 Crie um arquivo `.env` na raiz do projeto `backend/` com as seguintes variáveis:
 
 ```bash
+# Ambiente (OBRIGATÓRIO)
+ENVIRONMENT=development  # development, staging, production (ou dev, prod para compatibilidade)
+
 # Django Settings
 SECRET_KEY=django-insecure-change-me-in-production
 DEBUG=True
@@ -13,6 +16,19 @@ ALLOWED_HOSTS=localhost,127.0.0.1,*
 # Database (Produção)
 # DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 ```
+
+### 🔄 Variável ENVIRONMENT (Unificada)
+
+A variável `ENVIRONMENT` é a única variável necessária para definir o ambiente. Ela é usada tanto para:
+- **Carregar settings do Django** (dev.py ou prod.py)
+- **Configurar Sentry/GlitchTip** (tags de ambiente)
+
+**Valores suportados:**
+- `development` ou `dev` → Carrega `dev.py` (desenvolvimento)
+- `production` ou `prod` → Carrega `prod.py` (produção)
+- `staging` → Carrega `dev.py` (pode ser customizado)
+
+**Nota:** Valores curtos (`dev`, `prod`) são automaticamente normalizados para os valores completos (`development`, `production`) no Sentry/GlitchTip.
 
 ## 🚀 Performance e Cache
 
@@ -41,9 +57,15 @@ USE_SENTRY=false        # true para usar Sentry/GlitchTip, false para usar banco
 SENTRY_DSN=             # DSN do Sentry ou GlitchTip (se USE_SENTRY=true)
 LOG_RETENTION_DAYS=7    # Dias de retenção no banco (padrão: 7)
 ENVIRONMENT=production   # Ambiente (development, staging, production)
+RELEASE=                # Versão do deploy (ex: v1.0.0, commit hash) - opcional
+SERVER_NAME=            # Nome do servidor/instância (ex: backend-1, api-prod) - opcional
+DEPLOYMENT_TYPE=        # Tipo de deploy (ex: docker, kubernetes, caprover) - opcional
 
 # Frontend
 VITE_SENTRY_DSN=        # DSN do Sentry ou GlitchTip (opcional, se configurado usa Sentry/GlitchTip)
+VITE_ENVIRONMENT=       # Ambiente (development, staging, production) - opcional, usa MODE se não definido
+VITE_RELEASE=           # Versão do deploy (ex: v1.0.0, commit hash) - opcional
+VITE_DEPLOYMENT_TYPE=   # Tipo de deploy (ex: docker, kubernetes, caprover) - opcional
 ```
 
 **Nota**:

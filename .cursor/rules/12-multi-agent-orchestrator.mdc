@@ -3,7 +3,7 @@ description: "Multi-Agent Orchestrator - Comando para orquestrar múltiplos agen
 alwaysApply: false
 ---
 
-# Multi-Agent Orchestrator (@007orchestrator)
+# Multi-Agent Orchestrator (@007orch)
 
 ## O Que É o Multi-Agent Orchestrator
 
@@ -22,22 +22,22 @@ Use este comando quando uma tarefa requer:
 4. **Tarefas Complexas**: Features completas que tocam vários aspectos do sistema
 
 **Exemplos:**
-- "Quero que @007orchestrator crie uma feature completa de autenticação OAuth2"
-- "Quero que @007orchestrator implemente um módulo com validação de segurança"
-- "Quero que @007orchestrator faça uma refatoração completa com testes"
+- "Quero que @007orch crie uma feature completa de autenticação OAuth2"
+- "Quero que @007orch implemente um módulo com validação de segurança"
+- "Quero que @007orch faça uma refatoração completa com testes"
 
 ## Formato de Comando
 
 ### Formato Básico
 
 ```
-@007orchestrator [tarefa] → [agente1] → [agente2] → [agente3] ...
+@007orch [tarefa] → [agente1] → [agente2] → [agente3] ...
 ```
 
 ### Formato Detalhado (Sequencial)
 
 ```
-@007orchestrator [tarefa]
+@007orch [tarefa]
   → @007explorer: [análise inicial]
   → @007architect: [decisões estruturais]
   → @007backend: [implementação backend]
@@ -50,7 +50,7 @@ Use este comando quando uma tarefa requer:
 ### Formato Paralelo
 
 ```
-@007orchestrator [tarefa]
+@007orch [tarefa]
   → @007backend + @007frontend: [implementação paralela]
   → @007security: [revisão]
   → @007qa: [validação]
@@ -59,7 +59,7 @@ Use este comando quando uma tarefa requer:
 ### Formato Condicional
 
 ```
-@007orchestrator [tarefa]
+@007orch [tarefa]
   → @007explorer: [análise]
   → @007architect: [decisões]
   → @007backend: [implementação]
@@ -181,7 +181,7 @@ Use este comando quando uma tarefa requer:
 
 **Exemplo:**
 ```
-@007orchestrator criar módulo de pagamentos
+@007orch criar módulo de pagamentos
   → @007explorer: analisar código existente
   → @007architect: definir estrutura
   → @007backend: implementar APIs
@@ -202,7 +202,7 @@ Use este comando quando uma tarefa requer:
 
 **Exemplo:**
 ```
-@007orchestrator implementar feature completa
+@007orch implementar feature completa
   → @007backend + @007frontend: implementação paralela
   → @007security: revisar ambos
   → @007qa: testar integração
@@ -221,7 +221,7 @@ Use este comando quando uma tarefa requer:
 
 **Exemplo:**
 ```
-@007orchestrator refatorar módulo
+@007orch refatorar módulo
   → @007explorer: analisar código
   → @007architect: definir refatoração
   → @007backend: implementar
@@ -235,7 +235,7 @@ Use este comando quando uma tarefa requer:
 
 **Exemplo:**
 ```
-@007orchestrator otimizar performance
+@007orch otimizar performance
   → @007explorer: identificar gargalos
   → @007backend: otimizar
   → @007qa: validar performance
@@ -250,7 +250,7 @@ Use este comando quando uma tarefa requer:
 Quando o orchestrator coordena handoffs, ele deve usar este formato:
 
 ```markdown
-## HANDOFF: @007orchestrator → @007[agente]
+## HANDOFF: @007orch → @007[agente]
 
 ### Contexto da Orquestração
 [Tarefa completa sendo executada]
@@ -275,7 +275,7 @@ Quando o orchestrator coordena handoffs, ele deve usar este formato:
 ### Exemplo de Handoff Coordenado
 
 ```markdown
-## HANDOFF: @007orchestrator → @007backend
+## HANDOFF: @007orch → @007backend
 
 ### Contexto da Orquestração
 Criar módulo completo de pagamentos com integração Stripe
@@ -311,7 +311,7 @@ Implementar backend completo:
 ### Exemplo 1: Feature Completa com Segurança
 
 ```
-Usuário: "@007orchestrator criar sistema de autenticação OAuth2 com Google e GitHub"
+Usuário: "@007orch criar sistema de autenticação OAuth2 com Google e GitHub"
 
 Orchestrator:
 ▶ Iniciando orquestração: Sistema de autenticação OAuth2
@@ -353,7 +353,7 @@ Orchestrator:
 ### Exemplo 2: Refatoração com Validação
 
 ```
-Usuário: "@007orchestrator refatorar módulo de leads com melhorias de performance"
+Usuário: "@007orch refatorar módulo de leads com melhorias de performance"
 
 Orchestrator:
 ▶ Iniciando orquestração: Refatoração de leads
@@ -390,7 +390,7 @@ Orchestrator:
 ### Exemplo 3: Implementação Paralela
 
 ```
-Usuário: "@007orchestrator implementar feature de notificações (backend + frontend)"
+Usuário: "@007orch implementar feature de notificações (backend + frontend)"
 
 Orchestrator:
 ▶ Iniciando orquestração: Feature de notificações

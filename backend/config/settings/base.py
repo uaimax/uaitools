@@ -558,11 +558,48 @@ SENTRY_DSN = os.environ.get("SENTRY_DSN", "")  # Funciona com Sentry ou GlitchTi
 SENTRY_API_TOKEN = os.environ.get("SENTRY_API_TOKEN", "")  # Token para buscar erros via API (opcional)
 LOG_RETENTION_DAYS = int(os.environ.get("LOG_RETENTION_DAYS", "7"))
 
+
+def _add_sentry_tags(event: dict, environment: str) -> dict:
+    """Adiciona tags customizadas aos eventos do Sentry/GlitchTip.
+
+    Facilita a filtragem e identificação de erros por ambiente, tipo, etc.
+    """
+    if "tags" not in event:
+        event["tags"] = {}
+
+    # Tag de ambiente (já existe, mas garantimos que está presente)
+    event["tags"]["environment"] = environment
+
+    # Tag para identificar se é produção
+    event["tags"]["is_production"] = environment == "production"
+
+    # Tag para identificar tipo de deploy (se disponível)
+    deployment_type = os.environ.get("DEPLOYMENT_TYPE", "unknown")
+    event["tags"]["deployment_type"] = deployment_type
+
+    # Adicionar informações do Django se disponível
+    if "extra" not in event:
+        event["extra"] = {}
+
+    django_env = os.environ.get("ENVIRONMENT", "unknown")
+    event["extra"]["django_env"] = django_env
+
+    return event
+
+
 if USE_SENTRY and SENTRY_DSN:
     try:
         import sentry_sdk
         from sentry_sdk.integrations.django import DjangoIntegration
         from sentry_sdk.integrations.celery import CeleryIntegration
+
+        # Obter configurações de ambiente
+        env_raw = os.environ.get("ENVIRONMENT", "production")
+        # Normalizar valores: dev -> development, prod -> production
+        env_map = {"dev": "development", "prod": "production"}
+        environment = env_map.get(env_raw.lower(), env_raw.lower())
+        release = os.environ.get("RELEASE", None)  # Versão do deploy (ex: v1.0.0, commit hash)
+        server_name = os.environ.get("SERVER_NAME", None)  # Nome do servidor/instância
 
         # Configuração funciona tanto com Sentry quanto com GlitchTip
         # GlitchTip é compatível com a API do Sentry, então usa os mesmos SDKs
@@ -573,7 +610,11 @@ if USE_SENTRY and SENTRY_DSN:
                 CeleryIntegration(),
             ],
             traces_sample_rate=0.1,  # 10% das transações
-            environment=os.environ.get("ENVIRONMENT", "production"),
+            environment=environment,
+            release=release,  # Versão do deploy para rastreamento
+            server_name=server_name,  # Identificação do servidor/instância
+            # Tags padrão para facilitar filtragem no GlitchTip
+            before_send=lambda event, hint: _add_sentry_tags(event, environment),
             # Filtro de dados sensíveis já é feito pelo SensitiveDataFilter
         )
     except ImportError:

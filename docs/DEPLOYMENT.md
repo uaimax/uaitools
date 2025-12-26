@@ -28,7 +28,7 @@ Backend e frontend em serviços separados.
 
 ### Desenvolvimento (junto)
 ```bash
-DJANGO_ENV=dev
+ENVIRONMENT=development  # ou ENVIRONMENT=dev (compatível)
 FRONTEND_URL=          # Vazio = mesmo domínio
 API_URL=/api          # Relativo
 CORS_ENABLED=False     # Desabilitado
@@ -36,7 +36,7 @@ CORS_ENABLED=False     # Desabilitado
 
 ### Produção (separado)
 ```bash
-DJANGO_ENV=prod
+ENVIRONMENT=production  # ou ENVIRONMENT=prod (compatível)
 FRONTEND_URL=https://meusite.com
 API_URL=https://api.meusite.com
 CORS_ENABLED=True
