@@ -120,12 +120,35 @@ Sempre que precisar investigar erros ou problemas reportados, consulte diretamen
 - O DSN contém a URL do GlitchTip e o ID do projeto
 - Use o dashboard para análise detalhada de erros antes de debugar código
 
+## Multi-Agent Orchestrator - Como Usar
+
+### Ativação do Orchestrator
+
+Para orquestrar múltiplos agentes @007 em uma tarefa complexa:
+
+1. **Comando direto**: `@007orchestrator [tarefa] → [agente1] → [agente2] ...`
+2. **Formato sequencial**: Listar agentes na ordem de execução
+3. **Formato paralelo**: Usar `+` para agentes paralelos: `@007backend + @007frontend`
+
+### O Que o Orchestrator Faz
+
+Quando ativado, o orchestrator:
+- ✅ Analisa a tarefa e identifica agentes necessários
+- ✅ Cria plano de execução com handoffs claros
+- ✅ Coordena execução sequencial ou paralela
+- ✅ Faz handoffs com contexto completo
+- ✅ Valida entregáveis finais
+
+**Formato Completo:** Ver `12-multi-agent-orchestrator.mdc` para guia detalhado.
+
 ## Referências
 
 - `@docs/ARCHITECTURE.md` - Decisões arquiteturais
 - `@docs/context/PROTECTED_AREAS.md` - Zonas de proteção
 - `@docs/GLITCHTIP_SETUP.md` - Setup e configuração do GlitchTip
 - `10-deep-research-agent.mdc` - Regras completas de Deep Research
+- `11-module-creator-agent.mdc` - Criador de módulos completos
+- `12-multi-agent-orchestrator.mdc` - Orquestração de múltiplos agentes
 - `20-context-documentation.mdc` - Documentação automática de aprendizados
 - `backend/.context/` - Aprendizados do backend Django/DRF
 - `frontend/.context/` - Aprendizados do frontend React/TypeScript

@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useSocialProviders } from "../hooks/useSocialProviders"
 import { SocialButton } from "@/components/ui/social-button"
 import { getZodMessages } from "@/i18n/zod"
+import { getAuthErrorMessage } from "@/i18n/query-errors"
 
 export function LoginForm() {
   const { t } = useTranslation(["auth", "common"])
@@ -53,9 +54,20 @@ export function LoginForm() {
       })
       navigate("/admin/dashboard")
     } catch (error: any) {
+      // Usar função especializada para obter mensagem de erro amigável
+      let errorMessage: string;
+
+      // Prioridade 1: Erros de CORS/network (já têm mensagem descritiva do interceptor)
+      if (error.isCorsError || error.isNetworkError) {
+        errorMessage = error.message;
+      } else {
+        // Prioridade 2: Usar função de tradução de erros de autenticação
+        errorMessage = getAuthErrorMessage(error);
+      }
+
       toast({
         title: t("auth:toasts.login_error"),
-        description: error.response?.data?.detail || error.message || t("auth:messages.invalid_credentials"),
+        description: errorMessage,
         variant: "destructive",
       })
     }

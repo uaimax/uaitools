@@ -1,0 +1,503 @@
+---
+description: "Multi-Agent Orchestrator - Comando para orquestrar múltiplos agentes @007 em tarefas complexas"
+alwaysApply: false
+---
+
+# Multi-Agent Orchestrator (@007orchestrator)
+
+## O Que É o Multi-Agent Orchestrator
+
+O Multi-Agent Orchestrator é um comando especial que permite invocar e coordenar **múltiplos agentes @007** de forma sequencial ou paralela para executar tarefas complexas que requerem expertise de diferentes domínios.
+
+**Duração típica:** Variável, dependendo da complexidade e número de agentes envolvidos.
+**Output:** Tarefa completa executada por múltiplos agentes coordenados.
+
+## Quando Usar o Orchestrator
+
+Use este comando quando uma tarefa requer:
+
+1. **Múltiplos Domínios**: Backend + Frontend + Segurança + QA
+2. **Fluxo Sequencial**: Análise → Arquitetura → Implementação → Testes → Documentação
+3. **Validação Cruzada**: Múltiplos agentes revisando a mesma implementação
+4. **Tarefas Complexas**: Features completas que tocam vários aspectos do sistema
+
+**Exemplos:**
+- "Quero que @007orchestrator crie uma feature completa de autenticação OAuth2"
+- "Quero que @007orchestrator implemente um módulo com validação de segurança"
+- "Quero que @007orchestrator faça uma refatoração completa com testes"
+
+## Formato de Comando
+
+### Formato Básico
+
+```
+@007orchestrator [tarefa] → [agente1] → [agente2] → [agente3] ...
+```
+
+### Formato Detalhado (Sequencial)
+
+```
+@007orchestrator [tarefa]
+  → @007explorer: [análise inicial]
+  → @007architect: [decisões estruturais]
+  → @007backend: [implementação backend]
+  → @007frontend: [implementação frontend]
+  → @007security: [revisão de segurança]
+  → @007qa: [testes e validação]
+  → @007docs: [documentação]
+```
+
+### Formato Paralelo
+
+```
+@007orchestrator [tarefa]
+  → @007backend + @007frontend: [implementação paralela]
+  → @007security: [revisão]
+  → @007qa: [validação]
+```
+
+### Formato Condicional
+
+```
+@007orchestrator [tarefa]
+  → @007explorer: [análise]
+  → @007architect: [decisões]
+  → @007backend: [implementação]
+  → IF [condição]: @007security
+  → @007qa: [validação]
+```
+
+## Protocolo de Orquestração
+
+### Etapa 1: Análise da Tarefa
+
+**Quando:** Imediatamente após receber o comando.
+
+**Ação:** O orchestrator analisa a tarefa e identifica quais agentes são necessários.
+
+**Checklist:**
+- [ ] Entender o escopo completo da tarefa
+- [ ] Identificar agentes necessários (baseado em domínios afetados)
+- [ ] Definir ordem de execução (sequencial ou paralelo)
+- [ ] Identificar dependências entre agentes
+- [ ] Estimar complexidade e duração
+
+**Formato de Saída:**
+```
+▶ Iniciando orquestração de múltiplos agentes
+▶ Analisando tarefa: [descrição]
+▶ Agentes identificados: [lista de agentes]
+▶ Ordem de execução: [sequencial/paralelo]
+▶ Dependências: [lista de dependências]
+```
+
+### Etapa 2: Planejamento da Execução
+
+**Quando:** Após análise da tarefa.
+
+**Ação:** Criar plano detalhado de execução com handoffs claros.
+
+**Formato de Plano:**
+```
+**Plano de Execução:**
+
+1. @007explorer
+   - Objetivo: [análise do código existente]
+   - Entregáveis: [análise estruturada]
+   - Handoff para: @007architect
+
+2. @007architect
+   - Objetivo: [decisões arquiteturais]
+   - Entregáveis: [estrutura definida]
+   - Handoff para: @007backend
+
+3. @007backend
+   - Objetivo: [implementação backend]
+   - Entregáveis: [código backend]
+   - Handoff para: @007frontend
+
+[... continuar para todos os agentes ...]
+```
+
+### Etapa 3: Execução Coordenada
+
+**Quando:** Após planejamento.
+
+**Ação:** Executar cada agente na ordem definida, fazendo handoffs apropriados.
+
+**Regras de Execução:**
+- ✅ Cada agente recebe contexto completo do agente anterior
+- ✅ Handoffs seguem formato padrão (ver `@AGENTS.md`)
+- ✅ Agente atual aguarda conclusão do anterior (sequencial)
+- ✅ Agentes podem executar em paralelo quando não há dependências
+- ✅ Progresso é documentado em cada etapa
+
+**Formato de Progresso:**
+```
+▶ Executando @007explorer...
+  ✅ Análise completa
+  → Handoff para @007architect
+
+▶ Executando @007architect...
+  ✅ Decisões arquiteturais definidas
+  → Handoff para @007backend
+
+▶ Executando @007backend...
+  ✅ Implementação backend completa
+  → Handoff para @007frontend
+
+[... continuar ...]
+```
+
+### Etapa 4: Validação Final
+
+**Quando:** Após todos os agentes concluírem.
+
+**Ação:** Validar que a tarefa foi completada corretamente.
+
+**Checklist:**
+- [ ] Todos os agentes concluíram suas tarefas
+- [ ] Handoffs foram feitos corretamente
+- [ ] Entregáveis estão completos
+- [ ] Testes passando (se aplicável)
+- [ ] Documentação atualizada (se aplicável)
+
+**Formato de Validação:**
+```
+▶ Validando execução completa...
+  ✅ Todos os agentes concluíram
+  ✅ Handoffs realizados corretamente
+  ✅ Entregáveis completos
+  ✅ Testes passando
+  ✅ Documentação atualizada
+✅ Orquestração completa com sucesso!
+```
+
+## Tipos de Orquestração
+
+### 1. Orquestração Sequencial (Padrão)
+
+**Quando:** Agentes têm dependências claras.
+
+**Exemplo:**
+```
+@007orchestrator criar módulo de pagamentos
+  → @007explorer: analisar código existente
+  → @007architect: definir estrutura
+  → @007backend: implementar APIs
+  → @007frontend: implementar UI
+  → @007security: revisar segurança
+  → @007qa: criar testes
+  → @007docs: documentar
+```
+
+**Fluxo:**
+```
+@007explorer → @007architect → @007backend → @007frontend → @007security → @007qa → @007docs
+```
+
+### 2. Orquestração Paralela
+
+**Quando:** Agentes podem trabalhar independentemente.
+
+**Exemplo:**
+```
+@007orchestrator implementar feature completa
+  → @007backend + @007frontend: implementação paralela
+  → @007security: revisar ambos
+  → @007qa: testar integração
+```
+
+**Fluxo:**
+```
+     @007backend ──┐
+                   ├──→ @007security → @007qa
+     @007frontend ─┘
+```
+
+### 3. Orquestração Condicional
+
+**Quando:** Alguns agentes são opcionais baseado em condições.
+
+**Exemplo:**
+```
+@007orchestrator refatorar módulo
+  → @007explorer: analisar código
+  → @007architect: definir refatoração
+  → @007backend: implementar
+  → IF [mudanças estruturais]: @007security
+  → @007qa: testar
+```
+
+### 4. Orquestração Iterativa
+
+**Quando:** Ciclo de feedback entre agentes.
+
+**Exemplo:**
+```
+@007orchestrator otimizar performance
+  → @007explorer: identificar gargalos
+  → @007backend: otimizar
+  → @007qa: validar performance
+  → IF [não atende]: voltar para @007backend
+  → @007docs: documentar otimizações
+```
+
+## Handoffs Entre Agentes
+
+### Formato de Handoff no Orchestrator
+
+Quando o orchestrator coordena handoffs, ele deve usar este formato:
+
+```markdown
+## HANDOFF: @007orchestrator → @007[agente]
+
+### Contexto da Orquestração
+[Tarefa completa sendo executada]
+
+### Agentes Anteriores
+- @007[agente1]: [o que foi feito]
+- @007[agente2]: [o que foi feito]
+
+### Entregáveis Acumulados
+- [Lista de entregáveis de todos os agentes anteriores]
+
+### Próxima Tarefa
+[O que o agente atual deve fazer]
+
+### Dependências
+[O que o agente atual depende dos anteriores]
+
+### Riscos/Atenção
+[Pontos de atenção acumulados]
+```
+
+### Exemplo de Handoff Coordenado
+
+```markdown
+## HANDOFF: @007orchestrator → @007backend
+
+### Contexto da Orquestração
+Criar módulo completo de pagamentos com integração Stripe
+
+### Agentes Anteriores
+- @007explorer: Analisou código existente, identificou padrões de pagamento
+- @007architect: Definiu estrutura: Payment model, PaymentViewSet, integração Stripe
+
+### Entregáveis Acumulados
+- Análise do código existente (explorer)
+- Decisões arquiteturais documentadas (architect)
+
+### Próxima Tarefa
+Implementar backend completo:
+- Model Payment (herdar WorkspaceModel)
+- Serializers (PaymentSerializer, PaymentListSerializer)
+- ViewSet (PaymentViewSet com integração Stripe)
+- URLs em /api/v1/payments/
+
+### Dependências
+- Usar estrutura definida por @007architect
+- Seguir padrões identificados por @007explorer
+- Multi-tenancy obrigatório (WorkspaceModel)
+
+### Riscos/Atenção
+- Stripe API keys devem estar em variáveis de ambiente
+- Validar webhooks do Stripe
+- Garantir idempotência em pagamentos
+```
+
+## Exemplos Práticos
+
+### Exemplo 1: Feature Completa com Segurança
+
+```
+Usuário: "@007orchestrator criar sistema de autenticação OAuth2 com Google e GitHub"
+
+Orchestrator:
+▶ Iniciando orquestração: Sistema de autenticação OAuth2
+▶ Agentes identificados: explorer, architect, backend, security, qa, docs
+▶ Ordem: sequencial
+
+▶ Executando @007explorer...
+  → Analisando código de autenticação existente
+  ✅ Análise completa
+  → Handoff para @007architect
+
+▶ Executando @007architect...
+  → Definindo estrutura OAuth2
+  ✅ Decisões arquiteturais definidas
+  → Handoff para @007backend
+
+▶ Executando @007backend...
+  → Implementando OAuth2 providers (Google, GitHub)
+  ✅ Backend completo
+  → Handoff para @007security
+
+▶ Executando @007security...
+  → Revisando segurança OAuth2
+  ✅ Segurança validada
+  → Handoff para @007qa
+
+▶ Executando @007qa...
+  → Criando testes OAuth2
+  ✅ Testes completos (85% cobertura)
+  → Handoff para @007docs
+
+▶ Executando @007docs...
+  → Documentando OAuth2
+  ✅ Documentação completa
+
+✅ Orquestração completa: Sistema OAuth2 implementado e validado
+```
+
+### Exemplo 2: Refatoração com Validação
+
+```
+Usuário: "@007orchestrator refatorar módulo de leads com melhorias de performance"
+
+Orchestrator:
+▶ Iniciando orquestração: Refatoração de leads
+▶ Agentes identificados: explorer, architect, backend, qa
+▶ Ordem: sequencial
+
+▶ Executando @007explorer...
+  → Analisando módulo de leads atual
+  ✅ Identificados gargalos de performance
+  → Handoff para @007architect
+
+▶ Executando @007architect...
+  → Definindo estratégia de otimização
+  ✅ Plano de refatoração definido
+  → Handoff para @007backend
+
+▶ Executando @007backend...
+  → Implementando otimizações (queries, índices, cache)
+  ✅ Refatoração completa
+  → Handoff para @007qa
+
+▶ Executando @007qa...
+  → Validando performance e testes
+  ✅ Performance melhorada 3x, testes passando
+  → Handoff para @007docs
+
+▶ Executando @007docs...
+  → Atualizando documentação
+  ✅ Documentação atualizada
+
+✅ Orquestração completa: Módulo de leads refatorado e otimizado
+```
+
+### Exemplo 3: Implementação Paralela
+
+```
+Usuário: "@007orchestrator implementar feature de notificações (backend + frontend)"
+
+Orchestrator:
+▶ Iniciando orquestração: Feature de notificações
+▶ Agentes identificados: architect, backend, frontend, qa
+▶ Ordem: paralelo (backend + frontend)
+
+▶ Executando @007architect...
+  → Definindo estrutura de notificações
+  ✅ Arquitetura definida
+  → Handoff para @007backend e @007frontend (paralelo)
+
+▶ Executando @007backend (paralelo)...
+  → Implementando APIs de notificações
+  ✅ Backend completo
+
+▶ Executando @007frontend (paralelo)...
+  → Implementando UI de notificações
+  ✅ Frontend completo
+
+▶ Executando @007qa...
+  → Testando integração backend + frontend
+  ✅ Testes de integração passando
+
+✅ Orquestração completa: Feature de notificações implementada
+```
+
+## Regras de Orquestração
+
+### ALWAYS
+
+- ✅ Analisar tarefa antes de iniciar
+- ✅ Identificar todos os agentes necessários
+- ✅ Definir ordem de execução clara
+- ✅ Fazer handoffs com contexto completo
+- ✅ Documentar progresso em cada etapa
+- ✅ Validar entregáveis de cada agente
+- ✅ Garantir que dependências sejam respeitadas
+
+### NEVER
+
+- ❌ Pular análise inicial da tarefa
+- ❌ Executar agentes sem contexto adequado
+- ❌ Ignorar dependências entre agentes
+- ❌ Fazer handoffs sem contexto completo
+- ❌ Pular validação final
+- ❌ Executar agentes em ordem incorreta
+
+## Resolução de Conflitos
+
+### Hierarquia no Orchestrator
+
+Quando há conflitos durante a orquestração:
+
+```
+1. @007security    — Veto em questões de segurança
+2. @007architect   — Decisões estruturais
+3. Orchestrator    — Coordenação e resolução
+4. Humano          — Sempre pode intervir
+```
+
+### Processo de Conflito
+
+1. **Identificar**: Documentar conflito entre agentes
+2. **Escalar**: Subir para agente de maior hierarquia
+3. **Decidir**: Agente sênior decide com justificativa
+4. **Documentar**: Registrar decisão e continuar orquestração
+
+## Indicadores de Progresso
+
+Use estes indicadores durante a orquestração:
+
+```
+▶ Iniciando orquestração: [tarefa]
+▶ Analisando tarefa...
+▶ Agentes identificados: [lista]
+▶ Ordem de execução: [sequencial/paralelo]
+▶ Executando @007[agente]...
+  → [descrição do que está fazendo]
+  ✅ [resultado]
+  → Handoff para @007[próximo]
+▶ Validando execução...
+✅ Orquestração completa!
+```
+
+## Checklist de Qualidade
+
+Antes de finalizar a orquestração, verificar:
+
+- [ ] Todos os agentes necessários foram executados
+- [ ] Handoffs foram feitos corretamente
+- [ ] Contexto foi passado adequadamente
+- [ ] Entregáveis estão completos
+- [ ] Dependências foram respeitadas
+- [ ] Testes passando (se aplicável)
+- [ ] Documentação atualizada (se aplicável)
+- [ ] Nenhum conflito pendente
+
+## Notas Finais
+
+- O orchestrator **coordena**, não implementa diretamente
+- Cada agente mantém suas responsabilidades e regras
+- Handoffs seguem formato padrão de `@AGENTS.md`
+- Orquestração pode ser interrompida a qualquer momento
+- Progresso é sempre documentado
+- Validação final é obrigatória
+
+**Referências:**
+- `@AGENTS.md` — Definição completa de todos os agentes
+- `@docs/context/ORCHESTRATION.md` — Protocolo de handoff detalhado
+- `.cursor/rules/11-module-creator-agent.mdc` — Exemplo de agente complexo

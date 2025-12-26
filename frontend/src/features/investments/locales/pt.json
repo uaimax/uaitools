@@ -1,0 +1,137 @@
+{
+  "header": {
+    "title": "Agente de Investimentos Autônomo",
+    "subtitle": "Sua estratégia de dividendos, automatizada."
+  },
+  "title": {
+    "investments": "Consultor de Investimentos",
+    "onboarding": "Configuração Inicial",
+    "dashboard": "Minha Carteira"
+  },
+  "tabs": {
+    "suggestions": "Sugestões",
+    "portfolios": "Carteiras"
+  },
+  "fields": {
+    "ticker": "Ticker",
+    "quantity": "Quantidade",
+    "average_price": "Preço Médio",
+    "notes": "Observações",
+    "strategy": "Estratégia",
+    "portfolio_type": "Tipo de Carteira"
+  },
+  "placeholders": {
+    "ticker": "Ex: TAEE11, PETR4",
+    "quantity": "100",
+    "average_price": "35.50",
+    "strategy": "Descreva como você gosta de investir...",
+    "amount": "2000.00"
+  },
+  "status": {
+    "ok": "Tudo certo",
+    "attention": "Atenção necessária"
+  },
+  "messages": {
+    "empty": "Nenhum ativo cadastrado",
+    "empty_description": "Comece adicionando seus ativos",
+    "no_strategy": "Estratégia não definida",
+    "loading_quote": "Carregando cotação...",
+    "analyzing": "Analisando..."
+  },
+  "toasts": {
+    "create_success": "Criado com sucesso",
+    "update_success": "Atualizado com sucesso",
+    "delete_success": "Removido com sucesso",
+    "create_error": "Erro ao criar",
+    "update_error": "Erro ao atualizar",
+    "delete_error": "Erro ao remover"
+  },
+  "examples": {
+    "dividendos": "Foco em dividendos acima de 6%",
+    "value": "Empresas sólidas com P/L baixo",
+    "growth": "Empresas em crescimento"
+  },
+  "onboarding": {
+    "description": "Configure sua carteira e estratégia de investimentos",
+    "step1": "Ativos",
+    "step2": "Estratégia",
+    "step1_title": "O que você tem investido hoje?",
+    "step1_description": "Adicione seus ativos (ticker e quantidade)",
+    "add_asset": "Adicionar Ativo",
+    "next": "Próximo",
+    "step2_title": "Como você gosta de investir?",
+    "step2_description": "Descreva sua estratégia de investimento em texto livre",
+    "examples_label": "Exemplos (clique para usar):",
+    "back": "Voltar",
+    "start": "Começar",
+    "errors": {
+      "no_assets": "Adicione pelo menos um ativo",
+      "no_strategy": "Defina sua estratégia",
+      "portfolio_exists": "Você já possui uma carteira deste tipo. Use a carteira existente ou exclua a anterior."
+    }
+  },
+  "blocks": {
+    "status": {
+      "title": "Status da Carteira",
+      "ok_message": "Sua carteira está alinhada",
+      "attention_message": "{{count}} ativo(s) precisa(m) de atenção"
+    },
+    "portfolio": {
+      "title": "Minha Carteira",
+      "total_invested": "Total Investido",
+      "current_value": "Valor Atual",
+      "variation": "Variação",
+      "add_asset": "Adicionar Ativo"
+    },
+    "invest": {
+      "title": "Investir",
+      "input_label": "Tenho R$",
+      "button": "Onde devo colocar?",
+      "recommendation_title": "Recomendação"
+    }
+  },
+  "portfolios": {
+    "manage": "Gerenciar Carteiras",
+    "active_portfolio": "Carteira Ativa",
+    "select_portfolio": "Selecione uma carteira",
+    "default_name": "Carteira Principal",
+    "new": "Nova",
+    "super_admin_workspace_warning": "Você está vendo apenas as carteiras do workspace selecionado. Para ver todas as carteiras, selecione 'Todos os workspaces' no seletor de workspace no cabeçalho.",
+    "rename": "Renomear",
+    "delete": "Deletar",
+    "name": "Nome",
+    "name_placeholder": "Ex: Carteira Principal",
+    "new_description": "Crie uma nova carteira de investimentos",
+    "rename_description": "Renomeie sua carteira",
+    "confirm_delete": "Tem certeza que deseja deletar esta carteira? Esta ação não pode ser desfeita."
+  },
+  "portfolios_view": {
+    "title": "Carteira",
+    "consolidated_value": "Valor Consolidado",
+    "update_prices": "Atualizar Preços",
+    "add_asset": "Adicionar Ativo",
+    "table": {
+      "asset": "ATIVO",
+      "quantity": "QUANTIDADE",
+      "unit_price": "PREÇO UNIT.",
+      "total": "TOTAL",
+      "actions": "AÇÕES"
+    },
+    "actions": {
+      "add": "Adicionar",
+      "remove": "Remover",
+      "delete": "Deletar"
+    }
+  },
+  "suggestions_view": {
+    "title": "Sugestões",
+    "selected_portfolio": "Carteira selecionada",
+    "enter_amount": "Informe o valor para receber uma recomendação.",
+    "analyze_contribution": "Analisar Aporte",
+    "action_plan": "Plano de Ação",
+    "remaining_balance": "Saldo restante"
+  },
+  "strategy": {
+    "parsed_criteria": "Critérios Identificados"
+  }
+}

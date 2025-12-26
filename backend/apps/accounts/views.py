@@ -57,7 +57,7 @@ def login_view(request: Request) -> Response:
 
     if not email or not password:
         return Response(
-            {"error": "Email e senha são obrigatórios."},
+            {"error": "Por favor, informe seu e-mail e senha."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -69,13 +69,13 @@ def login_view(request: Request) -> Response:
 
         if user is None:
             return Response(
-                {"error": "Credenciais inválidas."},
+                {"error": "E-mail ou senha incorretos. Verifique suas credenciais e tente novamente."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
         if not user.is_active:
             return Response(
-                {"error": "Usuário inativo."},
+                {"error": "Sua conta está inativa. Entre em contato com o suporte para mais informações."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -95,8 +95,11 @@ def login_view(request: Request) -> Response:
             status=status.HTTP_200_OK,
         )
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Erro ao fazer login: {e}", exc_info=True)
         return Response(
-            {"error": "Erro ao fazer login. Tente novamente."},
+            {"error": "Ocorreu um erro no servidor. Tente novamente em alguns instantes."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

@@ -5,7 +5,8 @@ import {
   Users,
   Settings,
   FileText,
-  ChevronRight
+  ChevronRight,
+  TrendingUp
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -16,6 +17,7 @@ export function Sidebar() {
   const menuItems = [
     { icon: LayoutDashboard, label: t("common:navigation.dashboard"), path: "/admin/dashboard" },
     { icon: Users, label: t("common:navigation.leads"), path: "/admin/leads" },
+    { icon: TrendingUp, label: t("common:navigation.investments"), path: "/admin/investments" },
     { icon: FileText, label: t("common:navigation.documents"), path: "/admin/documents" },
     { icon: Settings, label: t("common:navigation.settings"), path: "/admin/settings" },
   ]

@@ -21,7 +21,18 @@
   "messages": {
     "login_success": "Login successful",
     "register_success": "Registration successful",
-    "invalid_credentials": "Invalid credentials"
+    "invalid_credentials": "Email or password incorrect. Please check your credentials and try again.",
+    "user_inactive": "Your account is inactive. Please contact support for more information.",
+    "email_required": "Please enter your email.",
+    "password_required": "Please enter your password.",
+    "login_failed": "Unable to log in. Please check your credentials and try again.",
+    "server_error": "A server error occurred. Please try again in a few moments.",
+    "network_error": "Unable to connect to the server. Please check your internet connection.",
+    "timeout_error": "The request took too long to respond. Please try again.",
+    "unauthorized": "You do not have permission to perform this action.",
+    "forbidden": "Access denied. You do not have permission to access this resource.",
+    "not_found": "The requested resource was not found.",
+    "validation_error": "The provided data is invalid. Please check and try again."
   },
   "toasts": {
     "login_success": "Login successful",

@@ -16,7 +16,11 @@ Backend e frontend rodam no mesmo container/serviço.
 
 Backend e frontend em serviços separados.
 
-**Configuração CapRover:**
+**Configuração CapRover usando `captain-definition` (Recomendado):**
+- App "backend": Captain Definition File = `backend/captain-definition`
+- App "frontend": Captain Definition File = `frontend/captain-definition`
+
+**Configuração CapRover usando Dockerfile (Alternativa):**
 - App "backend": Dockerfile Location = `backend/Dockerfile`
 - App "frontend": Dockerfile Location = `frontend/Dockerfile`
 
@@ -39,15 +43,50 @@ CORS_ENABLED=True
 ALLOWED_HOSTS=api.meusite.com
 ```
 
+## Configuração no CapRover
+
+### Usando `captain-definition` (Recomendado)
+
+O projeto inclui arquivos `captain-definition` prontos para uso:
+
+1. **Criar dois apps no CapRover:**
+   - App "backend"
+   - App "frontend"
+
+2. **Configurar Captain Definition File para cada app:**
+   - **Backend**: No app "backend", configure:
+     - **Captain Definition File**: `backend/captain-definition`
+     - O caminho é relativo à raiz do repositório Git
+
+   - **Frontend**: No app "frontend", configure:
+     - **Captain Definition File**: `frontend/captain-definition`
+     - O caminho é relativo à raiz do repositório Git
+
+3. **Configurar repositório Git:**
+   - Conecte o repositório Git no CapRover
+   - O CapRover irá clonar o repositório e usar os arquivos `captain-definition` especificados
+
+4. **Variáveis de ambiente:**
+   - Configure as variáveis de ambiente necessárias em cada app (veja seção abaixo)
+
+### Usando Dockerfile (Alternativa)
+
+Se preferir usar Dockerfiles diretamente:
+
+1. Criar dois apps no CapRover
+2. Configurar Dockerfile Location para cada um:
+   - Backend: `backend/Dockerfile`
+   - Frontend: `frontend/Dockerfile`
+
 ## Migração de Junto para Separado
 
 1. Criar dois apps no CapRover
-2. Configurar Dockerfile Location para cada um
+2. Configurar Captain Definition File ou Dockerfile Location para cada um
 3. Atualizar variáveis de ambiente:
    - Backend: `FRONTEND_URL`, `CORS_ENABLED=True`
    - Frontend: `API_URL` (URL absoluta do backend)
-4. Instalar `django-cors-headers` no backend
-5. Configurar CORS no settings
+4. Instalar `django-cors-headers` no backend (já incluído)
+5. Configurar CORS no settings (já configurado)
 
 ## URLs
 

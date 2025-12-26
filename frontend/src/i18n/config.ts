@@ -15,6 +15,8 @@ import ptAuth from "../features/auth/locales/pt.json";
 import enAuth from "../features/auth/locales/en.json";
 import ptLeads from "../features/leads/locales/pt.json";
 import enLeads from "../features/leads/locales/en.json";
+import ptInvestments from "../features/investments/locales/pt.json";
+import enInvestments from "../features/investments/locales/en.json";
 
 i18n
   .use(LanguageDetector)
@@ -26,17 +28,19 @@ i18n
         seo: ptSEO,
         auth: ptAuth,
         leads: ptLeads,
+        investments: ptInvestments,
       },
       en: {
         common: enCommon,
         seo: enSEO,
         auth: enAuth,
         leads: enLeads,
+        investments: enInvestments,
       },
     },
     fallbackLng: "pt",
     defaultNS: "common",
-    ns: ["common", "seo", "auth", "leads"],
+    ns: ["common", "seo", "auth", "leads", "investments"],
     fallbackNS: ["common"],
     interpolation: {
       escapeValue: false, // React já escapa valores

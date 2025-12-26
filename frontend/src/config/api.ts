@@ -59,6 +59,9 @@ export const apiClient = axios.create({
 /** Interceptador de requisições para adicionar header X-Workspace-ID, JWT e CSRF token. */
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Para rotas de investments, sempre usar workspace do usuário (não permitir seleção)
+    const isInvestmentsRoute = config.url?.includes("/investments/");
+
     // Adicionar header X-Workspace-ID se disponível
     let workspaceId = localStorage.getItem("workspace_id");
 
@@ -69,7 +72,17 @@ apiClient.interceptors.request.use(
       workspaceId = null;
     }
 
-    if (workspaceId && config.headers) {
+    // Para investments, sempre enviar workspace_id se disponível (mesmo que vazio, o backend cria)
+    if (isInvestmentsRoute && config.headers) {
+      if (workspaceId) {
+        config.headers["X-Workspace-ID"] = workspaceId;
+        console.log("apiClient [investments]: enviando X-Workspace-ID =", workspaceId, "para", config.url)
+      } else {
+        // Não enviar header para investments - backend usará workspace do usuário
+        console.log("apiClient [investments]: SEM X-Workspace-ID - backend usará workspace do usuário")
+      }
+    } else if (workspaceId && config.headers) {
+      // Para outras rotas, comportamento normal
       config.headers["X-Workspace-ID"] = workspaceId;
       console.log("apiClient: enviando X-Workspace-ID =", workspaceId, "para", config.url)
     } else {
@@ -104,7 +117,83 @@ apiClient.interceptors.request.use(
 /** Interceptador de respostas para tratamento de erros. */
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    // Verificar se é erro de CORS ou network
+    // Erros de CORS/network não têm response (error.response é undefined)
+    const hasNoResponse = !error.response;
+    const isCorsError = hasNoResponse && (
+      error.message?.includes("CORS") ||
+      error.message?.includes("blocked by CORS") ||
+      error.code === "ERR_NETWORK"
+    );
+    const isNetworkError = hasNoResponse && (
+      error.code === "ERR_NETWORK" ||
+      error.message?.includes("Network Error") ||
+      error.message?.includes("Failed to fetch")
+    );
+
+    // Se for erro de CORS ou network, criar um erro mais descritivo
+    if (isCorsError || isNetworkError) {
+      // Verificar se o backend está acessível
+      const backendUrl = error.config?.baseURL || API_URL;
+      const isBackendReachable = backendUrl.startsWith("http://localhost:8001") || backendUrl.startsWith("http://127.0.0.1:8001");
+
+      const errorMessage = isCorsError
+        ? `Erro de CORS: O backend em ${backendUrl} não está permitindo requisições do frontend (${window.location.origin}). Verifique a configuração de CORS_ALLOWED_ORIGINS no backend.`
+        : `Erro de conexão: Não foi possível conectar ao backend em ${backendUrl}. Verifique se o servidor está rodando na porta correta.`;
+
+      const corsError = new Error(errorMessage);
+      // Manter informações originais do erro
+      (corsError as any).isCorsError = isCorsError;
+      (corsError as any).isNetworkError = isNetworkError;
+      (corsError as any).originalError = error;
+      (corsError as any).backendUrl = backendUrl;
+      return Promise.reject(corsError);
+    }
+
+    // Logar erros críticos (500+, timeouts) e erros 400 inesperados
+    const isServerError = error.response?.status && error.response.status >= 500;
+    const isTimeout = error.code === "ECONNABORTED";
+
+    // Logar erros 400 que não são de validação esperada (ex: unique constraint violations)
+    const isUnexpected400 = error.response?.status === 400;
+    let shouldLog400 = false;
+
+    if (isUnexpected400) {
+      const errorData = error.response.data;
+      const errorMessage = typeof errorData === 'object'
+        ? JSON.stringify(errorData)
+        : String(errorData);
+
+      // Logar apenas erros 400 inesperados (não erros de validação de formulário comuns)
+      // Exemplos: unique constraint, integridade de dados, etc.
+      shouldLog400 = errorMessage.includes('unique') ||
+                     errorMessage.includes('constraint') ||
+                     errorMessage.includes('integrity') ||
+                     errorMessage.includes('already exists') ||
+                     errorMessage.includes('já existe');
+    }
+
+    if (isServerError || isTimeout || shouldLog400) {
+      try {
+        const { logError } = await import("@/lib/error-logger");
+        const errorObj = error.response
+          ? new Error(
+              `API Error ${error.response.status}: ${JSON.stringify(error.response.data)}`
+            )
+          : new Error(`Request Timeout: ${error.message || "Unknown"}`);
+        logError(errorObj, {
+          url: error.config?.url,
+          method: error.config?.method,
+          status: error.response?.status,
+          timeout: isTimeout,
+          unexpected400: shouldLog400,
+        });
+      } catch {
+        // Ignorar erros de importação
+      }
+    }
+
     // Tratamento de erros comuns
     if (error.response?.status === 401) {
       // Não autenticado - limpar dados

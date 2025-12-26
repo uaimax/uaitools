@@ -14,12 +14,12 @@ class HealthCheckTestCase(TestCase):
 
     def test_health_check_returns_200(self) -> None:
         """Testa que health check retorna 200."""
-        response = self.client.get("/api/health/")
+        response = self.client.get("/api/v1/health/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_health_check_returns_correct_data(self) -> None:
         """Testa que health check retorna dados corretos."""
-        response = self.client.get("/api/health/")
+        response = self.client.get("/api/v1/health/")
         data = response.json()
         self.assertEqual(data["status"], "healthy")
         self.assertIn("version", data)
@@ -28,7 +28,7 @@ class HealthCheckTestCase(TestCase):
     def test_health_check_no_auth_required(self) -> None:
         """Testa que health check não requer autenticação."""
         # Client sem autenticação
-        response = self.client.get("/api/health/")
+        response = self.client.get("/api/v1/health/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
@@ -41,13 +41,13 @@ class APIInfoTestCase(TestCase):
 
     def test_api_info_returns_200(self) -> None:
         """Testa que api info retorna 200."""
-        response = self.client.get("/api/info/")
+        response = self.client.get("/api/v1/info/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_api_info_returns_correct_data(self) -> None:
         """Testa que api info retorna dados corretos."""
         from django.conf import settings
-        response = self.client.get("/api/info/")
+        response = self.client.get("/api/v1/info/")
         data = response.json()
         api_title = getattr(settings, "API_TITLE", "API")
         self.assertEqual(data["name"], api_title)
@@ -58,6 +58,6 @@ class APIInfoTestCase(TestCase):
 
     def test_api_info_no_auth_required(self) -> None:
         """Testa que api info não requer autenticação."""
-        response = self.client.get("/api/info/")
+        response = self.client.get("/api/v1/info/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

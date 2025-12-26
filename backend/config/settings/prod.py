@@ -20,13 +20,18 @@ ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.s
 DATABASE_URL = os.environ.get("DATABASE_URL")  # noqa: F405
 if DATABASE_URL:
     # Parse DATABASE_URL manualmente (formato: postgresql://user:pass@host:port/dbname)
+    from urllib.parse import unquote  # noqa: F401
+
     parsed = urlparse(DATABASE_URL)
+    # Decodifica a senha (ex: %40 vira @)
+    password = unquote(parsed.password) if parsed.password else ""
+
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": parsed.path[1:],  # Remove leading /
             "USER": parsed.username,
-            "PASSWORD": parsed.password,
+            "PASSWORD": password,  # Senha decodificada
             "HOST": parsed.hostname,
             "PORT": parsed.port or 5432,
         }

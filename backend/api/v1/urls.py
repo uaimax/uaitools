@@ -21,6 +21,7 @@ urlpatterns = [
     # Apps
     path("", include("apps.accounts.urls")),  # Autenticação e tenants
     path("leads/", include("apps.leads.urls")),
+    path("investments/", include("apps.investments.urls")),
     # Auditoria LGPD
     path("audit/", include("apps.core.audit_urls")),
     # Logging (erros da aplicação)

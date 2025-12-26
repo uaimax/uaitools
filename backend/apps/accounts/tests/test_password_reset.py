@@ -176,7 +176,7 @@ class PasswordResetAPITest(TestCase):
     def test_password_reset_request_valid_email(self):
         """Testa solicitação de reset com email válido."""
         response = self.client.post(
-            "/api/auth/password-reset-request/",
+            "/api/v1/auth/password-reset-request/",
             {"email": "test@example.com"},
             format="json",
         )
@@ -188,7 +188,7 @@ class PasswordResetAPITest(TestCase):
     def test_password_reset_request_invalid_email(self):
         """Testa solicitação de reset com email inválido (ainda retorna sucesso)."""
         response = self.client.post(
-            "/api/auth/password-reset-request/",
+            "/api/v1/auth/password-reset-request/",
             {"email": "nonexistent@example.com"},
             format="json",
         )
@@ -200,7 +200,7 @@ class PasswordResetAPITest(TestCase):
     def test_password_reset_request_missing_email(self):
         """Testa solicitação de reset sem email."""
         response = self.client.post(
-            "/api/auth/password-reset-request/",
+            "/api/v1/auth/password-reset-request/",
             {},
             format="json",
         )
@@ -212,7 +212,7 @@ class PasswordResetAPITest(TestCase):
         token = generate_password_reset_token(self.user)
 
         response = self.client.post(
-            "/api/auth/password-reset-confirm/",
+            "/api/v1/auth/password-reset-confirm/",
             {
                 "token": str(token.token),
                 "new_password": "newpass123",
@@ -234,7 +234,7 @@ class PasswordResetAPITest(TestCase):
     def test_password_reset_confirm_invalid_token(self):
         """Testa confirmação de reset com token inválido."""
         response = self.client.post(
-            "/api/auth/password-reset-confirm/",
+            "/api/v1/auth/password-reset-confirm/",
             {
                 "token": "00000000-0000-0000-0000-000000000000",
                 "new_password": "newpass123",
@@ -250,7 +250,7 @@ class PasswordResetAPITest(TestCase):
         token = generate_password_reset_token(self.user)
 
         response = self.client.post(
-            "/api/auth/password-reset-confirm/",
+            "/api/v1/auth/password-reset-confirm/",
             {
                 "token": str(token.token),
                 "new_password": "123",  # Senha muito curta
@@ -264,7 +264,7 @@ class PasswordResetAPITest(TestCase):
     def test_password_reset_confirm_missing_fields(self):
         """Testa confirmação de reset sem campos obrigatórios."""
         response = self.client.post(
-            "/api/auth/password-reset-confirm/",
+            "/api/v1/auth/password-reset-confirm/",
             {},
             format="json",
         )
@@ -275,7 +275,7 @@ class PasswordResetAPITest(TestCase):
     def test_password_reset_email_sent(self, mock_send_email):
         """Testa que email é enviado ao solicitar reset."""
         response = self.client.post(
-            "/api/auth/password-reset-request/",
+            "/api/v1/auth/password-reset-request/",
             {"email": "test@example.com"},
             format="json",
         )

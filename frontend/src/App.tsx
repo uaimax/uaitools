@@ -21,6 +21,9 @@ import LeadsPage from "./features/admin/pages/LeadsPage";
 import LeadFormPage from "./features/admin/pages/LeadFormPage";
 import SettingsPage from "./features/admin/pages/SettingsPage";
 import DocumentsPage from "./features/admin/pages/DocumentsPage";
+// Investments pages
+import InvestmentsDashboard from "./features/investments/pages/InvestmentsDashboard";
+import OnboardingPage from "./features/investments/pages/OnboardingPage";
 
 // Componente para redirecionar /leads/:id para /admin/leads/:id
 function LeadsRedirect() {
@@ -126,6 +129,40 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DocumentsPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* Investments routes - mobile-first, fora do admin */}
+            <Route
+              path="/investments"
+              element={
+                <ProtectedRoute>
+                  <InvestmentsDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/investments/onboarding"
+              element={
+                <ProtectedRoute>
+                  <OnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* Redirecionar rotas antigas */}
+            <Route
+              path="/admin/investments"
+              element={
+                <ProtectedRoute>
+                  <Navigate to="/investments" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/investments/onboarding"
+              element={
+                <ProtectedRoute>
+                  <Navigate to="/investments/onboarding" replace />
                 </ProtectedRoute>
               }
             />

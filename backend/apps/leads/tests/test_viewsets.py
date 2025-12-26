@@ -25,7 +25,7 @@ class LeadViewSetTestCase(TestCase):
 
     def test_list_leads_requires_authentication(self) -> None:
         """Testa que listar leads requer autenticação."""
-        response = self.client.get("/api/leads/")
+        response = self.client.get("/api/v1/leads/")
         # DRF retorna 403 Forbidden quando não autenticado (não 401)
         self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
 
@@ -43,7 +43,7 @@ class LeadViewSetTestCase(TestCase):
         self.client.force_authenticate(user=self.user1)
         # Simular workspace no request (middleware faria isso)
         response = self.client.get(
-            "/api/leads/", HTTP_X_WORKSPACE_ID=self.workspace1.slug
+            "/api/v1/leads/", HTTP_X_WORKSPACE_ID=self.workspace1.slug
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -66,7 +66,7 @@ class LeadViewSetTestCase(TestCase):
             "status": "new",
         }
         response = self.client.post(
-            "/api/leads/", data, HTTP_X_WORKSPACE_ID=self.workspace1.slug
+            "/api/v1/leads/", data, HTTP_X_WORKSPACE_ID=self.workspace1.slug
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.json()["name"], "New Lead")
@@ -85,7 +85,7 @@ class LeadViewSetTestCase(TestCase):
 
         self.client.force_authenticate(user=self.user1)
         response = self.client.get(
-            "/api/leads/?status=new", HTTP_X_WORKSPACE_ID=self.workspace1.slug
+            "/api/v1/leads/?status=new", HTTP_X_WORKSPACE_ID=self.workspace1.slug
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
@@ -108,7 +108,7 @@ class LeadViewSetTestCase(TestCase):
 
         self.client.force_authenticate(user=self.user1)
         response = self.client.get(
-            "/api/leads/?search=John", HTTP_X_WORKSPACE_ID=self.workspace1.slug
+            "/api/v1/leads/?search=John", HTTP_X_WORKSPACE_ID=self.workspace1.slug
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()

@@ -59,37 +59,52 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer: serializers.Serializer) -> None:
         """Define workspace automaticamente ao criar.
 
-        Para super admins sem request.workspace, usa o workspace do usuário se disponível.
-        Se não houver workspace, lança erro de validação com instruções claras.
+        Para super admins sem request.workspace, cria ou obtém um workspace exclusivo.
+        Para usuários normais, usa o workspace do usuário ou do request.
         """
         workspace: "Workspace | None" = getattr(self.request, "workspace", None)
 
         # Se não há workspace no request, tentar usar o workspace do usuário
-        # Isso é especialmente importante para super admins que não têm request.workspace
         if not workspace and hasattr(self.request, "user") and self.request.user.is_authenticated:
             user = self.request.user
             # Verificar se o usuário tem um workspace associado
             if hasattr(user, "workspace") and user.workspace:
                 workspace = user.workspace
 
+        # Se ainda não há workspace e é super admin, criar workspace exclusivo
+        if not workspace and hasattr(self.request, "user") and self.request.user.is_authenticated:
+            is_superuser = getattr(self.request.user, "is_superuser", False)
+            if is_superuser:
+                # Criar ou obter workspace exclusivo para super admin
+                from apps.accounts.models import Workspace
+                from django.utils.text import slugify
+
+                user_email = self.request.user.email
+                workspace_name = f"Super Admin - {user_email}"
+                workspace_slug = slugify(f"super-admin-{user_email.split('@')[0]}")
+
+                # Tentar obter workspace existente ou criar novo
+                workspace, created = Workspace.objects.get_or_create(
+                    slug=workspace_slug,
+                    defaults={
+                        "name": workspace_name,
+                        "is_active": True,
+                    }
+                )
+
+                # Associar workspace ao usuário se não estiver associado
+                if hasattr(user, "workspace") and not user.workspace:
+                    user.workspace = workspace
+                    user.save(update_fields=["workspace"])
+
         if workspace:
             serializer.save(workspace=workspace)
         else:
             # Se ainda não há workspace, lançar erro de validação
             from rest_framework.exceptions import ValidationError
-            is_superuser = getattr(self.request.user, "is_superuser", False) if hasattr(self.request, "user") else False
-
-            if is_superuser:
-                error_message = (
-                    "Workspace é obrigatório. Como super admin, você precisa selecionar um tenant "
-                    "usando o seletor de tenant no cabeçalho antes de criar recursos. "
-                    "Ou configure o header X-Workspace-ID na requisição."
-                )
-            else:
-                error_message = (
-                    "Workspace é obrigatório. Configure o header X-Workspace-ID ou associe um workspace ao usuário."
-                )
-
+            error_message = (
+                "Workspace é obrigatório. Configure o header X-Workspace-ID ou associe um workspace ao usuário."
+            )
             raise ValidationError({"workspace": error_message})
 
     def get_object(self):

@@ -61,6 +61,7 @@
   "navigation": {
     "dashboard": "Dashboard",
     "leads": "Leads",
+    "investments": "Investments",
     "documents": "Documents",
     "settings": "Settings"
   },

@@ -1,0 +1,97 @@
+{
+  "title": {
+    "investments": "Investment Advisor",
+    "onboarding": "Initial Setup",
+    "dashboard": "My Portfolio"
+  },
+  "fields": {
+    "ticker": "Ticker",
+    "quantity": "Quantity",
+    "average_price": "Average Price",
+    "notes": "Notes",
+    "strategy": "Strategy",
+    "portfolio_type": "Portfolio Type"
+  },
+  "placeholders": {
+    "ticker": "Ex: TAEE11, PETR4",
+    "quantity": "100",
+    "average_price": "35.50",
+    "strategy": "Describe how you like to invest...",
+    "amount": "2000.00"
+  },
+  "status": {
+    "ok": "All good",
+    "attention": "Attention needed"
+  },
+  "messages": {
+    "empty": "No assets registered",
+    "empty_description": "Start by adding your assets",
+    "no_strategy": "Strategy not defined",
+    "loading_quote": "Loading quote...",
+    "analyzing": "Analyzing..."
+  },
+  "toasts": {
+    "create_success": "Created successfully",
+    "update_success": "Updated successfully",
+    "delete_success": "Removed successfully",
+    "create_error": "Error creating",
+    "update_error": "Error updating",
+    "delete_error": "Error removing"
+  },
+  "examples": {
+    "dividendos": "Focus on dividends above 6%",
+    "value": "Solid companies with low P/E",
+    "growth": "Growing companies"
+  },
+  "onboarding": {
+    "description": "Configure your portfolio and investment strategy",
+    "step1": "Assets",
+    "step2": "Strategy",
+    "step1_title": "What do you have invested today?",
+    "step1_description": "Add your assets (ticker and quantity)",
+    "add_asset": "Add Asset",
+    "next": "Next",
+    "step2_title": "How do you like to invest?",
+    "step2_description": "Describe your investment strategy in free text",
+    "examples_label": "Examples (click to use):",
+    "back": "Back",
+    "start": "Start",
+    "errors": {
+      "no_assets": "Add at least one asset",
+      "no_strategy": "Define your strategy",
+      "portfolio_exists": "You already have a portfolio of this type. Use the existing portfolio or delete the previous one."
+    }
+  },
+  "blocks": {
+    "status": {
+      "title": "Portfolio Status",
+      "ok_message": "Your portfolio is aligned",
+      "attention_message": "{{count}} asset(s) need attention"
+    },
+    "portfolio": {
+      "title": "My Portfolio",
+      "total_invested": "Total Invested",
+      "current_value": "Current Value",
+      "variation": "Variation",
+      "add_asset": "Add Asset"
+    },
+    "invest": {
+      "title": "Invest",
+      "input_label": "I have R$",
+      "button": "Where should I invest?",
+      "recommendation_title": "Recommendation"
+    }
+  },
+  "portfolios": {
+    "manage": "Manage Portfolios",
+    "active_portfolio": "Active Portfolio",
+    "select_portfolio": "Select a portfolio",
+    "default_name": "Main Portfolio",
+    "new": "New",
+    "rename": "Rename",
+    "delete": "Delete",
+    "name": "Name",
+    "name_placeholder": "Ex: Main Portfolio",
+    "super_admin_workspace_warning": "You are viewing only portfolios from the selected workspace. To see all portfolios, select 'All workspaces' in the workspace selector in the header."
+  }
+}

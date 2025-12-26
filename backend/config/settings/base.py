@@ -8,13 +8,23 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Carrega variaveis de ambiente do arquivo .env
-load_dotenv()
-
 # Build paths inside the project
 # Usa resolve() para garantir caminho absoluto e normalizado
 # parent.parent.parent = config/settings/ -> config/ -> backend/ -> raiz
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Carrega variaveis de ambiente do arquivo .env
+# Tenta carregar da raiz do projeto (onde está o .env)
+# Primeiro tenta na raiz do projeto (backend/), depois na raiz absoluta
+env_file_root = BASE_DIR.parent / ".env"  # Raiz do projeto (acima de backend/)
+env_file_backend = BASE_DIR / ".env"  # Dentro de backend/
+if env_file_root.exists():
+    load_dotenv(env_file_root)
+elif env_file_backend.exists():
+    load_dotenv(env_file_backend)
+else:
+    # Fallback: tenta carregar do diretório atual
+    load_dotenv()
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-change-me-in-production")
@@ -48,6 +58,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.accounts",
     "apps.leads",
+    "apps.investments",
 ]
 
 MIDDLEWARE = [
@@ -222,28 +233,37 @@ SPECTACULAR_SETTINGS = {
 }
 
 # CORS Configuration
-CORS_ENABLED = os.environ.get("CORS_ENABLED", "True") == "True"  # True por padrão em dev
-if CORS_ENABLED:
-    # Permitir credenciais (cookies/sessão) do frontend
-    CORS_ALLOW_CREDENTIALS = True
-    # Em desenvolvimento, permitir localhost
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:5173",  # Vite dev server
-        "http://127.0.0.1:5173",
-    ]
-    # Headers permitidos
-    CORS_ALLOW_HEADERS = [
-        "accept",
-        "accept-encoding",
-        "authorization",
-        "content-type",
-        "dnt",
-        "origin",
-        "user-agent",
-        "x-csrftoken",
-        "x-requested-with",
-        "x-workspace-id",  # Header customizado para multi-tenancy
-    ]
+# Por padrão, CORS está habilitado em desenvolvimento
+# Para desabilitar, defina CORS_ENABLED=False no .env
+cors_enabled_env = os.environ.get("CORS_ENABLED", "").strip()
+CORS_ENABLED = cors_enabled_env.lower() not in ("false", "0", "no") if cors_enabled_env else True
+
+# Configuração de CORS - sempre configurar em desenvolvimento
+# Permitir credenciais (cookies/sessão) do frontend
+CORS_ALLOW_CREDENTIALS = True
+# Em desenvolvimento, permitir localhost
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Vite dev server
+    "http://127.0.0.1:5173",
+]
+# Headers permitidos
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "x-workspace-id",  # Header customizado para multi-tenancy
+]
+
+# Garantir que CORS está habilitado se as origens estão configuradas
+if CORS_ALLOWED_ORIGINS:
+    CORS_ENABLED = True
+    CORS_ALLOW_ALL_ORIGINS = False  # Usar lista específica, não permitir todas
 else:
     CORS_ALLOW_ALL_ORIGINS = False
 

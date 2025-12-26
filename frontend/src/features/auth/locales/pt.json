@@ -21,7 +21,18 @@
   "messages": {
     "login_success": "Login realizado com sucesso",
     "register_success": "Registro realizado com sucesso",
-    "invalid_credentials": "Credenciais inválidas"
+    "invalid_credentials": "E-mail ou senha incorretos. Verifique suas credenciais e tente novamente.",
+    "user_inactive": "Sua conta está inativa. Entre em contato com o suporte para mais informações.",
+    "email_required": "Por favor, informe seu e-mail.",
+    "password_required": "Por favor, informe sua senha.",
+    "login_failed": "Não foi possível fazer login. Verifique suas credenciais e tente novamente.",
+    "server_error": "Ocorreu um erro no servidor. Tente novamente em alguns instantes.",
+    "network_error": "Não foi possível conectar ao servidor. Verifique sua conexão com a internet.",
+    "timeout_error": "A requisição demorou muito para responder. Tente novamente.",
+    "unauthorized": "Você não tem permissão para realizar esta ação.",
+    "forbidden": "Acesso negado. Você não tem permissão para acessar este recurso.",
+    "not_found": "O recurso solicitado não foi encontrado.",
+    "validation_error": "Os dados informados são inválidos. Verifique e tente novamente."
   },
   "toasts": {
     "login_success": "Login realizado com sucesso",
