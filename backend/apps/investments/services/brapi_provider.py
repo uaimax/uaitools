@@ -181,32 +181,9 @@ class BrapiProvider:
                 return cached
 
         # 2. Verificar banco de dados (evita requisição se atualizado recentemente)
-        if use_cache and workspace:
-            try:
-                from apps.investments.models import DividendHistory
-
-                # Buscar histórico no banco
-                history = DividendHistory.objects.filter(
-                    ticker=ticker, workspace=workspace
-                ).first()
-
-                # Se existe e foi atualizado nas últimas 24h, usar do banco
-                if history and history.last_updated:
-                    hours_since_update = (timezone.now() - history.last_updated).total_seconds() / 3600
-                    if hours_since_update < 24:
-                        result = {
-                            "ticker": ticker,
-                            "dividends": history.dividends_data,
-                            "total_last_12_months": float(history.total_last_12_months),
-                            "average_monthly": float(history.average_monthly),
-                            "regularity_score": float(history.regularity_score),
-                        }
-                        # Atualizar cache
-                        cache.set(cache_key, result, cache_timeout)
-                        return result
-            except Exception as e:
-                # Se der erro ao acessar banco, continuar com requisição
-                print(f"Erro ao buscar histórico no banco para {ticker}: {e}")
+        # NOTA: DividendHistory foi removido - histórico de dividendos agora é gerenciado
+        # pelo DataFreshnessManager e não é mais armazenado em modelo separado
+        # O cache Redis é suficiente para evitar requisições desnecessárias
 
         # 3. Fazer requisição à BRAPI (só se necessário)
         try:
@@ -298,23 +275,9 @@ class BrapiProvider:
                         cache.set(cache_key, result, cache_timeout)
 
                     # 5. Salvar no banco (se workspace fornecido)
-                    if workspace:
-                        try:
-                            from apps.investments.models import DividendHistory
-
-                            DividendHistory.objects.update_or_create(
-                                ticker=ticker,
-                                workspace=workspace,
-                                defaults={
-                                    "dividends_data": dividends,
-                                    "total_last_12_months": total_last_12_months,
-                                    "average_monthly": average_monthly,
-                                    "regularity_score": regularity_score,
-                                }
-                            )
-                        except Exception as e:
-                            # Não quebrar se der erro ao salvar
-                            print(f"Erro ao salvar histórico no banco para {ticker}: {e}")
+                    # NOTA: DividendHistory foi removido - histórico de dividendos agora é gerenciado
+                    # pelo DataFreshnessManager. O cache Redis é suficiente para evitar requisições desnecessárias.
+                    # Se necessário, podemos usar DataFreshness para rastrear quando foi atualizado.
 
                     return result
             return None

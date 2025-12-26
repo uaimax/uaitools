@@ -8,11 +8,7 @@ from apps.accounts.models import User, Workspace
 from apps.investments.models import (
     Asset,
     DividendReceived,
-    MarketPriceHistory,
     Portfolio,
-    PortfolioSnapshot,
-    Recommendation,
-    Strategy,
     Transaction,
 )
 
@@ -133,74 +129,8 @@ class AssetModelTest(TestCase):
         self.assertEqual(asset.get_total_invested(), expected)
 
 
-class StrategyModelTest(TestCase):
-    """Testes para modelo Strategy."""
-
-    def setUp(self) -> None:
-        """Configuração inicial."""
-        self.workspace = Workspace.objects.create(name="Test Workspace", slug="test")
-        self.portfolio = Portfolio.objects.create(
-            workspace=self.workspace,
-            portfolio_type="acoes_br",
-        )
-
-    def test_create_strategy(self) -> None:
-        """Testa criação de estratégia."""
-        strategy = Strategy.objects.create(
-            workspace=self.workspace,
-            portfolio=self.portfolio,
-            raw_text="Foco em dividendos acima de 6%",
-        )
-        self.assertEqual(strategy.portfolio, self.portfolio)
-        self.assertEqual(strategy.raw_text, "Foco em dividendos acima de 6%")
-
-    def test_strategy_str(self) -> None:
-        """Testa representação string."""
-        strategy = Strategy.objects.create(
-            workspace=self.workspace,
-            portfolio=self.portfolio,
-            raw_text="Foco em dividendos",
-            strategy_type="dividendos",
-        )
-        self.assertIn("Dividendos", str(strategy))
-        self.assertIn(str(self.portfolio), str(strategy))
-
-
-class PortfolioSnapshotModelTest(TestCase):
-    """Testes para PortfolioSnapshot."""
-
-    def setUp(self) -> None:
-        """Configuração inicial."""
-        self.workspace = Workspace.objects.create(name="Test Workspace", slug="test")
-        self.portfolio = Portfolio.objects.create(
-            workspace=self.workspace,
-            portfolio_type="acoes_br",
-            name="Test Portfolio",
-        )
-
-    def test_create_snapshot(self) -> None:
-        """Testa criação de snapshot."""
-        snapshot = PortfolioSnapshot.objects.create(
-            workspace=self.workspace,
-            portfolio=self.portfolio,
-            total_value=Decimal("10000.00"),
-            assets_data={"assets": [{"ticker": "TAEE11", "quantity": "100", "price": "35.00"}]},
-            notes="Test snapshot",
-        )
-        self.assertIsInstance(snapshot, PortfolioSnapshot)
-        self.assertEqual(snapshot.total_value, Decimal("10000.00"))
-        self.assertEqual(snapshot.portfolio, self.portfolio)
-
-    def test_snapshot_str(self) -> None:
-        """Testa representação string."""
-        snapshot = PortfolioSnapshot.objects.create(
-            workspace=self.workspace,
-            portfolio=self.portfolio,
-            total_value=Decimal("10000.00"),
-            assets_data={},
-        )
-        self.assertIn("Snapshot", str(snapshot))
-        self.assertIn("Test Portfolio", str(snapshot))
+# StrategyModelTest removido - modelo Strategy foi removido
+# PortfolioSnapshotModelTest removido - modelo PortfolioSnapshot foi removido
 
 
 class TransactionModelTest(TestCase):
@@ -272,40 +202,7 @@ class TransactionModelTest(TestCase):
         self.assertIn("TAEE11", str(transaction))
 
 
-class RecommendationModelTest(TestCase):
-    """Testes para Recommendation."""
-
-    def setUp(self) -> None:
-        """Configuração inicial."""
-        self.workspace = Workspace.objects.create(name="Test Workspace", slug="test")
-        self.portfolio = Portfolio.objects.create(
-            workspace=self.workspace,
-            portfolio_type="acoes_br",
-        )
-
-    def test_create_recommendation(self) -> None:
-        """Testa criação de recomendação."""
-        recommendation = Recommendation.objects.create(
-            workspace=self.workspace,
-            portfolio=self.portfolio,
-            amount=Decimal("2000.00"),
-            recommendation_data={"recommendation": {"total_amount": 2000.0, "allocations": []}},
-            was_followed=False,
-            market_context={"timestamp": "2025-12-26T10:00:00Z"},
-        )
-        self.assertEqual(recommendation.amount, Decimal("2000.00"))
-        self.assertFalse(recommendation.was_followed)
-
-    def test_recommendation_str(self) -> None:
-        """Testa representação string."""
-        recommendation = Recommendation.objects.create(
-            workspace=self.workspace,
-            portfolio=self.portfolio,
-            amount=Decimal("2000.00"),
-            recommendation_data={},
-        )
-        self.assertIn("Recomendação", str(recommendation))
-        self.assertIn("2000", str(recommendation))
+# RecommendationModelTest removido - modelo Recommendation foi removido
 
 
 class DividendReceivedModelTest(TestCase):
@@ -367,34 +264,5 @@ class DividendReceivedModelTest(TestCase):
         self.assertIn("42.50", str(dividend))
 
 
-class MarketPriceHistoryModelTest(TestCase):
-    """Testes para MarketPriceHistory."""
-
-    def setUp(self) -> None:
-        """Configuração inicial."""
-        self.workspace = Workspace.objects.create(name="Test Workspace", slug="test")
-
-    def test_create_market_price_history(self) -> None:
-        """Testa criação de histórico de preço."""
-        price_history = MarketPriceHistory.objects.create(
-            workspace=self.workspace,
-            ticker="TAEE11",
-            price=Decimal("35.50"),
-            change_percent=Decimal("1.25"),
-            volume=1000000,
-            market_cap=5000000000,
-        )
-        self.assertEqual(price_history.ticker, "TAEE11")
-        self.assertEqual(price_history.price, Decimal("35.50"))
-        self.assertEqual(price_history.change_percent, Decimal("1.25"))
-
-    def test_market_price_history_str(self) -> None:
-        """Testa representação string."""
-        price_history = MarketPriceHistory.objects.create(
-            workspace=self.workspace,
-            ticker="TAEE11",
-            price=Decimal("35.50"),
-        )
-        self.assertIn("TAEE11", str(price_history))
-        self.assertIn("35.50", str(price_history))
+# MarketPriceHistoryModelTest removido - modelo MarketPriceHistory foi removido
 

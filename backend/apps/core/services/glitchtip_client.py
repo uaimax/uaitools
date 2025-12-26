@@ -24,10 +24,17 @@ def parse_dsn(dsn: str) -> Dict[str, Optional[str]]:
             "public_key": None,
         }
 
+    # Limpar DSN: remover espaços, quebras de linha e comentários (#)
+    dsn_clean = dsn.strip()
+    if "#" in dsn_clean:
+        # Remover comentários (tudo após #)
+        dsn_clean = dsn_clean.split("#")[0].strip()
+    dsn_clean = dsn_clean.strip()
+
     # Regex para extrair componentes do DSN
     # Formato: protocol://public_key@host/project_id
     pattern = r"^(?P<protocol>https?://)(?P<public_key>[^@]+)@(?P<host>[^/]+)/(?P<project_id>\d+)$"
-    match = re.match(pattern, dsn)
+    match = re.match(pattern, dsn_clean)
 
     if not match:
         return {

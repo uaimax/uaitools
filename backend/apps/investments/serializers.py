@@ -7,15 +7,18 @@ from rest_framework import serializers
 from apps.core.serializers import WorkspaceSerializer
 from apps.investments.models import (
     Asset,
+    DataFreshness,
     DividendReceived,
-    MarketPriceHistory,
+    InvestorProfile,
     Portfolio,
-    Recommendation,
-    Strategy,
+    PortfolioChat,
+    SectorMapping,
+    StrategyPerformance,
+    StrategyTemplate,
+    StrategyValidation,
     Transaction,
+    UserPreferences,
 )
-from apps.investments.services.strategy_parser import StrategyParser
-from apps.investments.services.constants import DEFAULT_STRATEGY_RULES
 
 
 class PortfolioSerializer(WorkspaceSerializer):
@@ -112,92 +115,7 @@ class AssetListSerializer(serializers.ModelSerializer):
         ]
 
 
-class StrategySerializer(WorkspaceSerializer):
-    """Serializer para Strategy."""
-
-    portfolio_name = serializers.CharField(source="portfolio.name", read_only=True)
-    strategy_type_display = serializers.CharField(
-        source="get_strategy_type_display", read_only=True
-    )
-
-    class Meta:
-        model = Strategy
-        fields = [
-            "id",
-            "workspace_id",
-            "portfolio",
-            "portfolio_name",
-            "raw_text",
-            "parsed_rules",
-            "strategy_type",
-            "strategy_type_display",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = [
-            "id",
-            "workspace_id",
-            "parsed_rules",
-            "strategy_type",
-            "created_at",
-            "updated_at",
-        ]
-
-    def create(self, validated_data: dict) -> Strategy:
-        """Cria estratégia e parseia automaticamente."""
-        strategy = super().create(validated_data)
-        self._parse_strategy(strategy)
-        return strategy
-
-    def update(self, instance: Strategy, validated_data: dict) -> Strategy:
-        """Atualiza estratégia e re-parseia se texto mudou."""
-        strategy = super().update(instance, validated_data)
-        if "raw_text" in validated_data:
-            self._parse_strategy(strategy)
-        return strategy
-
-    def _parse_strategy(self, strategy: Strategy) -> None:
-        """Parseia a estratégia e salva regras estruturadas.
-
-        Se não houver critérios definidos, mescla com a estratégia padrão.
-        """
-        parser = StrategyParser()
-        parsed = parser.parse(strategy.raw_text)
-
-        # Se não há critérios definidos, usar estratégia padrão como base
-        if not parsed.get("criteria"):
-            parsed["criteria"] = DEFAULT_STRATEGY_RULES.copy()
-        else:
-            # Mesclar com padrão, mantendo critérios customizados
-            default_criteria = DEFAULT_STRATEGY_RULES.copy()
-            default_criteria.update(parsed["criteria"])
-            parsed["criteria"] = default_criteria
-
-        # Se não identificou tipo, usar padrão
-        if not parsed.get("strategy_type"):
-            parsed["strategy_type"] = DEFAULT_STRATEGY_RULES.get("strategy_type", "dividendos")
-
-        strategy.parsed_rules = parsed
-        strategy.strategy_type = parsed.get("strategy_type")
-        strategy.save(update_fields=["parsed_rules", "strategy_type"])
-
-
-class StrategyListSerializer(serializers.ModelSerializer):
-    """Serializer simplificado para listagem de estratégias."""
-
-    strategy_type_display = serializers.CharField(
-        source="get_strategy_type_display", read_only=True
-    )
-
-    class Meta:
-        model = Strategy
-        fields = [
-            "id",
-            "portfolio",
-            "strategy_type",
-            "strategy_type_display",
-            "created_at",
-        ]
+# StrategySerializer removido - será substituído pelo novo sistema
 
 
 class TransactionSerializer(WorkspaceSerializer):
@@ -264,47 +182,7 @@ class TransactionListSerializer(serializers.ModelSerializer):
         ]
 
 
-class RecommendationSerializer(WorkspaceSerializer):
-    """Serializer para Recommendation."""
-
-    portfolio_name = serializers.CharField(source="portfolio.name", read_only=True)
-
-    class Meta:
-        model = Recommendation
-        fields = [
-            "id",
-            "workspace_id",
-            "portfolio",
-            "portfolio_name",
-            "amount",
-            "recommendation_data",
-            "was_followed",
-            "executed_data",
-            "notes",
-            "market_context",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = [
-            "id",
-            "workspace_id",
-            "created_at",
-            "updated_at",
-        ]
-
-
-class RecommendationListSerializer(serializers.ModelSerializer):
-    """Serializer simplificado para listagem de recomendações."""
-
-    class Meta:
-        model = Recommendation
-        fields = [
-            "id",
-            "portfolio",
-            "amount",
-            "was_followed",
-            "created_at",
-        ]
+# RecommendationSerializer removido - será substituído pelo novo sistema
 
 
 class DividendReceivedSerializer(WorkspaceSerializer):
@@ -357,19 +235,268 @@ class DividendReceivedListSerializer(serializers.ModelSerializer):
         ]
 
 
-class MarketPriceHistorySerializer(WorkspaceSerializer):
-    """Serializer para MarketPriceHistory."""
+# MarketPriceHistorySerializer removido - será substituído pelo novo sistema
+
+
+# Novos serializers do sistema inteligente
+class StrategyTemplateSerializer(WorkspaceSerializer):
+    """Serializer para StrategyTemplate."""
+
+    performance_score_display = serializers.SerializerMethodField()
+    validation_status_display = serializers.CharField(
+        source="get_validation_status_display", read_only=True
+    )
 
     class Meta:
-        model = MarketPriceHistory
+        model = StrategyTemplate
+        fields = [
+            "id",
+            "workspace_id",
+            "name",
+            "slug",
+            "description",
+            "category",
+            "base_criteria",
+            "adaptation_logic",
+            "performance_score",
+            "performance_score_display",
+            "is_active",
+            "is_system_template",
+            "priority",
+            "validation_status",
+            "validation_status_display",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "workspace_id",
+            "created_at",
+            "updated_at",
+            "last_validated",
+        ]
+
+    def get_performance_score_display(self, obj: StrategyTemplate) -> str:
+        """Converte score para exibição em estrelas."""
+        score = float(obj.performance_score)
+        stars = int(score)
+        half_star = "☆" if score - stars >= 0.5 else ""
+        return "⭐" * stars + half_star + "☆" * (5 - stars - (1 if half_star else 0))
+
+
+class InvestorProfileSerializer(WorkspaceSerializer):
+    """Serializer para InvestorProfile."""
+
+    risk_tolerance_display = serializers.CharField(
+        source="get_risk_tolerance_display", read_only=True
+    )
+    investment_horizon_display = serializers.CharField(
+        source="get_investment_horizon_display", read_only=True
+    )
+    primary_goal_display = serializers.CharField(
+        source="get_primary_goal_display", read_only=True
+    )
+    experience_level_display = serializers.CharField(
+        source="get_experience_level_display", read_only=True
+    )
+
+    class Meta:
+        model = InvestorProfile
+        fields = [
+            "id",
+            "workspace_id",
+            "portfolio",
+            "risk_tolerance",
+            "risk_tolerance_display",
+            "investment_horizon",
+            "investment_horizon_display",
+            "primary_goal",
+            "primary_goal_display",
+            "experience_level",
+            "experience_level_display",
+            "total_invested",
+            "average_dividend_yield",
+            "diversification_score",
+            "concentration_risk",
+            "adherence_to_recommendations",
+            "average_holding_period",
+            "confidence_score",
+            "last_analyzed",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "workspace_id",
+            "created_at",
+            "updated_at",
+            "last_analyzed",
+        ]
+
+
+class UserPreferencesSerializer(WorkspaceSerializer):
+    """Serializer para UserPreferences."""
+
+    class Meta:
+        model = UserPreferences
+        fields = [
+            "id",
+            "workspace_id",
+            "portfolio",
+            "excluded_sectors",
+            "preferred_sectors",
+            "additional_criteria",
+            "restrictions",
+            "last_updated",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "workspace_id",
+            "created_at",
+            "updated_at",
+            "last_updated",
+        ]
+
+
+class StrategyValidationSerializer(WorkspaceSerializer):
+    """Serializer para StrategyValidation."""
+
+    validation_status_display = serializers.CharField(
+        source="get_validation_status_display", read_only=True
+    )
+    validated_by_display = serializers.CharField(
+        source="get_validated_by_display", read_only=True
+    )
+
+    class Meta:
+        model = StrategyValidation
+        fields = [
+            "id",
+            "workspace_id",
+            "strategy_template",
+            "portfolio",
+            "validation_status",
+            "validation_status_display",
+            "validation_result",
+            "suggested_adjustments",
+            "validated_at",
+            "validated_by",
+            "validated_by_display",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "workspace_id",
+            "created_at",
+            "updated_at",
+            "validated_at",
+        ]
+
+
+class StrategyPerformanceSerializer(WorkspaceSerializer):
+    """Serializer para StrategyPerformance."""
+
+    class Meta:
+        model = StrategyPerformance
+        fields = [
+            "id",
+            "workspace_id",
+            "strategy_template",
+            "portfolio",
+            "period_start",
+            "period_end",
+            "total_return",
+            "dividend_yield_realized",
+            "recommendations_followed",
+            "recommendations_total",
+            "adherence_rate",
+            "performance_score",
+            "vs_ibovespa",
+            "calculated_at",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "workspace_id",
+            "created_at",
+            "updated_at",
+            "calculated_at",
+        ]
+
+
+class PortfolioChatSerializer(WorkspaceSerializer):
+    """Serializer para PortfolioChat."""
+
+    class Meta:
+        model = PortfolioChat
+        fields = [
+            "id",
+            "workspace_id",
+            "portfolio",
+            "message",
+            "is_from_user",
+            "context_snapshot",
+            "ai_response",
+            "ai_confidence",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "workspace_id",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class DataFreshnessSerializer(WorkspaceSerializer):
+    """Serializer para DataFreshness."""
+
+    data_type_display = serializers.CharField(
+        source="get_data_type_display", read_only=True
+    )
+
+    class Meta:
+        model = DataFreshness
+        fields = [
+            "id",
+            "workspace_id",
+            "data_type",
+            "data_type_display",
+            "ticker",
+            "last_updated",
+            "next_update_due",
+            "is_fresh",
+            "freshness_score",
+            "update_frequency_minutes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "workspace_id",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class SectorMappingSerializer(WorkspaceSerializer):
+    """Serializer para SectorMapping."""
+
+    class Meta:
+        model = SectorMapping
         fields = [
             "id",
             "workspace_id",
             "ticker",
-            "price",
-            "change_percent",
-            "volume",
-            "market_cap",
+            "sector",
+            "subsector",
+            "company_name",
+            "is_active",
             "created_at",
             "updated_at",
         ]

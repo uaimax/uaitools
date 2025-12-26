@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.leads",
     "apps.investments",
+    "apps.supbrainnote",
 ]
 
 MIDDLEWARE = [
@@ -181,6 +182,8 @@ REST_FRAMEWORK = {
         "anon": os.environ.get("API_THROTTLE_ANON", "100/hour"),
         "user": os.environ.get("API_THROTTLE_USER", "1000/hour"),
         "logging": "100/hour",  # Limite para endpoint de logs
+        "supbrainnote_upload": "10/hour",  # Limite para uploads de áudio
+        "supbrainnote_query": "50/hour",  # Limite para consultas com IA
     },
 }
 

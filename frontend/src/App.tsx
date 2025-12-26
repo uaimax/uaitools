@@ -22,8 +22,10 @@ import LeadFormPage from "./features/admin/pages/LeadFormPage";
 import SettingsPage from "./features/admin/pages/SettingsPage";
 import DocumentsPage from "./features/admin/pages/DocumentsPage";
 // Investments pages
-import InvestmentsDashboard from "./features/investments/pages/InvestmentsDashboard";
+import InvestmentsPage from "./features/investments/pages/InvestmentsPage";
 import OnboardingPage from "./features/investments/pages/OnboardingPage";
+// SupBrainNote pages
+import SupBrainNotePage from "./features/supbrainnote/pages/SupBrainNotePage";
 
 // Componente para redirecionar /leads/:id para /admin/leads/:id
 function LeadsRedirect() {
@@ -137,7 +139,7 @@ function App() {
               path="/investments"
               element={
                 <ProtectedRoute>
-                  <InvestmentsDashboard />
+                  <InvestmentsPage />
                 </ProtectedRoute>
               }
             />
@@ -163,6 +165,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Navigate to="/investments/onboarding" replace />
+                </ProtectedRoute>
+              }
+            />
+            {/* SupBrainNote routes */}
+            <Route
+              path="/supbrainnote"
+              element={
+                <ProtectedRoute>
+                  <SupBrainNotePage />
                 </ProtectedRoute>
               }
             />

@@ -13,10 +13,8 @@ from apps.core.viewsets import WorkspaceViewSet
 from apps.investments.models import (
     Asset,
     DividendReceived,
-    MarketPriceHistory,
     Portfolio,
-    Recommendation,
-    Strategy,
+    StrategyTemplate,
     Transaction,
 )
 from apps.investments.serializers import (
@@ -24,18 +22,12 @@ from apps.investments.serializers import (
     AssetSerializer,
     DividendReceivedListSerializer,
     DividendReceivedSerializer,
-    MarketPriceHistorySerializer,
     PortfolioListSerializer,
     PortfolioSerializer,
-    RecommendationListSerializer,
-    RecommendationSerializer,
-    StrategyListSerializer,
-    StrategySerializer,
     TransactionListSerializer,
     TransactionSerializer,
 )
 from apps.investments.services.brapi_provider import BrapiProvider
-from apps.investments.services.investment_advisor import InvestmentAdvisor
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
@@ -91,66 +83,25 @@ class PortfolioViewSet(WorkspaceViewSet):
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        """Cria portfolio e estratégia padrão automaticamente."""
+        """Cria portfolio."""
         # Chamar perform_create do WorkspaceViewSet (define workspace)
         super().perform_create(serializer)
 
-        # Obter o portfolio criado
-        portfolio = serializer.instance
+    @action(detail=True, methods=["post"], url_path="smart-recommendation")
+    def smart_recommendation(self, request: "Request", pk: str = None) -> Response:
+        """Gera recomendação inteligente baseada em contexto.
 
-        # Garantir que a estratégia existe
-        self._ensure_strategy(portfolio)
-
-    def _ensure_strategy(self, portfolio: Portfolio) -> None:
-        """Garante que o portfolio tem uma estratégia padrão."""
-        if not portfolio:
-            return
-
-        from apps.investments.services.constants import DEFAULT_PARSED_RULES
-
-        # Verificar se estratégia existe (usando try/except para evitar problemas com relacionamento)
-        strategy_exists = False
-        try:
-            strategy_exists = hasattr(portfolio, "strategy") and portfolio.strategy is not None
-        except Exception:
-            # Se der erro ao acessar, verificar diretamente no banco
-            strategy_exists = Strategy.objects.filter(portfolio=portfolio, deleted_at__isnull=True).exists()
-
-        # Se não existe ou se existe mas está vazia, criar/atualizar
-        if not strategy_exists:
-            strategy, created = Strategy.objects.get_or_create(
-                workspace=portfolio.workspace,
-                portfolio=portfolio,
-                defaults={
-                    "raw_text": "Estratégia padrão: Foco em dividendos com DY mínimo de 8% e setores defensivos. Apenas ações da B3. Preço teto de entrada = dividendo / 0.08. Só comprar ações com cotação ≤ preço-teto e que estejam abaixo da alocação máxima.",
-                    "parsed_rules": DEFAULT_PARSED_RULES,
-                    "strategy_type": "dividendos",
-                }
-            )
-            # Se já existia mas estava vazia, atualizar
-            if not created and (not strategy.raw_text or not strategy.raw_text.strip()):
-                strategy.raw_text = "Estratégia padrão: Foco em dividendos com DY mínimo de 8% e setores defensivos. Apenas ações da B3. Preço teto de entrada = dividendo / 0.08. Só comprar ações com cotação ≤ preço-teto e que estejam abaixo da alocação máxima."
-                strategy.parsed_rules = DEFAULT_PARSED_RULES
-                strategy.strategy_type = "dividendos"
-                strategy.save(update_fields=["raw_text", "parsed_rules", "strategy_type"])
-
-    @action(detail=True, methods=["get"], url_path="status")
-    def status(self, request: "Request", pk: str = None) -> Response:
-        """Retorna status da carteira (alertas)."""
-        portfolio = self.get_object()
-        # Garantir que tem estratégia antes de avaliar
-        self._ensure_strategy(portfolio)
-        advisor = InvestmentAdvisor()
-        status_data = advisor.evaluate_portfolio_status(portfolio)
-        return Response(status_data)
-
-    @action(detail=True, methods=["post"], url_path="analyze")
-    def analyze(self, request: "Request", pk: str = None) -> Response:
-        """Gera recomendação de onde investir um valor e salva no histórico."""
-        from django.utils import timezone
+        Body:
+            {
+                "amount": 200.00,
+                "user_preference": "mais conservador"  // opcional
+            }
+        """
+        from apps.investments.services.smart_investment_advisor import SmartInvestmentAdvisor
 
         portfolio = self.get_object()
         amount = request.data.get("amount")
+        user_preference = request.data.get("user_preference")
 
         if not amount:
             return Response(
@@ -171,111 +122,177 @@ class PortfolioViewSet(WorkspaceViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        advisor = InvestmentAdvisor()
-        recommendation = advisor.generate_investment_recommendation(
-            portfolio, amount_decimal
+        advisor = SmartInvestmentAdvisor()
+        recommendation = advisor.generate_recommendation(
+            portfolio,
+            amount_decimal,
+            user_preference,
         )
-
-        # Salvar recomendação no histórico
-        from apps.investments.models import Recommendation
-
-        brapi = BrapiProvider()
-        # Tentar buscar IBOV (índice de referência)
-        ibov_quote = brapi.get_quote("^BVSP")
-        market_context = {
-            "timestamp": timezone.now().isoformat(),
-            "ibov": {
-                "price": float(ibov_quote.get("price", 0)) if ibov_quote else None,
-                "change_percent": float(ibov_quote.get("change_percent", 0)) if ibov_quote else None,
-            } if ibov_quote else None,
-        }
-
-        recommendation_obj = Recommendation.objects.create(
-            workspace=portfolio.workspace,
-            portfolio=portfolio,
-            amount=amount_decimal,
-            recommendation_data=recommendation,
-            market_context=market_context,
-        )
-
-        # Adicionar ID da recomendação na resposta
-        recommendation["recommendation_id"] = str(recommendation_obj.id)
 
         return Response(recommendation)
 
-    @action(detail=True, methods=["post"], url_path="update-prices")
-    def update_prices(self, request: "Request", pk: str = None) -> Response:
-        """Atualiza preços de todos os ativos da carteira usando BRAPI e cria snapshot."""
-        from django.utils import timezone
-        from apps.investments.models import MarketPriceHistory, PortfolioSnapshot
+    @action(detail=True, methods=["get"], url_path="context")
+    def context(self, request: "Request", pk: str = None) -> Response:
+        """Retorna contexto analisado da carteira."""
+        from apps.investments.services.context_analyzer import ContextAnalyzer
 
         portfolio = self.get_object()
-        brapi = BrapiProvider()
-        updated_count = 0
-        errors = []
-        assets_data = []
+        analyzer = ContextAnalyzer()
+        context = analyzer.analyze_user_context(portfolio)
 
-        for asset in portfolio.assets.all():
+        return Response(context)
+
+    @action(detail=True, methods=["get", "put"], url_path="preferences")
+    def preferences(self, request: "Request", pk: str = None) -> Response:
+        """Obtém ou atualiza preferências do usuário."""
+        from apps.investments.models import UserPreferences
+        from apps.investments.serializers import UserPreferencesSerializer
+
+        portfolio = self.get_object()
+
+        if request.method == "GET":
             try:
-                quote = brapi.get_quote(asset.ticker, use_cache=False)  # Sem cache para forçar atualização
-                if quote and quote.get("price"):
-                    old_price = asset.average_price
-                    asset.average_price = quote["price"]
-                    asset.save(update_fields=["average_price"])
-                    updated_count += 1
-                    assets_data.append({
-                        "ticker": asset.ticker,
-                        "quantity": str(asset.quantity),
-                        "price": str(asset.average_price),
-                        "old_price": str(old_price),
-                    })
+                preferences = portfolio.preferences
+                serializer = UserPreferencesSerializer(preferences)
+                return Response(serializer.data)
+            except UserPreferences.DoesNotExist:
+                return Response({
+                    "excluded_sectors": [],
+                    "preferred_sectors": [],
+                    "additional_criteria": "",
+                    "restrictions": {},
+                })
 
-                    # Salvar histórico de preço (apenas uma vez por dia por ticker)
-                    today = timezone.now().date()
-                    price_history = MarketPriceHistory.objects.filter(
-                        workspace=portfolio.workspace,
-                        ticker=asset.ticker,
-                        created_at__date=today,
-                    ).first()
+        # PUT - Criar ou atualizar
+        try:
+            preferences = portfolio.preferences
+            serializer = UserPreferencesSerializer(preferences, data=request.data, partial=True)
+        except UserPreferences.DoesNotExist:
+            serializer = UserPreferencesSerializer(data={
+                **request.data,
+                "portfolio": portfolio.id,
+            })
 
-                    if price_history:
-                        # Atualizar registro existente do dia
-                        price_history.price = Decimal(str(quote.get("price", 0)))
-                        price_history.change_percent = Decimal(str(quote.get("change_percent", 0))) if quote.get("change_percent") else None
-                        price_history.volume = quote.get("volume")
-                        price_history.market_cap = quote.get("market_cap")
-                        price_history.save()
-                    else:
-                        # Criar novo registro
-                        MarketPriceHistory.objects.create(
-                            workspace=portfolio.workspace,
-                            ticker=asset.ticker,
-                            price=Decimal(str(quote.get("price", 0))),
-                            change_percent=Decimal(str(quote.get("change_percent", 0))) if quote.get("change_percent") else None,
-                            volume=quote.get("volume"),
-                            market_cap=quote.get("market_cap"),
-                        )
-                else:
-                    errors.append(f"Não foi possível obter cotação para {asset.ticker}")
-            except Exception as e:
-                errors.append(f"Erro ao atualizar {asset.ticker}: {str(e)}")
+        if serializer.is_valid():
+            serializer.save(workspace=portfolio.workspace, portfolio=portfolio)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Criar snapshot do patrimônio após atualização
-        if updated_count > 0:
-            total_value = portfolio.get_total_invested()
-            PortfolioSnapshot.objects.create(
-                workspace=portfolio.workspace,
-                portfolio=portfolio,
-                total_value=total_value,
-                assets_data={"assets": assets_data},
-                notes=f"Atualização automática de preços - {updated_count} ativos atualizados",
+    @action(detail=True, methods=["post"], url_path="validate-strategy")
+    def validate_strategy(self, request: "Request", pk: str = None) -> Response:
+        """Valida estratégia para a carteira."""
+        from apps.investments.models import StrategyTemplate
+        from apps.investments.services.strategy_validator import StrategyValidator
+        from apps.investments.serializers import StrategyValidationSerializer
+
+        portfolio = self.get_object()
+        strategy_template_id = request.data.get("strategy_template_id")
+
+        if not strategy_template_id:
+            return Response(
+                {"error": "Campo 'strategy_template_id' é obrigatório"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        return Response({
-            "updated_count": updated_count,
-            "total_assets": portfolio.assets.count(),
-            "errors": errors if errors else None,
-        })
+        try:
+            strategy_template = StrategyTemplate.objects.get(
+                id=strategy_template_id,
+                workspace=portfolio.workspace,
+            )
+        except StrategyTemplate.DoesNotExist:
+            return Response(
+                {"error": "Template de estratégia não encontrado"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        validator = StrategyValidator()
+        validation = validator.validate_strategy(portfolio, strategy_template)
+
+        serializer = StrategyValidationSerializer(validation)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"], url_path="strategy-performance")
+    def strategy_performance(self, request: "Request", pk: str = None) -> Response:
+        """Obtém performance da estratégia."""
+        from apps.investments.models import StrategyTemplate, StrategyPerformance
+        from apps.investments.services.performance_calculator import PerformanceCalculator
+        from apps.investments.serializers import StrategyPerformanceSerializer
+        from datetime import date
+
+        portfolio = self.get_object()
+        strategy_template_id = request.query_params.get("strategy_template_id")
+
+        if not strategy_template_id:
+            return Response(
+                {"error": "Parâmetro 'strategy_template_id' é obrigatório"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            strategy_template = StrategyTemplate.objects.get(
+                id=strategy_template_id,
+                workspace=portfolio.workspace,
+            )
+        except StrategyTemplate.DoesNotExist:
+            return Response(
+                {"error": "Template de estratégia não encontrado"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Buscar performance existente ou calcular nova
+        period_start = request.query_params.get("period_start")
+        period_end = request.query_params.get("period_end")
+
+        if period_start and period_end:
+            try:
+                period_start_date = date.fromisoformat(period_start)
+                period_end_date = date.fromisoformat(period_end)
+            except ValueError:
+                return Response(
+                    {"error": "Datas inválidas. Use formato YYYY-MM-DD"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            period_start_date = None
+            period_end_date = None
+
+        calculator = PerformanceCalculator()
+        performance = calculator.calculate_performance(
+            portfolio,
+            strategy_template,
+            period_start_date,
+            period_end_date,
+        )
+
+        serializer = StrategyPerformanceSerializer(performance)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post", "get"], url_path="chat")
+    def chat(self, request: "Request", pk: str = None) -> Response:
+        """Chat contextual na carteira."""
+        from apps.investments.services.portfolio_chat_service import PortfolioChatService
+        from apps.investments.serializers import PortfolioChatSerializer
+
+        portfolio = self.get_object()
+        service = PortfolioChatService()
+
+        if request.method == "POST":
+            message = request.data.get("message")
+            if not message:
+                return Response(
+                    {"error": "Campo 'message' é obrigatório"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            chat_message = service.send_message(portfolio, message)
+            serializer = PortfolioChatSerializer(chat_message)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # GET - Histórico
+        limit = int(request.query_params.get("limit", 50))
+        history = service.get_history(portfolio, limit)
+        serializer = PortfolioChatSerializer(history, many=True)
+        return Response({"messages": serializer.data})
 
 
 class AssetViewSet(WorkspaceViewSet):
@@ -391,42 +408,7 @@ class AssetViewSet(WorkspaceViewSet):
         )
 
 
-class StrategyViewSet(WorkspaceViewSet):
-    """ViewSet para Strategy."""
-
-    queryset = Strategy.objects.all()
-    serializer_class = StrategySerializer
-    permission_classes = [permissions.IsAuthenticated, WorkspaceObjectPermission]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["raw_text"]
-    ordering_fields = ["strategy_type", "created_at"]
-    ordering = ["-created_at"]
-
-    def get_serializer_class(self) -> type[StrategySerializer | StrategyListSerializer]:
-        """Retorna serializer apropriado."""
-        if self.action == "list":
-            return StrategyListSerializer
-        return StrategySerializer
-
-    def get_queryset(self) -> models.QuerySet[Strategy]:
-        """Filtra por portfolio se fornecido."""
-        queryset = super().get_queryset()
-        portfolio_id = self.request.query_params.get("portfolio")
-        if portfolio_id:
-            queryset = queryset.filter(portfolio_id=portfolio_id)
-            # Se não encontrou estratégia, garantir que existe
-            if not queryset.exists():
-                try:
-                    portfolio = Portfolio.objects.get(id=portfolio_id)
-                    # Garantir que tem estratégia padrão
-                    portfolio_viewset = PortfolioViewSet()
-                    portfolio_viewset.request = self.request
-                    portfolio_viewset._ensure_strategy(portfolio)
-                    # Buscar novamente
-                    queryset = super().get_queryset().filter(portfolio_id=portfolio_id)
-                except Portfolio.DoesNotExist:
-                    pass
-        return queryset
+# StrategyViewSet removido - será substituído pelo novo sistema
 
 
 class QuoteViewSet(viewsets.ViewSet):
@@ -538,36 +520,7 @@ class TransactionViewSet(WorkspaceViewSet):
         return queryset
 
 
-class RecommendationViewSet(WorkspaceViewSet):
-    """ViewSet para Recommendation."""
-
-    queryset = Recommendation.objects.all()
-    serializer_class = RecommendationSerializer
-    permission_classes = [permissions.IsAuthenticated, WorkspaceObjectPermission]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["notes"]
-    ordering_fields = ["created_at", "amount", "was_followed"]
-    ordering = ["-created_at"]
-
-    def get_serializer_class(self) -> type[RecommendationSerializer | RecommendationListSerializer]:
-        """Retorna serializer apropriado."""
-        if self.action == "list":
-            return RecommendationListSerializer
-        return RecommendationSerializer
-
-    def get_queryset(self) -> models.QuerySet[Recommendation]:
-        """Filtra por portfolio, was_followed se fornecido."""
-        queryset = super().get_queryset()
-        portfolio_id = self.request.query_params.get("portfolio")
-        was_followed = self.request.query_params.get("was_followed")
-
-        if portfolio_id:
-            queryset = queryset.filter(portfolio_id=portfolio_id)
-        if was_followed is not None:
-            was_followed_bool = was_followed.lower() in ("true", "1", "yes")
-            queryset = queryset.filter(was_followed=was_followed_bool)
-
-        return queryset
+# RecommendationViewSet removido - será substituído pelo novo sistema
 
 
 class DividendReceivedViewSet(WorkspaceViewSet):
@@ -607,30 +560,44 @@ class DividendReceivedViewSet(WorkspaceViewSet):
         return queryset
 
 
-class MarketPriceHistoryViewSet(WorkspaceViewSet):
-    """ViewSet para MarketPriceHistory (read-only)."""
+# MarketPriceHistoryViewSet removido - será substituído pelo novo sistema
 
-    queryset = MarketPriceHistory.objects.all()
-    serializer_class = MarketPriceHistorySerializer
+
+# Novos ViewSets do sistema inteligente
+class StrategyTemplateViewSet(WorkspaceViewSet):
+    """ViewSet para StrategyTemplate."""
+
+    queryset = StrategyTemplate.objects.all()
+    serializer_class = None  # Será definido dinamicamente
     permission_classes = [permissions.IsAuthenticated, WorkspaceObjectPermission]
-    filter_backends = [filters.OrderingFilter]
-    ordering_fields = ["created_at", "price"]
-    ordering = ["-created_at"]
-    http_method_names = ["get", "head", "options"]  # Read-only
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["name", "description", "category"]
+    ordering_fields = ["performance_score", "priority", "created_at"]
+    ordering = ["-performance_score", "-priority"]
 
-    def get_queryset(self) -> models.QuerySet[MarketPriceHistory]:
-        """Filtra por ticker, período se fornecido."""
+    def get_serializer_class(self):
+        """Retorna serializer apropriado."""
+        from apps.investments.serializers import StrategyTemplateSerializer
+        return StrategyTemplateSerializer
+
+    def get_queryset(self) -> models.QuerySet:
+        """Filtra por workspace e status."""
         queryset = super().get_queryset()
-        ticker = self.request.query_params.get("ticker")
-        date_from = self.request.query_params.get("date_from")
-        date_to = self.request.query_params.get("date_to")
+        is_active = self.request.query_params.get("is_active")
+        category = self.request.query_params.get("category")
 
-        if ticker:
-            queryset = queryset.filter(ticker=ticker.upper())
-        if date_from:
-            queryset = queryset.filter(created_at__date__gte=date_from)
-        if date_to:
-            queryset = queryset.filter(created_at__date__lte=date_to)
+        if is_active is not None:
+            is_active_bool = is_active.lower() in ("true", "1", "yes")
+            queryset = queryset.filter(is_active=is_active_bool)
+        if category:
+            queryset = queryset.filter(category=category)
 
         return queryset
+
+    @action(detail=False, methods=["get"], url_path="list")
+    def list_templates(self, request: "Request") -> Response:
+        """Lista templates disponíveis (endpoint customizado)."""
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"templates": serializer.data})
 

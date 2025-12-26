@@ -12,10 +12,7 @@ from apps.accounts.models import User, Workspace
 from apps.investments.models import (
     Asset,
     DividendReceived,
-    MarketPriceHistory,
     Portfolio,
-    Recommendation,
-    Strategy,
     Transaction,
 )
 
@@ -56,75 +53,40 @@ class PortfolioViewSetTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.json()["name"], "Minha Carteira")
 
-    def test_get_portfolio_status(self) -> None:
-        """Testa endpoint de status da carteira."""
+    def test_smart_recommendation(self) -> None:
+        """Testa endpoint de recomendação inteligente."""
         portfolio = Portfolio.objects.create(
             workspace=self.workspace,
             portfolio_type="acoes_br",
-        )
-        Strategy.objects.create(
-            workspace=self.workspace,
-            portfolio=portfolio,
-            raw_text="Foco em dividendos acima de 6%",
-        )
-
-        self.client.force_authenticate(user=self.user)
-        response = self.client.get(
-            f"/api/v1/investments/portfolios/{portfolio.id}/status/",
-            HTTP_X_WORKSPACE_ID=self.workspace.slug,
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.json()
-        self.assertIn("status", data)
-        self.assertIn("alerts", data)
-
-    def test_analyze_investment(self) -> None:
-        """Testa endpoint de análise de investimento."""
-        portfolio = Portfolio.objects.create(
-            workspace=self.workspace,
-            portfolio_type="acoes_br",
-        )
-        Strategy.objects.create(
-            workspace=self.workspace,
-            portfolio=portfolio,
-            raw_text="Foco em dividendos",
         )
 
         self.client.force_authenticate(user=self.user)
         response = self.client.post(
-            f"/api/v1/investments/portfolios/{portfolio.id}/analyze/",
+            f"/api/v1/investments/portfolios/{portfolio.id}/smart-recommendation/",
             {"amount": "2000.00"},
             HTTP_X_WORKSPACE_ID=self.workspace.slug,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertIn("recommendation", data)
+        self.assertIn("strategy_used", data)
 
-    def test_update_prices(self) -> None:
-        """Testa endpoint de atualização de preços."""
+    def test_get_context(self) -> None:
+        """Testa endpoint de contexto."""
         portfolio = Portfolio.objects.create(
             workspace=self.workspace,
             portfolio_type="acoes_br",
-            name="Test Portfolio",
         )
-        Asset.objects.create(
-            workspace=self.workspace,
-            portfolio=portfolio,
-            ticker="TAEE11",
-            quantity=Decimal("100"),
-            average_price=Decimal("35.00"),
-        )
+
         self.client.force_authenticate(user=self.user)
-        response = self.client.post(
-            f"/api/v1/investments/portfolios/{portfolio.id}/update-prices/",
+        response = self.client.get(
+            f"/api/v1/investments/portfolios/{portfolio.id}/context/",
             HTTP_X_WORKSPACE_ID=self.workspace.slug,
         )
-        # Pode retornar 200 mesmo se BRAPI não responder (erro tratado)
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_500_INTERNAL_SERVER_ERROR])
-        if response.status_code == status.HTTP_200_OK:
-            data = response.json()
-            self.assertIn("updated_count", data)
-            self.assertIn("total_assets", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertIn("profile", data)
+        self.assertIn("market_context", data)
 
 
 class AssetViewSetTestCase(TestCase):
@@ -186,40 +148,7 @@ class AssetViewSetTestCase(TestCase):
         self.assertEqual(results[0]["ticker"], "TAEE11")
 
 
-class StrategyViewSetTestCase(TestCase):
-    """Testes para StrategyViewSet."""
-
-    def setUp(self) -> None:
-        """Configuração inicial."""
-        self.client = APIClient()
-        self.workspace = Workspace.objects.create(name="Test Workspace", slug="test")
-        self.user = User.objects.create_user(
-            email="user@test.com",
-            password="pass123",
-            workspace=self.workspace,
-        )
-        self.portfolio = Portfolio.objects.create(
-            workspace=self.workspace,
-            portfolio_type="acoes_br",
-        )
-
-    def test_create_strategy(self) -> None:
-        """Testa criação de estratégia via API."""
-        self.client.force_authenticate(user=self.user)
-        data = {
-            "portfolio": self.portfolio.id,
-            "raw_text": "Foco em dividendos acima de 6%",
-        }
-        response = self.client.post(
-            "/api/v1/investments/strategies/",
-            data,
-            HTTP_X_WORKSPACE_ID=self.workspace.slug,
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        data_response = response.json()
-        self.assertEqual(data_response["raw_text"], "Foco em dividendos acima de 6%")
-        # Verificar que foi parseado
-        self.assertIn("parsed_rules", data_response)
+# StrategyViewSetTestCase removido - StrategyViewSet foi removido
 
 
 class TransactionViewSetTestCase(TestCase):
@@ -310,61 +239,7 @@ class TransactionViewSetTestCase(TestCase):
         self.assertEqual(transaction.unit_price, Decimal("28.00"))
 
 
-class RecommendationViewSetTestCase(TestCase):
-    """Testes para RecommendationViewSet."""
-
-    def setUp(self) -> None:
-        """Configuração inicial."""
-        self.client = APIClient()
-        self.workspace = Workspace.objects.create(name="Test Workspace", slug="test")
-        self.user = User.objects.create_user(
-            email="user@test.com",
-            password="pass123",
-            workspace=self.workspace,
-        )
-        self.portfolio = Portfolio.objects.create(
-            workspace=self.workspace,
-            portfolio_type="acoes_br",
-        )
-
-    def test_list_recommendations(self) -> None:
-        """Testa listagem de recomendações."""
-        Recommendation.objects.create(
-            workspace=self.workspace,
-            portfolio=self.portfolio,
-            amount=Decimal("2000.00"),
-            recommendation_data={"recommendation": {"total_amount": 2000.0}},
-        )
-
-        self.client.force_authenticate(user=self.user)
-        response = self.client.get(
-            f"/api/v1/investments/recommendations/?portfolio={self.portfolio.id}",
-            HTTP_X_WORKSPACE_ID=self.workspace.slug,
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_analyze_creates_recommendation(self) -> None:
-        """Testa que analyze cria Recommendation automaticamente."""
-        Strategy.objects.create(
-            workspace=self.workspace,
-            portfolio=self.portfolio,
-            raw_text="Foco em dividendos",
-        )
-
-        self.client.force_authenticate(user=self.user)
-        response = self.client.post(
-            f"/api/v1/investments/portfolios/{self.portfolio.id}/analyze/",
-            {"amount": "2000.00"},
-            HTTP_X_WORKSPACE_ID=self.workspace.slug,
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # Verificar que recomendação foi criada
-        recommendations = Recommendation.objects.filter(portfolio=self.portfolio)
-        self.assertEqual(recommendations.count(), 1)
-        recommendation = recommendations.first()
-        self.assertEqual(recommendation.amount, Decimal("2000.00"))
-        self.assertIn("recommendation_id", response.json())
+# RecommendationViewSetTestCase removido - RecommendationViewSet foi removido
 
 
 class DividendReceivedViewSetTestCase(TestCase):
@@ -437,47 +312,5 @@ class DividendReceivedViewSetTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-class MarketPriceHistoryViewSetTestCase(TestCase):
-    """Testes para MarketPriceHistoryViewSet."""
-
-    def setUp(self) -> None:
-        """Configuração inicial."""
-        self.client = APIClient()
-        self.workspace = Workspace.objects.create(name="Test Workspace", slug="test")
-        self.user = User.objects.create_user(
-            email="user@test.com",
-            password="pass123",
-            workspace=self.workspace,
-        )
-
-    def test_list_price_history(self) -> None:
-        """Testa listagem de histórico de preços."""
-        MarketPriceHistory.objects.create(
-            workspace=self.workspace,
-            ticker="TAEE11",
-            price=Decimal("35.50"),
-            change_percent=Decimal("1.25"),
-        )
-
-        self.client.force_authenticate(user=self.user)
-        response = self.client.get(
-            f"/api/v1/investments/price-history/?ticker=TAEE11",
-            HTTP_X_WORKSPACE_ID=self.workspace.slug,
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_price_history_read_only(self) -> None:
-        """Testa que histórico de preços é read-only."""
-        self.client.force_authenticate(user=self.user)
-        data = {
-            "ticker": "TAEE11",
-            "price": "35.50",
-        }
-        response = self.client.post(
-            "/api/v1/investments/price-history/",
-            data,
-            HTTP_X_WORKSPACE_ID=self.workspace.slug,
-        )
-        # Deve retornar 405 Method Not Allowed
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+# MarketPriceHistoryViewSetTestCase removido - MarketPriceHistoryViewSet foi removido
 
