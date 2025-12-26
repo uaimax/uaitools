@@ -12,6 +12,9 @@ ENVIRONMENT=development  # development, staging, production (ou dev, prod para c
 SECRET_KEY=django-insecure-change-me-in-production
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1,*
+# CSRF Trusted Origins (Produção - Opcional)
+# Se não configurado, deriva automaticamente de ALLOWED_HOSTS adicionando https://
+# Exemplo: CSRF_TRUSTED_ORIGINS=https://meusite.com,https://api.meusite.com
 
 # Database (Produção)
 # DATABASE_URL=postgresql://user:password@localhost:5432/dbname

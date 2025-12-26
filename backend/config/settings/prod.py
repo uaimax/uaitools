@@ -47,3 +47,27 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
+# CSRF Trusted Origins - obrigatório em produção
+# Pode ser configurado via variável de ambiente CSRF_TRUSTED_ORIGINS (lista separada por vírgula)
+# Se não configurado, deriva de ALLOWED_HOSTS adicionando https://
+CSRF_TRUSTED_ORIGINS_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+if CSRF_TRUSTED_ORIGINS_ENV:
+    # Usar lista da variável de ambiente
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(",") if origin.strip()
+    ]
+else:
+    # Derivar de ALLOWED_HOSTS (adicionar https:// para cada host)
+    # Ignorar wildcards (*) e localhost
+    CSRF_TRUSTED_ORIGINS = []
+    for host in ALLOWED_HOSTS:  # noqa: F405
+        if host not in ("*", "localhost", "127.0.0.1"):
+            # Adicionar https:// para cada host válido
+            CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
+    
+    # Se não houver hosts válidos, usar lista vazia (não recomendado)
+    if not CSRF_TRUSTED_ORIGINS:
+        # Fallback: tentar usar ALLOWED_HOSTS mesmo com wildcard
+        # Isso é menos seguro, mas pode ser necessário em alguns casos
+        CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host != "*"]  # noqa: F405
+
