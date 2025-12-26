@@ -1,0 +1,60 @@
+{
+  "site_name": "SaaS Bootstrap",
+  "default": {
+    "title": "SaaS Bootstrap",
+    "description": "Complete SaaS platform for business management. Manage leads, customers and more with a modern and intuitive interface."
+  },
+  "home": {
+    "title": "Home",
+    "description": "Welcome to SaaS Bootstrap. Complete platform for business management."
+  },
+  "login": {
+    "title": "Login",
+    "description": "Sign in to your account to access the admin panel."
+  },
+  "register": {
+    "title": "Register",
+    "description": "Create your account and start managing your business today."
+  },
+  "forgot_password": {
+    "title": "Forgot Password",
+    "description": "Recover access to your account by entering your email."
+  },
+  "reset_password": {
+    "title": "Reset Password",
+    "description": "Set a new password for your account."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Overview of your business. Track statistics, leads and more."
+  },
+  "leads": {
+    "title": "Leads",
+    "description": "Manage your leads efficiently. View, create and edit leads.",
+    "list": {
+      "title": "Leads List",
+      "description": "View all your leads in an organized table."
+    },
+    "create": {
+      "title": "Create Lead",
+      "description": "Add a new lead to the system by filling in the information below."
+    },
+    "edit": {
+      "title": "Edit Lead - {{name}}",
+      "description": "Edit the information for lead {{name}}."
+    },
+    "view": {
+      "title": "Lead - {{name}}",
+      "description": "View details for lead {{name}}."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your account and workspace settings."
+  },
+  "documents": {
+    "title": "Documents",
+    "description": "View and manage legal documents and contracts."
+  }
+}
+

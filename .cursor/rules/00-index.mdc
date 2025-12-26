@@ -1,0 +1,132 @@
+---
+description: "Project overview and Deep Research Agent activation instructions"
+alwaysApply: true
+---
+
+# SaaS Bootstrap - Deep Research Agent
+
+## Visão Geral do Projeto
+
+Projeto Django 5 + DRF para lançamento rápido de MicroSaaS com multi-tenancy por `tenant_id`.
+
+**Stack Principal:**
+- Backend: Django 5 + Django REST Framework
+- Frontend: React SPA (Fase 4)
+- Arquitetura: Multi-tenancy por tenant_id
+- Fase Atual: Fundação (Fase 1)
+
+## Deep Research Agent - Como Usar
+
+### Ativação do Modo Deep Research
+
+Para ativar o modo de pesquisa profunda, você pode usar qualquer uma das seguintes formas:
+
+1. **Mencionar explicitamente**: `@deep-research` ou `deep research mode`
+2. **Solicitar pesquisa profunda**: "Faça uma pesquisa profunda sobre [tópico]"
+3. **Comando direto**: "Deep research mode ativado" para toggle de modo
+4. **Perguntas de research**: Qualquer pergunta que requeira análise de mercado, competidores, tendências ou avaliação técnica
+
+### O Que o Deep Research Agent Faz
+
+Quando ativado, o Cursor Agent executará automaticamente:
+
+- ✅ **Análise Multi-Pergunta**: Gera 5-7 questões estruturadas sobre o tópico
+- ✅ **Busca Web Paralela**: Realiza pesquisas web específicas para cada pergunta usando `@Web`
+- ✅ **Compilação de Resultados**: Organiza achados com fontes documentadas
+- ✅ **Síntese Analítica Crítica**: Identifica padrões, contradições e gaps
+- ✅ **Relatório Estruturado**: Gera documento markdown completo com seções temáticas
+
+### Output Padrão
+
+O relatório gerado seguirá esta estrutura:
+
+```
+Cabeçalho → Sumário Executivo → Seções Temáticas → Análise Crítica → Fontes → Confiança
+```
+
+**Formato Completo:** Ver `10-deep-research-agent.mdc` para template detalhado.
+
+## Regras Universais do Projeto
+
+### ALWAYS
+- Type hints em todas as funções Python
+- Docstrings em classes e funções públicas
+- Arquivos < 300 linhas
+- Testes junto ao app em `tests/`
+- APIs com prefixo `/api/`
+- Variáveis de ambiente para configurações sensíveis
+
+### NEVER
+- Modificar migrations existentes
+- Alterar models críticos (User, Tenant, TenantModel) sem autorização
+- Modificar middleware de tenant
+- Hardcodar URLs, secrets ou configurações de deploy
+- Ignorar zonas de proteção
+
+## Comandos Úteis
+
+```bash
+./dev-start.sh    # Inicia ambiente de desenvolvimento
+./run-tests.sh    # Executa suite de testes
+make migrate      # Aplica migrations
+make seed         # Popula dados de exemplo
+```
+
+## Consulta de Erros no GlitchTip/Sentry
+
+### Quando Consultar Erros
+
+Sempre que precisar investigar erros ou problemas reportados, consulte diretamente o GlitchTip/Sentry:
+
+1. **Obter URL do GlitchTip**:
+   - As credenciais estão nas variáveis de ambiente (`.env` do backend e frontend)
+   - Backend: `SENTRY_DSN` (formato: `https://xxx@app.glitchtip.com/14243`)
+   - Frontend: `VITE_SENTRY_DSN` (mesmo formato)
+   - Extrair a URL base do DSN: `https://app.glitchtip.com` (ou URL do self-hosted)
+
+2. **Acessar o Dashboard**:
+   - URL padrão SaaS: `https://app.glitchtip.com`
+   - URL self-hosted: Extrair do DSN (ex: `http://localhost:8000` ou URL customizada)
+   - Credenciais de acesso estão nas variáveis de ambiente ou documentação do projeto
+
+3. **Consultar Erros Específicos**:
+   - Filtrar por projeto (identificado pelo ID no DSN)
+   - Filtrar por ambiente (`ENVIRONMENT` do backend)
+   - Filtrar por data, nível (ERROR, WARNING), ou mensagem
+   - Ver stack traces completos, contexto do request, e breadcrumbs
+
+4. **Verificar Configuração**:
+   ```bash
+   # Backend - Verificar se está configurado
+   cd backend
+   cat .env | grep SENTRY_DSN
+
+   # Frontend - Verificar se está configurado
+   cd frontend
+   cat .env | grep VITE_SENTRY_DSN
+   ```
+
+5. **Testar Conexão**:
+   ```bash
+   # Backend
+   python manage.py test_glitchtip
+
+   # Ou via script standalone
+   python backend/test_glitchtip_connection.py
+   ```
+
+**Importante**:
+- As credenciais (DSN) estão nas `.env` do backend e frontend
+- O DSN contém a URL do GlitchTip e o ID do projeto
+- Use o dashboard para análise detalhada de erros antes de debugar código
+
+## Referências
+
+- `@docs/ARCHITECTURE.md` - Decisões arquiteturais
+- `@docs/context/PROTECTED_AREAS.md` - Zonas de proteção
+- `@docs/GLITCHTIP_SETUP.md` - Setup e configuração do GlitchTip
+- `10-deep-research-agent.mdc` - Regras completas de Deep Research
+- `20-context-documentation.mdc` - Documentação automática de aprendizados
+- `backend/.context/` - Aprendizados do backend Django/DRF
+- `frontend/.context/` - Aprendizados do frontend React/TypeScript
+- `.context/` - Aprendizados gerais (devops, etc)

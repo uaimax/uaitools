@@ -1,0 +1,96 @@
+{
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "labels": {
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "created_at": "Created at",
+    "updated_at": "Updated at",
+    "actions": "Actions",
+    "optional": "optional",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "profile": "Profile",
+    "logout": "Logout",
+    "user": "User"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "total_leads": "Total Leads",
+    "new_leads": "New Leads",
+    "converted": "Converted",
+    "documents": "Documents",
+    "leads_registered": "Registered leads",
+    "last_30_days": "Last 30 days",
+    "leads_converted": "Converted leads",
+    "coming_soon": "Coming soon",
+    "new_lead": "New Lead",
+    "quick_actions": "Quick Actions",
+    "quick_actions_description": "Quick access to main features",
+    "view_all_leads": "View All Leads",
+    "create_new_lead": "Create New Lead",
+    "settings": "Settings",
+    "welcome": "Welcome!",
+    "welcome_description": "Start managing your leads",
+    "welcome_text": "Use the sidebar menu to navigate between different sections of the system. You can create, edit and manage leads through the Leads page.",
+    "error_loading_stats": "Error loading statistics"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "leads": "Leads",
+    "documents": "Documents",
+    "settings": "Settings"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "no_data": "No data found",
+    "success": "Operation completed successfully",
+    "error": "An error occurred"
+  },
+  "validation": {
+    "required": "Field is required",
+    "invalid_email": "Invalid email",
+    "invalid_phone": "Invalid phone",
+    "min_length": "Minimum of {{min}} characters",
+    "max_length": "Maximum of {{max}} characters",
+    "password_mismatch": "Passwords do not match",
+    "invalid": "Invalid value"
+  },
+  "errors": {
+    "required": "Field is required",
+    "invalid_email": "Invalid email",
+    "invalid_phone": "Invalid phone",
+    "min_length": "Minimum of {{min}} characters",
+    "max_length": "Maximum of {{max}} characters",
+    "not_found": "Record not found",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Access denied",
+    "server_error": "Internal server error",
+    "network_error": "Connection error",
+    "unknown": "An unknown error occurred"
+  }
+}
+

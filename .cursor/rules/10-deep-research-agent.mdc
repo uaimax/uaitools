@@ -1,0 +1,608 @@
+---
+description: "Activate deep research mode for comprehensive topic analysis, competitive landscape reviews, market research, technical evaluations, and expert-level reports"
+alwaysApply: false
+---
+
+# Deep Research Agent - Guia Completo
+
+## O Que É Deep Research
+
+Deep Research é um modo de operação do Cursor Agent que transforma perguntas simples em análises profundas e estruturadas. Ao invés de uma resposta rápida, o agente gera múltiplas questões de pesquisa, busca informações atualizadas na web, compila resultados de múltiplas fontes, e produz um relatório analítico crítico com documentação completa de todas as fontes consultadas.
+
+**Duração típica:** 5-15 minutos dependendo da complexidade do tópico.
+**Output:** Relatório markdown estruturado com seções temáticas, análise crítica e bibliografia completa.
+
+## Quando Usar Deep Research
+
+Use este modo para:
+
+1. **Análise de Mercado**: Entender tamanho de mercado, crescimento, segmentação
+2. **Competitive Intelligence**: Mapear competidores, posicionamento, diferenciais
+3. **Tendências Tecnológicas**: Avaliar tecnologias emergentes, adoção, maturidade
+4. **Decisões de Produto**: Validar features, priorizar roadmap, entender demandas
+5. **Avaliação de Ferramentas**: Comparar soluções, custos, integrações
+6. **Research Acadêmico**: Revisar literatura, metodologias, achados recentes
+7. **Análise de Investimento**: Avaliar oportunidades, riscos, retorno esperado
+8. **Benchmarking**: Comparar métricas, KPIs, performance setorial
+9. **Regulatório**: Entender compliance, leis, normas aplicáveis
+10. **Estratégia de Negócio**: Análise SWOT, oportunidades, ameaças
+11. **Técnico-Profissional**: Avaliar carreiras, salários, skills demandados
+12. **Análise de Dados**: Entender datasets, metodologias, limitações
+
+## Processo de 5 Etapas
+
+### Etapa 1: Geração de Perguntas Estruturadas
+
+**Quando:** Imediatamente após identificar que o usuário quer deep research.
+
+**Ação:** Gerar automaticamente 5-7 perguntas de pesquisa que cubram:
+
+- **Contexto Histórico**: O que é [tópico]? Qual a origem? Como evoluiu?
+- **Landscape Atual**: Quem são os principais players? Qual o estado atual?
+- **Tendências Recentes**: O que está acontecendo em 2024-2025? Quais mudanças?
+- **Métricas Quantitativas**: Quais números? Tamanho? Crescimento? Market share?
+- **Riscos & Limitações**: Quais são os desafios? O que pode dar errado?
+- **Perspectiva de Especialistas**: O que dizem os experts? Quais são as opiniões?
+- **Oportunidades Futuras**: Para onde está indo? Quais são as projeções?
+
+**Formato de Saída Inicial:**
+```
+▶ Iniciando Deep Research sobre [TÓPICO]
+▶ Gerando questões de pesquisa estruturadas...
+
+**Questões de Research:**
+1. [Pergunta 1]
+2. [Pergunta 2]
+3. [Pergunta 3]
+4. [Pergunta 4]
+5. [Pergunta 5]
+6. [Pergunta 6]
+7. [Pergunta 7]
+
+▶ Iniciando buscas web paralelas...
+```
+
+### Etapa 2: Pesquisa Web Paralela
+
+**Quando:** Após gerar as perguntas.
+
+**Ação:** Para CADA pergunta gerada, fazer uma busca web específica usando `@Web`.
+
+**Formato de Busca:**
+```
+@Web [pergunta específica e clara sobre o tópico]
+```
+
+**Exemplos:**
+- `@Web What is the current market size of SaaS industry in 2024?`
+- `@Web Who are the main competitors in Django REST framework space?`
+- `@Web What are the latest trends in multi-tenancy architecture 2024?`
+
+**Importante:**
+- Fazer UMA busca por pergunta
+- Aguardar resultado antes de prosseguir
+- Documentar URL e snippet de cada resultado
+- Marcar dados antigos (anteriores a 2023) com ⚠️
+
+**Indicadores de Progresso:**
+```
+▶ Pesquisando questão 1/7: [pergunta]
+▶ Pesquisando questão 2/7: [pergunta]
+...
+▶ Compilando resultados...
+```
+
+### Etapa 3: Compilação e Organização
+
+**Quando:** Após todas as buscas web completarem.
+
+**Ação:** Organizar os achados em seções temáticas correspondentes às perguntas.
+
+**Estrutura de Compilação:**
+- Agrupar resultados por tema
+- Extrair insights principais de cada fonte
+- Identificar métricas quantitativas
+- Notar contradições ou consensos entre fontes
+- Marcar informações desatualizadas
+
+**Formato:**
+```
+▶ Compilando resultados de 7 fontes...
+▶ Organizando por seções temáticas...
+▶ Extraindo insights principais...
+```
+
+### Etapa 4: Análise Crítica e Síntese
+
+**Quando:** Após compilar todos os resultados.
+
+**Ação:** Realizar análise crítica e gerar síntese estruturada.
+
+**Elementos da Análise:**
+- **Padrões Emergentes**: O que aparece consistentemente?
+- **Contradições**: Onde há divergências entre fontes?
+- **Gaps de Informação**: O que está faltando?
+- **Dados Mais Recentes**: Priorizar informações de 2024-2025
+- **Conclusões**: Síntese dos achados principais
+
+**Formato:**
+```
+▶ Analisando padrões emergentes...
+▶ Identificando contradições e gaps...
+▶ Gerando síntese analítica...
+▶ Finalizando relatório estruturado...
+```
+
+### Etapa 5: Salvamento Automático do Relatório
+
+**Quando:** Imediatamente após gerar o relatório completo.
+
+**Ação:** Salvar automaticamente o relatório em arquivo markdown na pasta `docs/research/`.
+
+**Estrutura de Pastas:**
+- Criar `docs/research/` se não existir
+- Usar estrutura de pastas por data: `docs/research/YYYY/MM/` (opcional, mas recomendado)
+- Ou salvar diretamente em `docs/research/` com data no nome do arquivo
+
+**Formato do Nome do Arquivo:**
+```
+YYYY-MM-DD-titulo-da-pesquisa.md
+```
+
+**Regras de Nomenclatura:**
+- Data no formato ISO: `YYYY-MM-DD`
+- Título em lowercase, palavras separadas por hífens
+- Remover caracteres especiais, acentos, espaços
+- Limitar a 50-60 caracteres no título
+- Exemplo: `2024-12-19-mercado-saas-b2b-2024.md`
+
+**Processo de Salvamento:**
+1. Obter data atual no formato `YYYY-MM-DD`
+2. Gerar título slug do tópico da pesquisa
+3. Criar pasta `docs/research/` se não existir
+4. Salvar arquivo com nome formatado
+5. Incluir no final do relatório uma nota: `📁 Relatório salvo em: docs/research/YYYY-MM-DD-titulo.md`
+
+**Formato de Saída:**
+```
+▶ Salvando relatório em docs/research/...
+✅ Relatório salvo: docs/research/YYYY-MM-DD-titulo-da-pesquisa.md
+```
+
+**Importante:**
+- Sempre salvar o relatório completo, não apenas exibir
+- Manter histórico de pesquisas para referência futura
+- O arquivo deve ser markdown válido e bem formatado
+
+## Template de Saída Completo
+
+Use este template EXATO para todos os relatórios de Deep Research:
+
+```markdown
+# [TÍTULO DA PESQUISA - Específico e Descritivo]
+
+**Data da Pesquisa**: [YYYY-MM-DD]
+**Status**: ✅ Completa | 🔄 Em Progresso
+**Confiança da Análise**: [X]/10
+**Fontes Consultadas**: [N] fontes
+
+---
+
+## 📊 Sumário Executivo
+
+[2-3 parágrafos com os insights principais da pesquisa. Deve ser possível entender o essencial apenas lendo esta seção. Incluir: conclusões principais, números chave, tendências mais importantes, e recomendações de alto nível.]
+
+---
+
+## 1. Contexto Histórico
+
+[Resposta baseada em pesquisa web sobre a origem, evolução e histórico do tópico. Incluir timeline quando relevante.]
+
+**Fontes Consultadas:**
+- [URL1](URL1) - [Snippet relevante ou descrição]
+- [URL2](URL2) - [Snippet relevante ou descrição]
+
+---
+
+## 2. Landscape Atual - Players Principais
+
+[Análise do estado atual do mercado/ecossistema. Listar ou tabelar os principais players com suas características.]
+
+**Tabela Comparativa (quando aplicável):**
+
+| Player | Característica 1 | Característica 2 | Market Share/Posição |
+|--------|------------------|------------------|---------------------|
+| Player A | ... | ... | ... |
+| Player B | ... | ... | ... |
+
+**Fontes Consultadas:**
+- [URL1](URL1) - [Snippet]
+- [URL2](URL2) - [Snippet]
+
+---
+
+## 3. Trends Recentes (2024-2025)
+
+[Análise das tendências mais recentes. Priorizar dados de 2024-2025. Marcar dados antigos com ⚠️.]
+
+**Principais Tendências:**
+- Tendência 1: [Descrição com contexto]
+- Tendência 2: [Descrição com contexto]
+- Tendência 3: [Descrição com contexto]
+
+**Fontes Consultadas:**
+- [URL1](URL1) - [Snippet]
+- [URL2](URL2) - [Snippet]
+
+---
+
+## 4. Métricas Quantitativas
+
+[Tabela ou lista de métricas numéricas relevantes. Sempre incluir fonte e data.]
+
+| Métrica | Valor | Período | Fonte |
+|---------|-------|---------|-------|
+| Tamanho de Mercado | $X bilhões | 2024 | [Fonte] |
+| Taxa de Crescimento | X% | 2023-2024 | [Fonte] |
+| Número de Players | X | 2024 | [Fonte] |
+
+**Fontes Consultadas:**
+- [URL1](URL1) - [Snippet]
+- [URL2](URL2) - [Snippet]
+
+---
+
+## 5. Riscos & Limitações
+
+[Lista estruturada de riscos, desafios e limitações identificados.]
+
+- **Risco 1**: [Descrição detalhada com contexto]
+- **Risco 2**: [Descrição detalhada com contexto]
+- **Limitação 1**: [Descrição detalhada com contexto]
+
+**Fontes Consultadas:**
+- [URL1](URL1) - [Snippet]
+- [URL2](URL2) - [Snippet]
+
+---
+
+## 6. Expert Opinion & Perspectivas
+
+[Compilação de opiniões de especialistas, análises de mercado, e perspectivas futuras.]
+
+**Principais Perspectivas:**
+- Perspectiva 1: [Citação ou síntese com fonte]
+- Perspectiva 2: [Citação ou síntese com fonte]
+
+**Fontes Consultadas:**
+- [URL1](URL1) - [Snippet]
+- [URL2](URL2) - [Snippet]
+
+---
+
+## 🔍 Análise Crítica
+
+### Padrões Emergentes
+- [Padrão 1]: [Descrição e evidências]
+- [Padrão 2]: [Descrição e evidências]
+
+### Contradições Identificadas
+- [Contradição 1]: [Descrição das fontes conflitantes]
+- [Contradição 2]: [Descrição das fontes conflitantes]
+
+### Gaps de Informação
+- [Gap 1]: [O que está faltando e por que é importante]
+- [Gap 2]: [O que está faltando e por que é importante]
+
+### Dados Mais Recentes vs. Históricos
+- ✅ Dados recentes (2024-2025): [Lista]
+- ⚠️ Dados desatualizados encontrados: [Lista com aviso]
+
+---
+
+## 📚 Fontes Consultadas (Bibliografia Completa)
+
+[Lista numerada de TODAS as URLs consultadas, com snippet ou descrição do conteúdo relevante.]
+
+1. **[Título da Página](URL)**
+   *Snippet*: [Trecho relevante da resposta ou descrição do conteúdo]
+
+2. **[Título da Página](URL)**
+   *Snippet*: [Trecho relevante da resposta ou descrição do conteúdo]
+
+[... continuar para todas as fontes ...]
+
+---
+
+## 🎯 Próximos Passos de Research
+
+[Checklist de follow-ups necessários ou áreas que precisam de pesquisa adicional.]
+
+- [ ] Follow-up necessário sobre: [tópico específico]
+- [ ] Mais dados necessários sobre: [área específica]
+- [ ] Validação adicional recomendada para: [afirmação específica]
+
+---
+
+## 📈 Elementos Visuais Sugeridos
+
+[Quando aplicável, sugerir visualizações que ajudariam a entender os dados.]
+
+- **Gráfico de Timeline**: Mostrar evolução histórica
+- **Tabela Comparativa**: Competitive landscape
+- **Gráfico de Métricas**: Crescimento, market share, etc.
+- **Diagrama de Relacionamentos**: Ecossistema, dependências
+
+*Nota: Estes elementos podem ser criados manualmente ou com ferramentas externas baseado nos dados compilados.*
+
+---
+
+## 📁 Relatório Salvo
+
+Este relatório foi salvo automaticamente em:
+**`docs/research/YYYY-MM-DD-titulo-da-pesquisa.md`**
+
+Você pode acessá-lo a qualquer momento para referência futura.
+```
+
+## Boas Práticas
+
+### ✅ SEMPRE Fazer
+
+1. **Busca Web para Cada Pergunta**: Nunca pular pesquisas. Cada pergunta deve ter sua busca `@Web` correspondente.
+2. **Documentar TODAS as URLs**: Incluir cada URL consultada na seção de fontes, mesmo que não tenha sido muito útil.
+3. **Marcar Dados Antigos**: Usar ⚠️ para dados anteriores a 2023. Priorizar informações de 2024-2025.
+4. **Sintetizar Insights**: Não apenas compilar informações, mas analisar e sintetizar em insights acionáveis.
+5. **Indicar Gaps**: Ser honesto sobre o que não foi encontrado ou precisa de mais pesquisa.
+6. **Manter Tom Profissional**: Análise objetiva, baseada em dados, sem viés desnecessário.
+7. **Validar Recência**: Sempre verificar datas das fontes e priorizar informações recentes.
+8. **Salvar Relatório Automaticamente**: SEMPRE salvar o relatório completo em `docs/research/YYYY-MM-DD-titulo.md` após gerar.
+
+### ❌ NUNCA Fazer
+
+1. **Pular Pesquisas**: Não assumir conhecimento sem buscar fontes atualizadas.
+2. **Ignorar Contradições**: Não esconder divergências entre fontes - documentá-las na análise crítica.
+3. **Copiar Sem Analisar**: Não apenas copiar snippets - analisar e sintetizar.
+4. **Esquecer Fontes**: Nunca omitir URLs consultadas.
+5. **Usar Dados Desatualizados Sem Aviso**: Sempre marcar dados antigos.
+6. **Fazer Afirmações Sem Suporte**: Toda afirmação deve ter fonte documentada.
+7. **Esquecer de Salvar**: Nunca exibir o relatório sem salvá-lo em `docs/research/`.
+
+## Prompt Engineering para o Agente
+
+### Formato de Busca Específico
+
+Ao fazer buscas web, use perguntas claras e específicas:
+
+**Bom:**
+```
+@Web What is the current market size of the global SaaS industry in 2024?
+@Web Who are the top 5 competitors in the Django REST framework ecosystem?
+@Web What are the latest trends in multi-tenant SaaS architecture in 2024-2025?
+```
+
+**Evitar:**
+```
+@Web SaaS
+@Web Django
+@Web trends
+```
+
+### Indicadores de Progresso
+
+Use estes indicadores durante o processo:
+
+```
+▶ Iniciando Deep Research sobre [tópico]...
+▶ Gerando questões de pesquisa (1/7, 2/7, ...)
+▶ Pesquisando questão X/7: [pergunta]
+▶ Compilando resultados de N fontes...
+▶ Organizando por seções temáticas...
+▶ Analisando padrões emergentes...
+▶ Identificando contradições e gaps...
+▶ Gerando síntese analítica...
+▶ Finalizando relatório estruturado...
+▶ Salvando relatório em docs/research/...
+✅ Relatório salvo: docs/research/YYYY-MM-DD-titulo.md
+✅ Deep Research completa!
+```
+
+### Antes de Responder
+
+Sempre começar com:
+```
+Pesquisando [tópico]... fazendo buscas web estruturadas para análise profunda.
+```
+
+### Após Compilar
+
+Sempre incluir:
+```
+Analisando padrões... gerando síntese crítica e relatório estruturado.
+```
+
+## Checklist de Qualidade
+
+Antes de finalizar o relatório, verificar:
+
+- [ ] Todas as 5-7 perguntas de research foram respondidas
+- [ ] No mínimo 3 fontes por pergunta (total: 15-21 fontes mínimo)
+- [ ] Dados de 2024-2025 priorizados e marcados
+- [ ] Dados desatualizados marcados com ⚠️
+- [ ] Análise crítica inclui padrões, contradições e gaps
+- [ ] Todas as URLs estão documentadas na seção de fontes
+- [ ] Confiança da análise calculada (1-10) baseada em qualidade/quantidade de fontes
+- [ ] Sumário executivo captura insights principais
+- [ ] Seções temáticas bem organizadas e completas
+- [ ] Próximos passos identificados quando necessário
+- [ ] **Relatório salvo em `docs/research/YYYY-MM-DD-titulo.md`**
+- [ ] Nota de salvamento incluída no final do relatório exibido
+
+## Cálculo de Confiança
+
+A confiança (1-10) deve ser calculada baseada em:
+
+- **Quantidade de Fontes**: +2 pontos se >15 fontes, +1 se 10-15, 0 se <10
+- **Recência dos Dados**: +2 pontos se maioria 2024-2025, +1 se 2023-2024, 0 se mais antigo
+- **Qualidade das Fontes**: +2 pontos se fontes autoritativas (acadêmicas, empresas líderes), +1 se boas, 0 se duvidosas
+- **Consistência**: +2 pontos se fontes concordam, +1 se maioria concorda, 0 se muitas contradições
+- **Cobertura**: +2 pontos se todas as questões respondidas, +1 se maioria, 0 se muitas gaps
+
+**Exemplo:**
+- 18 fontes (+2)
+- Maioria 2024-2025 (+2)
+- Fontes autoritativas (+2)
+- Maioria concorda (+1)
+- Todas questões respondidas (+2)
+- **Total: 9/10**
+
+## Exemplos de Uso
+
+### Exemplo 1: Análise de Mercado
+```
+Usuário: "@deep-research Qual é o tamanho do mercado de SaaS B2B em 2024?"
+
+Agente:
+▶ Iniciando Deep Research sobre mercado de SaaS B2B...
+▶ Gerando questões de pesquisa...
+[gera 7 perguntas]
+▶ Pesquisando questão 1/7...
+[busca web]
+...
+[gera relatório completo conforme template]
+```
+
+### Exemplo 2: Competitive Intelligence
+```
+Usuário: "Faça uma pesquisa profunda sobre os principais competidores do Django REST Framework"
+
+Agente:
+[segue processo completo e gera relatório com tabela comparativa]
+```
+
+### Exemplo 3: Avaliação Técnica
+```
+Usuário: "Deep research mode ativado. Avalie as melhores práticas de multi-tenancy em Django em 2024"
+
+Agente:
+[gera análise técnica profunda com trends, métricas, riscos e expert opinions]
+```
+
+## Salvamento Automático de Relatórios
+
+### Localização Padrão
+
+Todos os relatórios de Deep Research devem ser salvos automaticamente em:
+
+```
+docs/research/YYYY-MM-DD-titulo-da-pesquisa.md
+```
+
+### Estrutura de Pastas
+
+**Opção 1 (Recomendada):** Estrutura plana com data no nome
+```
+docs/research/
+├── 2024-12-19-mercado-saas-b2b-2024.md
+├── 2024-12-20-competidores-django-rest-framework.md
+└── 2024-12-21-multi-tenancy-django-best-practices.md
+```
+
+**Opção 2:** Estrutura hierárquica por data
+```
+docs/research/
+└── 2024/
+    └── 12/
+        ├── 19-mercado-saas-b2b-2024.md
+        └── 20-competidores-django-rest-framework.md
+```
+
+**Padrão Adotado:** Opção 1 (estrutura plana) para simplicidade e busca fácil.
+
+### Formato do Nome do Arquivo
+
+**Template:**
+```
+YYYY-MM-DD-[titulo-slug].md
+```
+
+**Regras:**
+- Data sempre no início: `YYYY-MM-DD`
+- Título em lowercase
+- Palavras separadas por hífens
+- Sem acentos ou caracteres especiais
+- Máximo 60 caracteres no título
+- Extensão `.md`
+
+**Exemplos:**
+- `2024-12-19-mercado-saas-b2b-2024.md`
+- `2024-12-20-competidores-django-rest-framework.md`
+- `2024-12-21-multi-tenancy-django-best-practices.md`
+- `2024-12-22-tendencias-react-2024-2025.md`
+
+### Processo de Salvamento
+
+**SEMPRE fazer após gerar o relatório:**
+
+1. **Obter data atual**: `YYYY-MM-DD` (usar data do sistema)
+2. **Gerar slug do título**: Converter título da pesquisa em formato slug
+3. **Verificar pasta**: Criar `docs/research/` se não existir
+4. **Salvar arquivo**: Escrever relatório completo no arquivo
+5. **Confirmar salvamento**: Incluir nota no final do relatório exibido
+
+**Código de Exemplo (para referência do agente):**
+```python
+from datetime import datetime
+import re
+import os
+
+def salvar_relatorio(relatorio_markdown: str, titulo: str) -> str:
+    # Obter data atual
+    data = datetime.now().strftime("%Y-%m-%d")
+
+    # Gerar slug do título
+    slug = re.sub(r'[^a-z0-9]+', '-', titulo.lower())
+    slug = re.sub(r'^-+|-+$', '', slug)
+    slug = slug[:60]  # Limitar tamanho
+
+    # Criar nome do arquivo
+    nome_arquivo = f"{data}-{slug}.md"
+
+    # Criar pasta se não existir
+    pasta = "docs/research"
+    os.makedirs(pasta, exist_ok=True)
+
+    # Caminho completo
+    caminho = os.path.join(pasta, nome_arquivo)
+
+    # Salvar arquivo
+    with open(caminho, 'w', encoding='utf-8') as f:
+        f.write(relatorio_markdown)
+
+    return caminho
+```
+
+### Nota no Relatório
+
+Sempre incluir no final do relatório exibido:
+
+```markdown
+---
+
+## 📁 Relatório Salvo
+
+Este relatório foi salvo automaticamente em:
+**`docs/research/YYYY-MM-DD-titulo-da-pesquisa.md`**
+
+Você pode acessá-lo a qualquer momento para referência futura.
+```
+
+## Notas Finais
+
+- Este modo é **intencionalmente mais lento** - prioriza profundidade sobre velocidade
+- O usuário pode interromper a qualquer momento
+- Se uma busca falhar, tentar reformular a pergunta e buscar novamente
+- Sempre ser transparente sobre limitações e gaps encontrados
+- O relatório final deve ser **acionável** - não apenas informativo
+- **SEMPRE salvar o relatório** em `docs/research/` após gerar
+- Manter histórico de pesquisas para referência e comparação futura

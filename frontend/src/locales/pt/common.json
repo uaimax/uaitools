@@ -1,0 +1,96 @@
+{
+  "actions": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Deletar",
+    "edit": "Editar",
+    "create": "Criar",
+    "update": "Atualizar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "close": "Fechar",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior"
+  },
+  "status": {
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "pending": "Pendente",
+    "completed": "Concluído",
+    "cancelled": "Cancelado"
+  },
+  "labels": {
+    "name": "Nome",
+    "email": "E-mail",
+    "phone": "Telefone",
+    "created_at": "Criado em",
+    "updated_at": "Atualizado em",
+    "actions": "Ações",
+    "optional": "opcional",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "profile": "Perfil",
+    "logout": "Sair",
+    "user": "Usuário"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "total_leads": "Total de Leads",
+    "new_leads": "Novos Leads",
+    "converted": "Convertidos",
+    "documents": "Documentos",
+    "leads_registered": "Leads cadastrados",
+    "last_30_days": "Últimos 30 dias",
+    "leads_converted": "Leads convertidos",
+    "coming_soon": "Em breve",
+    "new_lead": "Novo Lead",
+    "quick_actions": "Ações Rápidas",
+    "quick_actions_description": "Acesso rápido às funcionalidades principais",
+    "view_all_leads": "Ver Todos os Leads",
+    "create_new_lead": "Criar Novo Lead",
+    "settings": "Configurações",
+    "welcome": "Bem-vindo!",
+    "welcome_description": "Comece a gerenciar seus leads",
+    "welcome_text": "Use o menu lateral para navegar entre as diferentes seções do sistema. Você pode criar, editar e gerenciar leads através da página de Leads.",
+    "error_loading_stats": "Erro ao carregar estatísticas"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "leads": "Leads",
+    "documents": "Documentos",
+    "settings": "Configurações"
+  },
+  "messages": {
+    "loading": "Carregando...",
+    "no_data": "Nenhum dado encontrado",
+    "success": "Operação realizada com sucesso",
+    "error": "Ocorreu um erro"
+  },
+  "validation": {
+    "required": "Campo obrigatório",
+    "invalid_email": "E-mail inválido",
+    "invalid_phone": "Telefone inválido",
+    "min_length": "Mínimo de {{min}} caracteres",
+    "max_length": "Máximo de {{max}} caracteres",
+    "password_mismatch": "As senhas não coincidem",
+    "invalid": "Valor inválido"
+  },
+  "errors": {
+    "required": "Campo obrigatório",
+    "invalid_email": "E-mail inválido",
+    "invalid_phone": "Telefone inválido",
+    "min_length": "Mínimo de {{min}} caracteres",
+    "max_length": "Máximo de {{max}} caracteres",
+    "not_found": "Registro não encontrado",
+    "unauthorized": "Não autorizado",
+    "forbidden": "Acesso negado",
+    "server_error": "Erro interno do servidor",
+    "network_error": "Erro de conexão",
+    "unknown": "Ocorreu um erro desconhecido"
+  }
+}
+

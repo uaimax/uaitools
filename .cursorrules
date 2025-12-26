@@ -1,0 +1,63 @@
+# SaaS Bootstrap - Contexto para IA
+
+## Visao Geral
+Projeto Django 5 + DRF para lancamento rapido de MicroSaaS.
+Multi-tenancy por tenant_id em cada model.
+
+## Estrutura
+- backend/config/ - Projeto Django (settings, urls, wsgi)
+- backend/apps/ - Apps modulares
+  - apps/core/ - App base (models base, mixins)
+  - apps/accounts/ - User + Tenant (Fase 1.4)
+  - apps/leads/ - Modulo exemplo (Fase 3)
+- frontend/ - React SPA (Fase 4)
+
+## Convencoes de Codigo
+- Arquivos: maximo 300 linhas
+- Type hints: obrigatorios em funcoes
+- Docstrings: em classes e funcoes publicas
+- Testes: junto ao app em tests/
+
+## Comandos Principais
+- ./dev-start.sh - Inicia ambiente de dev
+- ./run-tests.sh - Executa testes
+- make migrate - Aplica migrations
+- make seed - Popula dados exemplo
+
+## Multi-tenancy
+- Todo model com dados de tenant herda TenantModel (apps.core)
+- Middleware define request.tenant via header X-Tenant-ID
+- ViewSets filtram automaticamente por tenant
+
+## Ambiente
+- Dev: SQLite + DEBUG=True
+- Prod: PostgreSQL via DATABASE_URL
+
+## Aprendizados e Contexto
+- `backend/.context/` - Aprendizados específicos do backend Django/DRF
+- `frontend/.context/` - Aprendizados específicos do frontend React/TypeScript
+- `.context/` - Aprendizados gerais (devops, configuração, etc)
+- `.context/milestones.md` - **Marcos importantes do projeto** (fases, commits, pushes)
+- Sempre consultar `.context/` apropriado antes de implementar soluções similares
+- **SEMPRE consultar `.context/milestones.md` antes de começar trabalho** para entender estado atual
+- Documentar automaticamente novos aprendizados no `.context/` correto
+- **Documentar marcos importantes** (fases, commits significativos, pushes) em `.context/milestones.md`
+
+## Contratos Arquiteturais
+- `docs/contracts/` - Contratos de funcionalidades críticas
+- **SEMPRE consultar** antes de implementar módulos ativáveis ou formulários dinâmicos
+- Contratos definem estrutura, não implementação (YAGNI)
+- Ver `@docs/contracts/README.md` para guia completo
+- Contratos disponíveis:
+  - `MODULE_ACTIVATION.md` - Sistema de módulos ativáveis por workspace
+  - `DYNAMIC_FORMS.md` - Formulários dinâmicos criados em runtime
+
+## Consulta de Erros no GlitchTip/Sentry
+- **SEMPRE consultar o GlitchTip/Sentry diretamente** quando investigar erros
+- Credenciais estão nas `.env` do backend (`SENTRY_DSN`) e frontend (`VITE_SENTRY_DSN`)
+- Extrair URL do dashboard do DSN (formato: `https://xxx@app.glitchtip.com/14243` → `https://app.glitchtip.com`)
+- Filtrar erros por projeto, ambiente, data, nível ou mensagem
+- Ver stack traces completos, contexto do request e breadcrumbs no dashboard
+- Testar conexão: `python manage.py test_glitchtip` (backend)
+- Ver `@docs/GLITCHTIP_SETUP.md` para mais detalhes
+

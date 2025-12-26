@@ -1,0 +1,215 @@
+---
+description: "Regras para documentação automática de aprendizados e soluções em .context/"
+alwaysApply: true
+---
+
+# Documentação Automática de Contexto
+
+## 🎯 Propósito
+
+Esta regra define como a LLM deve **documentar automaticamente** aprendizados, erros e soluções nas pastas `.context/` para evitar repetição de problemas.
+
+## 📁 Estrutura de Contexto
+
+O projeto usa **contexto separado por domínio**:
+
+- **`backend/.context/`** - Aprendizados específicos do backend Django/DRF
+- **`frontend/.context/`** - Aprendizados específicos do frontend React/TypeScript
+- **`.context/`** (raiz) - Aprendizados gerais (devops, configuração, integração)
+
+## 📋 Quando Documentar
+
+A LLM deve documentar automaticamente quando:
+
+1. **Resolve um problema novo** que não estava documentado
+2. **Identifica um padrão** que deve ser seguido ou evitado
+3. **Encontra uma solução** que pode ser reutilizada
+4. **Comete um erro** e o corrige (aprendizado importante)
+5. **Alcança um marco importante** (fase concluída, commit significativo, push importante)
+6. **Congela uma versão** ou finaliza uma etapa crítica do projeto
+
+## 📝 Processo de Documentação
+
+### 1. Antes de Implementar
+
+**SEMPRE consultar `.context/` apropriado antes de:**
+- Implementar nova funcionalidade no backend → `backend/.context/`
+- Implementar nova funcionalidade no frontend → `frontend/.context/`
+- Resolver bug ou problema → `.context/` do domínio correspondente
+- Criar novo model/view/service → `backend/.context/`
+- Criar novo componente/hook → `frontend/.context/`
+- Configurar deploy/CI/CD → `.context/` (raiz)
+
+### 2. Durante Implementação
+
+Se encontrar dificuldade ou erro:
+1. Identificar domínio (backend/frontend/geral)
+2. Verificar se já existe em `.context/mistakes.md` do domínio
+3. Se não existir, documentar após resolver
+
+### 3. Após Resolver Problema
+
+**Documentar automaticamente no `.context/` correto** seguindo este formato:
+
+### 4. Após Alcançar Marco
+
+**Documentar marcos importantes em `.context/milestones.md`** quando:
+- Concluir uma fase do projeto
+- Fazer commit que muda estrutura significativamente
+- Fazer push importante (versão, freeze)
+- Finalizar funcionalidade crítica
+
+**Formato para marcos:**
+
+```markdown
+---
+date: YYYY-MM-DD
+type: [phase|commit|push|milestone|freeze]
+tags: [tag1, tag2]
+importance: [low|medium|high|critical]
+---
+
+## [Título do Marco]
+
+### O Que Foi Feito
+[Descrição clara do que foi concluído]
+
+### Arquivos Principais
+- `path/to/file1.py` - Descrição
+- `path/to/file2.ts` - Descrição
+
+### Estado Atual
+[Estado do projeto após este marco]
+
+### Próximos Passos
+[O que vem a seguir, se aplicável]
+
+### Notas para Próximas LLMs
+[Informações importantes que outras LLMs precisam saber]
+```
+
+**Exemplos de marcos:**
+- Conclusão de fase (ex: "Fase 4: Frontend Mínimo ✅")
+- Commit estrutural (ex: "RBAC implementado")
+- Push importante (ex: "v1.0.0 - Bootstrap congelado")
+- Marco de funcionalidade (ex: "Contratos arquiteturais definidos")
+
+## 📁 Estrutura de Arquivos em Cada `.context/`
+
+Cada pasta `.context/` (backend, frontend, raiz) contém:
+
+### `learnings.md`
+- Aprendizados positivos (o que funcionou bem)
+- Padrões que devem ser replicados
+- Soluções elegantes
+
+### `mistakes.md`
+- Erros já enfrentados
+- Soluções para problemas comuns
+- O que evitar
+
+### `patterns.md`
+- Padrões identificados que funcionam
+- Convenções do projeto
+- Boas práticas específicas
+
+### `anti-patterns.md`
+- Padrões que devem ser evitados
+- O que não fazer
+- Armadilhas comuns
+
+### `README.md`
+- Guia de uso específico do domínio
+- Quando usar aquela pasta
+- Formato e convenções
+
+### `milestones.md` (apenas em `.context/` raiz)
+- Marcos importantes do projeto
+- Conclusões de fases
+- Commits/pushes significativos
+- Estados do projeto que outras LLMs precisam saber
+
+## 🔍 Critérios de Severidade
+
+- **critical**: Erros que quebram funcionalidade ou segurança
+- **high**: Problemas importantes que afetam qualidade
+- **medium**: Aprendizados relevantes mas não críticos
+- **low**: Notas menores, podem ser consolidadas depois
+
+## ✅ Checklist de Documentação
+
+Antes de finalizar qualquer tarefa que envolveu aprendizado:
+
+- [ ] Domínio identificado (backend/frontend/geral)?
+- [ ] Problema/solução documentado no `.context/` correto?
+- [ ] Arquivo correto escolhido (learnings/mistakes/patterns/anti-patterns)?
+- [ ] Severidade correta atribuída?
+- [ ] Tags relevantes adicionadas?
+- [ ] Referências incluídas?
+- [ ] Formato seguido corretamente?
+
+**Se alcançou um marco importante:**
+- [ ] Marco documentado em `.context/milestones.md`?
+- [ ] Tipo correto (phase/commit/push/milestone/freeze)?
+- [ ] Importância correta atribuída?
+- [ ] Estado atual do projeto descrito?
+- [ ] Notas para próximas LLMs incluídas?
+
+## 🚫 O Que NÃO Documentar
+
+- Informações já em `.cursorrules` ou `docs/`
+- Aprendizados muito específicos (uma linha de código)
+- Informações temporárias ou experimentais
+- Duplicatas de aprendizados já documentados
+
+## 📌 Quando Documentar Marcos (Commits/Pushes)
+
+**SEMPRE documentar em `.context/milestones.md` quando:**
+
+1. **Commit estrutural** - Muda arquitetura, models base, middleware, permissões
+2. **Push de versão** - Tag Git (ex: v1.0.0), release, freeze
+3. **Conclusão de fase** - Fase do projeto finalizada (ex: "Fase 4: Frontend ✅")
+4. **Funcionalidade crítica** - Feature que afeta múltiplos módulos ou estrutura
+5. **Congelamento** - Bootstrap pronto para ser clonado/reutilizado
+
+**NÃO documentar:**
+- Commits de correção de bugs menores
+- Commits de refatoração sem impacto estrutural
+- Pushes de desenvolvimento contínuo sem marco
+
+**Regra de ouro:** Se outra LLM precisaria saber disso para entender o estado atual do projeto, documente.
+
+## 🔄 Manutenção
+
+- **Revisão mensal**: Limpar entradas obsoletas
+- **Consolidação**: Juntar aprendizados similares
+- **Priorização**: Manter apenas severity medium+
+
+## 🎯 Escolhendo o `.context/` Correto
+
+### Use `backend/.context/` quando:
+- Problema/solução é específico de Django, DRF, Python
+- Envolve models, views, serializers, migrations
+- Relacionado a APIs, autenticação, multi-tenancy
+- Performance de queries, ORM
+
+### Use `frontend/.context/` quando:
+- Problema/solução é específico de React, TypeScript
+- Envolve componentes, hooks, estado
+- Relacionado a UI/UX, integração com APIs
+- Performance de renderização, bundle size
+
+### Use `.context/` (raiz) quando:
+- Problema/solução afeta ambos (backend e frontend)
+- Relacionado a DevOps, CI/CD, deploy
+- Configuração de ambiente, variáveis
+- Scripts e automações gerais
+- Decisões arquiteturais gerais
+- **Marcos do projeto** (sempre em `.context/milestones.md`)
+
+---
+
+**Referências**:
+- `backend/.context/README.md` - Guia do backend
+- `frontend/.context/README.md` - Guia do frontend
+- `.context/README.md` - Guia geral

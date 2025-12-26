@@ -1,0 +1,100 @@
+---
+description: "Regras específicas para desenvolvimento backend Django"
+globs:
+  - "backend/**/*.py"
+  - "backend/**/*.txt"
+alwaysApply: false
+---
+
+# Regras Backend — Django + DRF
+
+@global.mdc
+@AGENTS.md#007backend
+
+## Contexto
+
+Você está trabalhando no **backend Django** deste projeto.
+Multi-tenancy implementado via `TenantModel` e `TenantMiddleware`.
+
+## Estrutura do Backend
+
+```
+backend/
+├── core/           # Projeto Django (settings, urls, wsgi)
+│   └── settings/   # base.py, dev.py, prod.py
+├── apps/           # Apps modulares
+│   ├── core/       # TenantModel, middleware
+│   └── accounts/   # User, Tenant
+├── api/            # Rotas API centralizadas
+└── conftest.py     # Fixtures pytest
+```
+
+## Convenções Django
+
+### Models
+
+```python
+# ✅ CORRETO - Com tenant
+from apps.core.models import TenantModel
+
+class MeuModel(TenantModel):
+    """Docstring obrigatória."""
+    nome = models.CharField(max_length=255)
+    
+    class Meta:
+        verbose_name = "Meu Model"
+
+# ❌ ERRADO - Sem herdar TenantModel para dados de tenant
+class MeuModel(models.Model):
+    tenant_id = models.IntegerField()  # NÃO FAZER
+```
+
+### Views/ViewSets
+
+```python
+# ✅ CORRETO
+class MeuViewSet(viewsets.ModelViewSet):
+    """Docstring obrigatória."""
+    
+    def get_queryset(self) -> QuerySet:
+        """Filtra por tenant automaticamente."""
+        return MeuModel.objects.filter(tenant=self.request.tenant)
+```
+
+### URLs
+
+```python
+# ✅ CORRETO - Todas as APIs em api/urls.py
+# Já terão prefixo /api/ do core/urls.py
+
+# ❌ ERRADO - URLs fora de api/
+path("meumodulo/", ...)  # Não fazer
+```
+
+## ALWAYS (Backend)
+
+1. Herdar `TenantModel` para dados multi-tenant
+2. Filtrar querysets por `request.tenant`
+3. Usar `select_related`/`prefetch_related` para otimização
+4. Serializers com validação explícita
+5. Testes em `apps/<app>/tests/`
+
+## NEVER (Backend)
+
+1. Queries N+1 (sempre otimizar)
+2. Lógica de negócio em views (usar services)
+3. Imports circulares
+4. `objects.all()` sem filtro de tenant
+
+## Checklist Antes de Commit
+
+- [ ] Testes passando (`./run-tests.sh`)
+- [ ] Type hints em todas as funções
+- [ ] Docstrings em funções públicas
+- [ ] Arquivo < 300 linhas
+- [ ] Multi-tenancy respeitado
+
+## Referências
+
+@backend/ANALYSIS.md
+@docs/ARCHITECTURE.md

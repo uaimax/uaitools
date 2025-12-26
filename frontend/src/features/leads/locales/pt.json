@@ -1,0 +1,48 @@
+{
+  "title": {
+    "leads": "Leads",
+    "create_lead": "Novo Lead",
+    "edit_lead": "Editar Lead"
+  },
+  "fields": {
+    "name": "Nome do Lead",
+    "email": "E-mail do Lead",
+    "phone": "Telefone do Lead",
+    "client_workspace": "Workspace do Cliente",
+    "status": "Status",
+    "notes": "Observações",
+    "source": "Origem"
+  },
+  "status": {
+    "new": "Novo",
+    "contacted": "Contatado",
+    "qualified": "Qualificado",
+    "converted": "Convertido",
+    "lost": "Perdido"
+  },
+  "placeholders": {
+    "name": "Nome completo",
+    "email": "email@exemplo.com",
+    "phone": "(00) 00000-0000",
+    "client_workspace": "Nome do workspace do cliente",
+    "notes": "Anotações sobre o lead...",
+    "source": "Origem do lead"
+  },
+  "toasts": {
+    "create_success": "Lead criado com sucesso",
+    "create_error": "Erro ao criar lead",
+    "update_success": "Lead atualizado com sucesso",
+    "update_error": "Erro ao atualizar lead",
+    "delete_success": "Lead deletado com sucesso",
+    "delete_error": "Erro ao deletar lead"
+  },
+  "messages": {
+    "empty": "Nenhum lead encontrado",
+    "empty_description": "Comece criando seu primeiro lead."
+  },
+  "descriptions": {
+    "create": "Preencha os campos para criar um novo lead.",
+    "edit": "Edite as informações do lead abaixo."
+  }
+}
+

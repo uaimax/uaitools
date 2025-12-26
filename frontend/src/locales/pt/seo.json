@@ -1,0 +1,60 @@
+{
+  "site_name": "SaaS Bootstrap",
+  "default": {
+    "title": "SaaS Bootstrap",
+    "description": "Plataforma SaaS completa para gerenciamento de negócios. Gerencie leads, clientes e muito mais com uma interface moderna e intuitiva."
+  },
+  "home": {
+    "title": "Início",
+    "description": "Bem-vindo ao SaaS Bootstrap. Plataforma completa para gerenciamento de negócios."
+  },
+  "login": {
+    "title": "Login",
+    "description": "Faça login na sua conta para acessar o painel administrativo."
+  },
+  "register": {
+    "title": "Registrar",
+    "description": "Crie sua conta e comece a gerenciar seus negócios hoje mesmo."
+  },
+  "forgot_password": {
+    "title": "Recuperar Senha",
+    "description": "Recupere o acesso à sua conta informando seu e-mail."
+  },
+  "reset_password": {
+    "title": "Redefinir Senha",
+    "description": "Defina uma nova senha para sua conta."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Visão geral do seu negócio. Acompanhe estatísticas, leads e muito mais."
+  },
+  "leads": {
+    "title": "Leads",
+    "description": "Gerencie seus leads de forma eficiente. Visualize, crie e edite leads.",
+    "list": {
+      "title": "Lista de Leads",
+      "description": "Visualize todos os seus leads em uma tabela organizada."
+    },
+    "create": {
+      "title": "Criar Lead",
+      "description": "Adicione um novo lead ao sistema preenchendo as informações abaixo."
+    },
+    "edit": {
+      "title": "Editar Lead - {{name}}",
+      "description": "Edite as informações do lead {{name}}."
+    },
+    "view": {
+      "title": "Lead - {{name}}",
+      "description": "Visualize os detalhes do lead {{name}}."
+    }
+  },
+  "settings": {
+    "title": "Configurações",
+    "description": "Gerencie as configurações da sua conta e workspace."
+  },
+  "documents": {
+    "title": "Documentos",
+    "description": "Visualize e gerencie documentos legais e contratos."
+  }
+}
+

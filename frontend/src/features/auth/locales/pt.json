@@ -1,0 +1,85 @@
+{
+  "title": {
+    "login": "Login",
+    "register": "Registrar",
+    "forgot_password": "Esqueci minha senha",
+    "reset_password": "Redefinir senha"
+  },
+  "fields": {
+    "email": "E-mail",
+    "password": "Senha",
+    "confirm_password": "Confirmar senha",
+    "first_name": "Nome",
+    "last_name": "Sobrenome",
+    "workspace_name": "Nome do workspace"
+  },
+  "buttons": {
+    "login": "Entrar",
+    "register": "Registrar",
+    "forgot_password": "Esqueci minha senha"
+  },
+  "messages": {
+    "login_success": "Login realizado com sucesso",
+    "register_success": "Registro realizado com sucesso",
+    "invalid_credentials": "Credenciais inválidas"
+  },
+  "toasts": {
+    "login_success": "Login realizado com sucesso",
+    "login_error": "Erro ao fazer login",
+    "register_success": "Registro realizado com sucesso",
+    "register_error": "Erro ao registrar",
+    "forgot_password_success": "Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha",
+    "forgot_password_error": "Erro ao solicitar reset de senha",
+    "reset_password_success": "Senha redefinida com sucesso",
+    "reset_password_error": "Erro ao redefinir senha"
+  },
+  "descriptions": {
+    "login": "Entre com sua conta para continuar",
+    "register": "Crie sua conta para começar",
+    "forgot_password": "Digite seu e-mail e enviaremos um link para redefinir sua senha",
+    "reset_password": "Digite sua nova senha",
+    "read_terms": "Leia atentamente os termos e condições de uso.",
+    "read_privacy": "Leia atentamente nossa política de privacidade e conformidade com a LGPD."
+  },
+  "links": {
+    "no_account": "Não tem uma conta?",
+    "register": "Registrar",
+    "has_account": "Já tem uma conta?",
+    "login": "Entrar",
+    "forgot_password": "Esqueci minha senha",
+    "back_to_login": "Voltar para login",
+    "or_continue_with": "Ou continue com",
+    "terms": "Termos e Condições de Uso",
+    "privacy": "Política de Privacidade e Proteção de Dados (LGPD)"
+  },
+  "validation": {
+    "email_required": "E-mail é obrigatório",
+    "password_required": "Senha é obrigatória",
+    "password_min": "Senha deve ter pelo menos 8 caracteres",
+    "password_confirm_required": "Confirmação de senha é obrigatória",
+    "passwords_mismatch": "As senhas não coincidem",
+    "accept_terms": "Você deve aceitar os termos de uso",
+    "accept_privacy": "Você deve aceitar a política de privacidade",
+    "accept_terms_prefix": "Eu aceito e concordo com os ",
+    "accept_terms_suffix": " desta plataforma.",
+    "accept_privacy_prefix": "Eu aceito e concordo com a ",
+    "accept_privacy_suffix": " desta plataforma."
+  },
+  "loading": {
+    "logging_in": "Entrando...",
+    "registering": "Registrando...",
+    "sending_reset": "Enviando...",
+    "resetting": "Redefinindo..."
+  },
+  "forgot_password": {
+    "success_message": "Se o e-mail fornecido estiver cadastrado, você receberá um link para redefinir sua senha."
+  },
+  "reset_password": {
+    "success_message": "Senha redefinida com sucesso. Você já pode fazer login com sua nova senha.",
+    "errors": {
+      "invalid_token": "Token inválido ou expirado. Solicite um novo link de reset de senha.",
+      "expired_token": "Token expirado. Solicite um novo link de reset de senha."
+    }
+  }
+}
+

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste de Internacionalização</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .test-section h3 {
+      margin-top: 0;
+    }
+    .pass {
+      color: green;
+      font-weight: bold;
+    }
+    .fail {
+      color: red;
+      font-weight: bold;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f0f0f0;
+    }
+    button:hover {
+      background: #e0e0e0;
+    }
+    .translation-example {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f9f9f9;
+      border-left: 3px solid #007bff;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Teste de Internacionalização (i18n)</h1>
+
+  <div class="test-section">
+    <h3>1. Seletor de Idioma</h3>
+    <p>Idioma atual: <strong id="current-lang">-</strong></p>
+    <button onclick="changeLanguage('pt')">Português</button>
+    <button onclick="changeLanguage('en')">English</button>
+  </div>
+
+  <div class="test-section">
+    <h3>2. Exemplos de Traduções</h3>
+    <div id="translations"></div>
+  </div>
+
+  <div class="test-section">
+    <h3>3. Validação de Traduções</h3>
+    <button onclick="validateTranslations()">Validar Traduções</button>
+    <div id="validation-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h3>4. Teste de Fallback</h3>
+    <button onclick="testFallback()">Testar Fallback</button>
+    <div id="fallback-result"></div>
+  </div>
+
+  <script type="module">
+    // Este arquivo é apenas para referência visual
+    // Os testes reais devem ser executados no console do navegador
+    // após carregar a aplicação React
+
+    console.log(`
+      Para testar a internacionalização:
+
+      1. Abra o console do navegador (F12)
+      2. Importe e execute os testes:
+         import { runI18nTests } from './src/i18n/test-i18n.ts'
+         runI18nTests()
+
+      3. Ou teste manualmente:
+         - Mude o idioma usando o seletor no header
+         - Verifique se os textos mudam
+         - Teste formulários de login/register
+         - Teste CRUD de leads
+    `);
+  </script>
+</body>
+</html>
+
+
+
