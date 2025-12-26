@@ -593,30 +593,37 @@ if USE_SENTRY and SENTRY_DSN:
         from sentry_sdk.integrations.django import DjangoIntegration
         from sentry_sdk.integrations.celery import CeleryIntegration
 
-        # Obter configurações de ambiente
-        env_raw = os.environ.get("ENVIRONMENT", "production")
-        # Normalizar valores: dev -> development, prod -> production
-        env_map = {"dev": "development", "prod": "production"}
-        environment = env_map.get(env_raw.lower(), env_raw.lower())
-        release = os.environ.get("RELEASE", None)  # Versão do deploy (ex: v1.0.0, commit hash)
-        server_name = os.environ.get("SERVER_NAME", None)  # Nome do servidor/instância
+        # Verificar se Sentry já foi inicializado (pode ter sido inicializado no wsgi.py)
+        # Se já foi inicializado, apenas adicionar as tags customizadas
+        if sentry_sdk.Hub.current.client is None:
+            # Obter configurações de ambiente
+            env_raw = os.environ.get("ENVIRONMENT", "production")
+            # Normalizar valores: dev -> development, prod -> production
+            env_map = {"dev": "development", "prod": "production"}
+            environment = env_map.get(env_raw.lower(), env_raw.lower())
+            release = os.environ.get("RELEASE", None)  # Versão do deploy (ex: v1.0.0, commit hash)
+            server_name = os.environ.get("SERVER_NAME", None)  # Nome do servidor/instância
 
-        # Configuração funciona tanto com Sentry quanto com GlitchTip
-        # GlitchTip é compatível com a API do Sentry, então usa os mesmos SDKs
-        sentry_sdk.init(
-            dsn=SENTRY_DSN,
-            integrations=[
-                DjangoIntegration(),
-                CeleryIntegration(),
-            ],
-            traces_sample_rate=0.1,  # 10% das transações
-            environment=environment,
-            release=release,  # Versão do deploy para rastreamento
-            server_name=server_name,  # Identificação do servidor/instância
-            # Tags padrão para facilitar filtragem no GlitchTip
-            before_send=lambda event, hint: _add_sentry_tags(event, environment),
-            # Filtro de dados sensíveis já é feito pelo SensitiveDataFilter
-        )
+            # Configuração funciona tanto com Sentry quanto com GlitchTip
+            # GlitchTip é compatível com a API do Sentry, então usa os mesmos SDKs
+            sentry_sdk.init(
+                dsn=SENTRY_DSN,
+                integrations=[
+                    DjangoIntegration(),
+                    CeleryIntegration(),
+                ],
+                traces_sample_rate=0.1,  # 10% das transações
+                environment=environment,
+                release=release,  # Versão do deploy para rastreamento
+                server_name=server_name,  # Identificação do servidor/instância
+                # Tags padrão para facilitar filtragem no GlitchTip
+                before_send=lambda event, hint: _add_sentry_tags(event, environment),
+                # Filtro de dados sensíveis já é feito pelo SensitiveDataFilter
+            )
+        else:
+            # Sentry já foi inicializado no wsgi.py, apenas adicionar tags customizadas
+            # As tags serão adicionadas via before_send no wsgi.py também
+            pass
     except ImportError:
         # Sentry SDK não instalado - usar fallback para banco
         USE_SENTRY = False
