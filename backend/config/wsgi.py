@@ -54,5 +54,22 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
-application = get_wsgi_application()
+# Tentar inicializar Django e capturar erros de boot
+try:
+    application = get_wsgi_application()
+except Exception as e:
+    # Se houver erro durante o boot, tentar enviar para Sentry se estiver configurado
+    if USE_SENTRY and SENTRY_DSN:
+        try:
+            import sentry_sdk
+            # Capturar o erro manualmente
+            sentry_sdk.capture_exception(e)
+            # Tentar enviar (flush) antes de re-raise
+            sentry_sdk.flush(timeout=2)
+        except Exception:
+            # Se não conseguir enviar para Sentry, apenas logar
+            pass
+    
+    # Re-raise o erro para que o Gunicorn veja e reporte nos logs
+    raise
 
