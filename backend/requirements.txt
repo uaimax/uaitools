@@ -20,4 +20,6 @@ psycopg2-binary>=2.9,<3.0
 # Sentry/GlitchTip (opcional) - Descomente se quiser usar Sentry ou GlitchTip para logging
 # GlitchTip é compatível com a API do Sentry, então usa os mesmos SDKs
 sentry-sdk[django]>=2.0,<3.0
+# WhiteNoise - Para servir arquivos estáticos em produção
+whitenoise>=6.6,<7.0
 
