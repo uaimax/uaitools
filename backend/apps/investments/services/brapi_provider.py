@@ -118,13 +118,36 @@ class BrapiProvider:
                 if "results" in data and len(data["results"]) > 0:
                     quote_data = data["results"][0]
                     # Extrair dados fundamentalistas disponíveis
+                    # Brapi pode retornar campos diferentes, tentar múltiplas variações
+                    pe_ratio = (
+                        quote_data.get("trailingPE") or
+                        quote_data.get("priceEarnings") or
+                        quote_data.get("peRatio") or
+                        None
+                    )
+                    price_to_book = (
+                        quote_data.get("priceToBook") or
+                        quote_data.get("priceToBookRatio") or
+                        None
+                    )
+                    dividend_yield = (
+                        quote_data.get("dividendYield") or
+                        quote_data.get("dividendYieldPercent") or
+                        None
+                    )
+                    earnings_per_share = (
+                        quote_data.get("trailingEps") or
+                        quote_data.get("earningsPerShare") or
+                        None
+                    )
+
                     result = {
                         "ticker": quote_data.get("symbol", ticker),
                         "price": Decimal(str(quote_data.get("regularMarketPrice", 0))),
-                        "pe_ratio": quote_data.get("trailingPE"),  # P/L
-                        "price_to_book": quote_data.get("priceToBook"),  # P/VP
-                        "dividend_yield": quote_data.get("dividendYield"),  # DY
-                        "earnings_per_share": quote_data.get("trailingEps"),
+                        "pe_ratio": float(pe_ratio) if pe_ratio is not None else None,
+                        "price_to_book": float(price_to_book) if price_to_book is not None else None,
+                        "dividend_yield": float(dividend_yield) if dividend_yield is not None else None,
+                        "earnings_per_share": float(earnings_per_share) if earnings_per_share is not None else None,
                         "market_cap": quote_data.get("marketCap"),
                     }
                     # Salvar no cache

@@ -124,3 +124,4 @@ class SectorMapper:
 
         return sector.lower() in [s.lower() for s in excluded_sectors]
 
+

@@ -40,3 +40,4 @@ class Migration(migrations.Migration):
         migrations.RunPython(migrate_existing_assets, reverse_migrate_existing_assets),
     ]
 
+

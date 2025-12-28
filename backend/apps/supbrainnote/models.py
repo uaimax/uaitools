@@ -1,28 +1,39 @@
 """Models for supbrainnote app."""
 
 import os
+from datetime import timedelta
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
-from apps.core.models import WorkspaceModel
+from apps.core.models import WorkspaceModel, UUIDPrimaryKeyMixin
 
 
 def audio_upload_path(instance: "Note", filename: str) -> str:
     """Gera caminho de upload para arquivo de áudio."""
     # Formato: supbrainnote/audios/{workspace_id}/{year}/{month}/{day}/{filename}
-    workspace_id = str(instance.workspace.id)
+    from django.utils import timezone
+    import uuid
+
+    # Usar workspace_id diretamente (não requer que o objeto workspace esteja carregado)
+    workspace_id = str(instance.workspace_id) if instance.workspace_id else "unknown"
+    # Usar data atual (created_at ainda não existe no momento do upload)
+    date = timezone.now()
+    # Adicionar UUID ao filename para evitar colisões
+    name, ext = os.path.splitext(filename)
+    unique_filename = f"{uuid.uuid4()}{ext}"
     return os.path.join(
         "supbrainnote",
         "audios",
         workspace_id,
-        instance.created_at.strftime("%Y"),
-        instance.created_at.strftime("%m"),
-        instance.created_at.strftime("%d"),
-        filename,
+        date.strftime("%Y"),
+        date.strftime("%m"),
+        date.strftime("%d"),
+        unique_filename,
     )
 
 
-class Box(WorkspaceModel):
+class Box(UUIDPrimaryKeyMixin, WorkspaceModel):
     """Caixinha (categoria) para organizar anotações."""
 
     name = models.CharField(max_length=255, verbose_name=_("Nome"))
@@ -57,7 +68,7 @@ class Box(WorkspaceModel):
         return self.notes.filter(deleted_at__isnull=True).count()
 
 
-class Note(WorkspaceModel):
+class Note(UUIDPrimaryKeyMixin, WorkspaceModel):
     """Anotação criada a partir de áudio."""
 
     SOURCE_CHOICES = [
@@ -83,9 +94,12 @@ class Note(WorkspaceModel):
     )
 
     # Conteúdo
+    # Importar storage aqui para garantir que seja uma instância
+    from apps.supbrainnote.storage import SupBrainNoteAudioStorage
     audio_file = models.FileField(
         upload_to=audio_upload_path,
         verbose_name=_("Arquivo de áudio"),
+        storage=SupBrainNoteAudioStorage(),
     )
     transcript = models.TextField(
         blank=True,
@@ -151,6 +165,23 @@ class Note(WorkspaceModel):
     def is_in_inbox(self) -> bool:
         """Verifica se anotação está na inbox (sem caixinha)."""
         return self.box is None
+
+    @property
+    def is_audio_expired(self) -> bool:
+        """Verifica se o áudio está próximo do vencimento (7 dias)."""
+        if not self.created_at:
+            return False
+        expiration_date = self.created_at + timedelta(days=7)
+        return timezone.now() >= expiration_date
+
+    @property
+    def days_until_expiration(self) -> int:
+        """Retorna quantos dias faltam para o áudio expirar."""
+        if not self.created_at:
+            return 0
+        expiration_date = self.created_at + timedelta(days=7)
+        delta = expiration_date - timezone.now()
+        return max(0, delta.days)
 
     def save(self, *args, **kwargs) -> None:
         """Salva anotação e atualiza metadados do arquivo."""

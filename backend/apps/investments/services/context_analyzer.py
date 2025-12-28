@@ -13,7 +13,7 @@ from apps.investments.models import (
     Transaction,
 )
 from apps.investments.services.bcb_provider import BCBProvider
-from apps.investments.services.brapi_provider import BrapiProvider
+from apps.investments.services.market_data_provider import MarketDataProvider
 from apps.investments.services.sector_mapper import SectorMapper
 from apps.investments.services.openai_service import OpenAIService
 
@@ -23,7 +23,7 @@ class ContextAnalyzer:
 
     def __init__(self) -> None:
         """Inicializa o analisador."""
-        self.brapi = BrapiProvider()
+        self.brapi = MarketDataProvider()
         self.bcb = BCBProvider()
         self.sector_mapper = SectorMapper()
         self.openai = OpenAIService()

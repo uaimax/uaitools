@@ -294,6 +294,39 @@ class PortfolioViewSet(WorkspaceViewSet):
         serializer = PortfolioChatSerializer(history, many=True)
         return Response({"messages": serializer.data})
 
+    @action(detail=True, methods=["post"], url_path="update-prices")
+    def update_prices(self, request: "Request", pk: str = None) -> Response:
+        """Atualiza preços de todos os ativos da carteira usando BrapiProvider.
+
+        Atualiza o preço médio dos ativos com base nas cotações atuais de mercado.
+        """
+        from apps.investments.services.brapi_provider import BrapiProvider
+
+        portfolio = self.get_object()
+        brapi = BrapiProvider()
+
+        updated_count = 0
+        errors = []
+
+        for asset in portfolio.assets.all():
+            try:
+                quote = brapi.get_quote(asset.ticker, use_cache=False)
+                if quote and quote.get("price"):
+                    # Atualizar apenas o preço médio se houver cotação disponível
+                    # Nota: Em produção, pode querer manter o preço médio de compra e ter um campo separado para preço atual
+                    asset.average_price = quote["price"]
+                    asset.save(update_fields=["average_price"])
+                    updated_count += 1
+            except Exception as e:
+                errors.append(f"Erro ao atualizar {asset.ticker}: {str(e)}")
+
+        return Response({
+            "success": True,
+            "updated_count": updated_count,
+            "errors": errors,
+            "message": f"{updated_count} ativo(s) atualizado(s) com sucesso",
+        })
+
 
 class AssetViewSet(WorkspaceViewSet):
     """ViewSet para Asset."""

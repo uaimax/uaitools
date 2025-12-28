@@ -51,9 +51,27 @@ CSRF_COOKIE_SECURE = False
 # Permitir cookies em requisições cross-origin
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
-# CSRF Trusted Origins - permite requisições do frontend
+# CSRF Trusted Origins - permite requisições do frontend e mobile
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:5173",  # Frontend web
     "http://127.0.0.1:5173",
+    # Expo adiciona automaticamente origens do tunnel
+    # Para desenvolvimento mobile, CORS_ALLOW_ALL_ORIGINS pode ser True temporariamente
 ]
+
+# Rate limiting DESABILITADO em desenvolvimento para facilitar testes
+# O app mobile pode fazer múltiplas tentativas durante desenvolvimento
+if "SUPBRAINNOTE_UPLOAD_RATE" not in os.environ:
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["supbrainnote_upload"] = "10000/hour"  # noqa: F405
+if "SUPBRAINNOTE_QUERY_RATE" not in os.environ:
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["supbrainnote_query"] = "10000/hour"  # noqa: F405
+# Também aumentar rate limits gerais em dev
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["anon"] = "10000/hour"  # noqa: F405
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["user"] = "10000/hour"  # noqa: F405
+
+# CORS para desenvolvimento mobile (Expo)
+# ⚠️ ATENÇÃO: Apenas para desenvolvimento! NUNCA em produção!
+# Expo tunnel adiciona origens dinamicamente, então permitir todas facilita testes
+# Para produção, use CORS_ALLOWED_ORIGINS com lista específica
+CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL_ORIGINS", "False").lower() in ("true", "1", "yes")
 

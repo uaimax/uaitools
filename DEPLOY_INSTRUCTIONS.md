@@ -113,3 +113,4 @@ SECRET_KEY=...
 - Use o endpoint `/api/v1/test-sentry/` para diagnosticar
 - Verifique os logs do CapRover para mensagens do Sentry
 
+

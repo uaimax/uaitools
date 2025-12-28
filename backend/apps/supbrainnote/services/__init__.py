@@ -6,3 +6,4 @@ from apps.supbrainnote.services.query import QueryService
 
 __all__ = ["TranscriptionService", "ClassificationService", "QueryService"]
 
+

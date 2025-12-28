@@ -9,7 +9,7 @@ from apps.investments.models import (
     StrategyValidation,
 )
 from apps.investments.services.bcb_provider import BCBProvider
-from apps.investments.services.brapi_provider import BrapiProvider
+from apps.investments.services.market_data_provider import MarketDataProvider
 from apps.investments.services.context_analyzer import ContextAnalyzer
 
 
@@ -18,7 +18,7 @@ class StrategyValidator:
 
     def __init__(self) -> None:
         """Inicializa o validador."""
-        self.brapi = BrapiProvider()
+        self.brapi = MarketDataProvider()
         self.bcb = BCBProvider()
         self.context_analyzer = ContextAnalyzer()
 

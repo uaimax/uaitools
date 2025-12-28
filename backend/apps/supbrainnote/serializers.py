@@ -53,6 +53,8 @@ class NoteSerializer(WorkspaceSerializer):
     box_name = serializers.CharField(source="box.name", read_only=True)
     audio_url = serializers.SerializerMethodField()
     is_in_inbox = serializers.BooleanField(read_only=True)
+    days_until_expiration = serializers.SerializerMethodField()
+    is_audio_expired = serializers.SerializerMethodField()
 
     class Meta:
         model = Note
@@ -73,6 +75,8 @@ class NoteSerializer(WorkspaceSerializer):
             "file_size_bytes",
             "metadata",
             "is_in_inbox",
+            "days_until_expiration",
+            "is_audio_expired",
             "created_at",
             "updated_at",
         ]
@@ -89,12 +93,30 @@ class NoteSerializer(WorkspaceSerializer):
 
     def get_audio_url(self, obj: Note) -> str | None:
         """Retorna URL do arquivo de áudio."""
-        if obj.audio_file:
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(obj.audio_file.url)
-            return obj.audio_file.url
+        if obj.audio_file and obj.audio_file.name:
+            try:
+                # Obter URL do storage
+                file_url = obj.audio_file.url
+                request = self.context.get("request")
+                if request:
+                    # Se for URL relativa, construir URL absoluta
+                    if file_url.startswith("/"):
+                        return request.build_absolute_uri(file_url)
+                    return file_url
+                return file_url
+            except (AttributeError, ValueError) as e:
+                # Se houver erro ao obter URL, retornar None
+                # Isso pode acontecer se o storage não estiver configurado corretamente
+                return None
         return None
+
+    def get_days_until_expiration(self, obj: Note) -> int:
+        """Retorna quantos dias faltam para o áudio expirar."""
+        return obj.days_until_expiration
+
+    def get_is_audio_expired(self, obj: Note) -> bool:
+        """Verifica se o áudio está expirado."""
+        return obj.is_audio_expired
 
 
 class NoteListSerializer(serializers.ModelSerializer):

@@ -23,7 +23,6 @@ import SettingsPage from "./features/admin/pages/SettingsPage";
 import DocumentsPage from "./features/admin/pages/DocumentsPage";
 // Investments pages
 import InvestmentsPage from "./features/investments/pages/InvestmentsPage";
-import OnboardingPage from "./features/investments/pages/OnboardingPage";
 // SupBrainNote pages
 import SupBrainNotePage from "./features/supbrainnote/pages/SupBrainNotePage";
 
@@ -143,14 +142,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/investments/onboarding"
-              element={
-                <ProtectedRoute>
-                  <OnboardingPage />
-                </ProtectedRoute>
-              }
-            />
             {/* Redirecionar rotas antigas */}
             <Route
               path="/admin/investments"
@@ -161,14 +152,22 @@ function App() {
               }
             />
             <Route
-              path="/admin/investments/onboarding"
+              path="/investments/onboarding"
               element={
                 <ProtectedRoute>
-                  <Navigate to="/investments/onboarding" replace />
+                  <Navigate to="/investments" replace />
                 </ProtectedRoute>
               }
             />
-            {/* SupBrainNote routes */}
+            <Route
+              path="/admin/investments/onboarding"
+              element={
+                <ProtectedRoute>
+                  <Navigate to="/investments" replace />
+                </ProtectedRoute>
+              }
+            />
+            {/* SupBrainNote - Módulo independente (não é admin) */}
             <Route
               path="/supbrainnote"
               element={

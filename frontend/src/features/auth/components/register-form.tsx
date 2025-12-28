@@ -141,7 +141,9 @@ export function RegisterForm() {
         title: t("auth:toasts.register_success"),
         variant: "default",
       });
-      navigate("/admin/dashboard");
+      // Pegar destino original da URL ou usar padrão
+      const redirectTo = new URLSearchParams(window.location.search).get("redirect") || "/admin/dashboard";
+      navigate(redirectTo);
     } catch (error: any) {
       toast({
         title: t("auth:toasts.register_error"),

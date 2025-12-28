@@ -26,11 +26,27 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Logar erro para GlitchTip ou banco
-    logError(error, {
-      componentStack: errorInfo.componentStack,
-      errorBoundary: true,
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/8a2091d5-0f0b-4303-b859-a6756e62cd84',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ErrorBoundary.tsx:28',message:'ErrorBoundary capturou erro',data:{errorMessage:error.message,errorName:error.name,errorStack:error.stack,componentStack:errorInfo.componentStack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    // Logar no console para debug
+    console.error("ErrorBoundary capturou erro:", error);
+    console.error("Stack do componente:", errorInfo.componentStack);
+    console.error("Detalhes do erro:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
     });
+
+    // Logar erro para GlitchTip ou banco
+    try {
+      logError(error, {
+        componentStack: errorInfo.componentStack,
+        errorBoundary: true,
+      });
+    } catch (logError) {
+      console.error("Erro ao logar no sistema de erros:", logError);
+    }
   }
 
   render(): ReactNode {

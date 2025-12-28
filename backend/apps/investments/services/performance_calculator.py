@@ -12,7 +12,7 @@ from apps.investments.models import (
     StrategyTemplate,
     Transaction,
 )
-from apps.investments.services.brapi_provider import BrapiProvider
+from apps.investments.services.market_data_provider import MarketDataProvider
 
 
 class PerformanceCalculator:
@@ -20,7 +20,7 @@ class PerformanceCalculator:
 
     def __init__(self) -> None:
         """Inicializa o calculador."""
-        self.brapi = BrapiProvider()
+        self.brapi = MarketDataProvider()
 
     def calculate_performance(
         self,

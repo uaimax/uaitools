@@ -20,6 +20,8 @@ export interface Note {
   file_size_bytes?: number;
   metadata: Record<string, any>;
   is_in_inbox: boolean;
+  days_until_expiration?: number;
+  is_audio_expired?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -36,18 +38,27 @@ export function useNotes(filters?: NotesFilters) {
   return useQuery<Note[]>({
     queryKey: ["supbrainnote", "notes", filters],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.box) params.append("box", filters.box);
-      if (filters?.inbox) params.append("inbox", "true");
-      if (filters?.status) params.append("status", filters.status);
-      if (filters?.search) params.append("search", filters.search);
+      try {
+        const params = new URLSearchParams();
+        if (filters?.box) params.append("box", filters.box);
+        if (filters?.inbox) params.append("inbox", "true");
+        if (filters?.status) params.append("status", filters.status);
+        if (filters?.search) params.append("search", filters.search);
 
-      const response = await apiClient.get(`/supbrainnote/notes/?${params.toString()}`);
-      return response.data;
+        const response = await apiClient.get(`/supbrainnote/notes/?${params.toString()}`);
+        // API pode retornar paginado (results) ou array direto
+        const data = response.data?.results || response.data || [];
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Erro ao buscar anotações:", error);
+        return [];
+      }
     },
+    retry: 1,
     refetchInterval: (data) => {
       // Se há anotações processando, refetch a cada 3 segundos
-      const hasProcessing = data?.some(note =>
+      if (!data || !Array.isArray(data)) return false;
+      const hasProcessing = data.some(note =>
         note.processing_status === "pending" || note.processing_status === "processing"
       );
       return hasProcessing ? 3000 : false;
@@ -74,24 +85,51 @@ export function useNote(id: string | null) {
   });
 }
 
+/** Valida se uma string é um UUID válido. */
+function isValidUUID(str: string | null | undefined): boolean {
+  if (!str || typeof str !== "string") return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str.trim());
+}
+
 /** Upload de áudio. */
 export function useUploadAudio() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { audio_file: File; box_id?: string; source_type?: "memo" | "group_audio" }) => {
+    mutationFn: async (data: { audio_file: File; box_id?: string | null; source_type?: "memo" | "group_audio" }) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/8a2091d5-0f0b-4303-b859-a6756e62cd84',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'use-notes.ts:100',message:'Iniciando upload de áudio',data:{file_name:data.audio_file.name,file_size:data.audio_file.size,box_id:data.box_id,source_type:data.source_type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+      // #endregion
+
       const formData = new FormData();
       formData.append("audio_file", data.audio_file);
-      if (data.box_id) formData.append("box_id", data.box_id);
+      // Só adiciona box_id se for um UUID válido
+      if (isValidUUID(data.box_id)) {
+        formData.append("box_id", data.box_id!.trim());
+      }
       if (data.source_type) formData.append("source_type", data.source_type);
 
-      const response = await apiClient.post("/supbrainnote/notes/upload/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      return response.data;
+      try {
+        const response = await apiClient.post("/supbrainnote/notes/upload/", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/8a2091d5-0f0b-4303-b859-a6756e62cd84',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'use-notes.ts:115',message:'Upload bem-sucedido',data:{status:response.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+        // #endregion
+        return response.data;
+      } catch (error: any) {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/8a2091d5-0f0b-4303-b859-a6756e62cd84',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'use-notes.ts:120',message:'Erro no upload',data:{error_status:error?.response?.status,error_message:error?.response?.data?.detail||error?.message,is_429:error?.response?.status===429},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+        // #endregion
+
+        // Re-throw para que o componente possa tratar
+        throw error;
+      }
     },
+    retry: false, // Desabilitar retries automáticos para evitar loops
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["supbrainnote", "notes"] });
       queryClient.invalidateQueries({ queryKey: ["supbrainnote", "boxes"] });

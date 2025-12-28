@@ -334,6 +334,30 @@ export function useDeleteAsset() {
   });
 }
 
+export function useUpdatePortfolioPrices() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { success: boolean; updated_count: number; errors: string[]; message: string },
+    Error,
+    string
+  >({
+    mutationFn: async (portfolioId) => {
+      const response = await apiClient.post<{
+        success: boolean;
+        updated_count: number;
+        errors: string[];
+        message: string;
+      }>(`/investments/portfolios/${portfolioId}/update-prices/`);
+      return response.data;
+    },
+    onSuccess: (_, portfolioId) => {
+      queryClient.invalidateQueries({ queryKey: investmentsKeys.assets.lists() });
+      queryClient.invalidateQueries({ queryKey: investmentsKeys.portfolios.detail(portfolioId) });
+    },
+  });
+}
+
 // Strategy hooks
 export function useStrategies(filters?: StrategiesFilters) {
   return useQuery<Strategy[], Error>({

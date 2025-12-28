@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 
+// Inicializar console logger ANTES de tudo (para capturar todos os logs)
+import { initConsoleLogger } from './lib/console-logger'
+initConsoleLogger()
+
 // Inicializar i18n antes de renderizar app
 import './i18n/config'
 

@@ -99,3 +99,4 @@ Mapeamento de tickers para setores e subsetores para filtros de diversificação
 
 *Continua na Parte 2: Serviços, Lógica e APIs.*
 
+

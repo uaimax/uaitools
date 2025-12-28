@@ -32,3 +32,4 @@ export function PerformanceIndicator({ score }: PerformanceIndicatorProps) {
   );
 }
 
+

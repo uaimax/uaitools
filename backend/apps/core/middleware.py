@@ -63,24 +63,65 @@ class WorkspaceMiddleware:
         # Importa aqui para evitar circular imports
         from apps.accounts.models import Workspace
         from apps.core.audit import set_current_user
+        import uuid as uuid_lib
 
-        # Obtém o slug do workspace do header X-Workspace-ID
-        workspace_slug = request.headers.get("X-Workspace-ID", "").strip()
+        # Obtém o identificador do workspace do header X-Workspace-ID
+        # Aceita tanto slug quanto UUID
+        workspace_identifier = request.headers.get("X-Workspace-ID", "").strip()
 
-        # Validação de formato (slug válido) - Previne enumeração e queries maliciosas
+        # Log para debug (apenas em desenvolvimento)
+        import logging
+        logger = logging.getLogger("apps.core.middleware")
+        if workspace_identifier:
+            logger.debug(f"[WorkspaceMiddleware] Header recebido: '{workspace_identifier}'")
+
+        # Validação de formato (UUID primeiro, depois slug)
+        # UUID válido: formato padrão UUID (validado pelo Python)
         # Slug válido: apenas letras minúsculas, números e hífens
-        if workspace_slug and not re.match(r"^[a-z0-9-]+$", workspace_slug):
+        is_valid_uuid = False
+        is_valid_slug = False
+
+        if workspace_identifier:
+            # Verificar UUID primeiro (mais rigoroso)
+            try:
+                uuid_lib.UUID(workspace_identifier)
+                is_valid_uuid = True
+                logger.debug(f"[WorkspaceMiddleware] ✅ Identificado como UUID válido: {workspace_identifier}")
+            except (ValueError, TypeError):
+                # Não é UUID, verificar se é slug válido
+                # Slug válido: apenas letras minúsculas, números e hífens
+                if re.match(r"^[a-z0-9-]+$", workspace_identifier):
+                    is_valid_slug = True
+                    logger.debug(f"[WorkspaceMiddleware] ✅ Identificado como slug válido: {workspace_identifier}")
+                else:
+                    logger.debug(f"[WorkspaceMiddleware] ❌ Não é UUID nem slug válido: {workspace_identifier}")
+
+        if workspace_identifier and not is_valid_slug and not is_valid_uuid:
             # Formato inválido - definir workspace como None e continuar
+            logger.warning(f"[WorkspaceMiddleware] Formato inválido: '{workspace_identifier}'")
             request.workspace = None  # type: ignore[attr-defined]
             return self.get_response(request)
 
-        # Tenta encontrar o workspace
+        # Tenta encontrar o workspace (por UUID primeiro, depois por slug)
         workspace: "Workspace | None" = None
-        if workspace_slug:
+        if workspace_identifier:
             try:
-                workspace = Workspace.objects.filter(is_active=True).get(slug=workspace_slug)
+                if is_valid_uuid:
+                    # Busca por UUID (ID)
+                    logger.debug(f"[WorkspaceMiddleware] Buscando workspace por UUID: {workspace_identifier}")
+                    workspace = Workspace.objects.filter(is_active=True).get(id=workspace_identifier)
+                    logger.info(f"[WorkspaceMiddleware] ✅ Workspace encontrado por UUID: {workspace.id} ({workspace.slug})")
+                elif is_valid_slug:
+                    # Busca por slug
+                    logger.debug(f"[WorkspaceMiddleware] Buscando workspace por slug: {workspace_identifier}")
+                    workspace = Workspace.objects.filter(is_active=True).get(slug=workspace_identifier)
+                    logger.info(f"[WorkspaceMiddleware] ✅ Workspace encontrado por slug: {workspace.id} ({workspace.slug})")
             except Workspace.DoesNotExist:
                 # Workspace não encontrado - request.workspace será None
+                logger.warning(f"[WorkspaceMiddleware] ❌ Workspace não encontrado: '{workspace_identifier}' (is_uuid={is_valid_uuid}, is_slug={is_valid_slug})")
+                pass
+            except Exception as e:
+                logger.error(f"[WorkspaceMiddleware] Erro ao buscar workspace: {e}", exc_info=True)
                 pass
 
         # Define request.workspace
@@ -109,10 +150,12 @@ class WorkspaceMiddleware:
 
 
 class ErrorLoggingMiddleware:
-    """Middleware para capturar exceções não tratadas e enviar para logging.
+    """Middleware para capturar exceções não tratadas e respostas HTTP de erro.
 
-    Captura exceções que não foram tratadas e envia para o sistema de logging
-    híbrido (Sentry ou banco de dados).
+    Captura:
+    - Exceções não tratadas (500, etc)
+    - Respostas HTTP de erro (4xx, 5xx) - especialmente rate limits (429)
+    Envia para o sistema de logging híbrido (Sentry ou banco de dados).
     """
 
     def __init__(self, get_response: callable) -> None:
@@ -120,9 +163,73 @@ class ErrorLoggingMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
-        """Processa a requisição e captura exceções."""
+        """Processa a requisição e captura exceções e respostas de erro."""
         try:
             response = self.get_response(request)
+
+            # Capturar respostas HTTP de erro (4xx, 5xx) para logging
+            if response.status_code >= 400:
+                import logging
+                import sentry_sdk
+                from django.conf import settings
+
+                logger = logging.getLogger("apps")
+
+                # Extrair informações da resposta
+                try:
+                    # Tentar obter corpo da resposta se disponível
+                    response_body = ""
+                    if hasattr(response, 'data'):
+                        response_body = str(response.data)
+                    elif hasattr(response, 'content'):
+                        try:
+                            response_body = response.content.decode('utf-8')[:500]  # Limitar tamanho
+                        except:
+                            response_body = str(response.content)[:500]
+                except:
+                    response_body = "Não foi possível obter corpo da resposta"
+
+                # Log detalhado
+                error_info = {
+                    "status_code": response.status_code,
+                    "method": request.method,
+                    "path": request.path,
+                    "user_id": getattr(request.user, "id", None) if hasattr(request, "user") and request.user.is_authenticated else None,
+                    "workspace_id": getattr(request.workspace, "id", None) if hasattr(request, "workspace") else None,
+                    "response_body": response_body,
+                }
+
+                # Logar no logger do Django
+                if response.status_code >= 500:
+                    logger.error(f"[HTTP ERROR {response.status_code}] {request.method} {request.path}", extra=error_info)
+                    # Enviar para Sentry com contexto
+                    with sentry_sdk.push_scope() as scope:
+                        scope.set_context("http_error", error_info)
+                        sentry_sdk.capture_message(
+                            f"HTTP Error {response.status_code}: {request.method} {request.path}",
+                            level="error"
+                        )
+                elif response.status_code == 429:
+                    # Rate limit - logar como warning mas enviar para Sentry
+                    logger.warning(f"[RATE LIMIT 429] {request.method} {request.path}", extra=error_info)
+                    # Enviar para Sentry com contexto
+                    with sentry_sdk.push_scope() as scope:
+                        scope.set_context("rate_limit", error_info)
+                        sentry_sdk.capture_message(
+                            f"Rate limit atingido: {request.method} {request.path}",
+                            level="warning"
+                        )
+                elif response.status_code >= 400:
+                    logger.warning(f"[HTTP ERROR {response.status_code}] {request.method} {request.path}", extra=error_info)
+                    # Enviar erros 4xx importantes para Sentry
+                    if response.status_code in [401, 403, 404, 422]:
+                        with sentry_sdk.push_scope() as scope:
+                            scope.set_context("http_error", error_info)
+                            sentry_sdk.capture_message(
+                                f"HTTP Error {response.status_code}: {request.method} {request.path}",
+                                level="warning"
+                            )
+
             return response
         except Exception as exc:
             # Importar aqui para evitar circular imports

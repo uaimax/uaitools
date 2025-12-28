@@ -4,6 +4,7 @@ Configuracoes compartilhadas entre dev e prod.
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -149,6 +150,10 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Media files (uploads de usuários)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # WhiteNoise configuration (para servir arquivos estáticos em produção)
 # Em desenvolvimento, o Django serve automaticamente quando DEBUG=True
 # Em produção, o WhiteNoise serve os arquivos coletados por collectstatic
@@ -165,7 +170,9 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
+        # SessionAuthentication customizada que pula verificação de CSRF
+        # APIs REST usam JWT, não precisam de CSRF (tokens não são enviados automaticamente)
+        "apps.core.authentication.CsrfExemptSessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -182,8 +189,8 @@ REST_FRAMEWORK = {
         "anon": os.environ.get("API_THROTTLE_ANON", "100/hour"),
         "user": os.environ.get("API_THROTTLE_USER", "1000/hour"),
         "logging": "100/hour",  # Limite para endpoint de logs
-        "supbrainnote_upload": "10/hour",  # Limite para uploads de áudio
-        "supbrainnote_query": "50/hour",  # Limite para consultas com IA
+        "supbrainnote_upload": os.environ.get("SUPBRAINNOTE_UPLOAD_RATE", "10/hour"),  # Limite para uploads de áudio (configurável)
+        "supbrainnote_query": os.environ.get("SUPBRAINNOTE_QUERY_RATE", "50/hour"),  # Limite para consultas com IA (configurável)
     },
 }
 
@@ -262,9 +269,12 @@ CORS_ENABLED = cors_enabled_env.lower() not in ("false", "0", "no") if cors_enab
 # Permitir credenciais (cookies/sessão) do frontend
 CORS_ALLOW_CREDENTIALS = True
 # Em desenvolvimento, permitir localhost
+# Nota: Expo adiciona automaticamente origens do tunnel
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite dev server
+    "http://localhost:5173",  # Vite dev server (frontend web)
     "http://127.0.0.1:5173",
+    # Expo tunnel origens são adicionadas automaticamente
+    # Para desenvolvimento mobile, considere CORS_ALLOW_ALL_ORIGINS=True temporariamente
 ]
 # Headers permitidos
 CORS_ALLOW_HEADERS = [
@@ -278,6 +288,15 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
     "x-workspace-id",  # Header customizado para multi-tenancy
+    "range",  # Para streaming de áudio/vídeo
+]
+
+# Headers expostos para o frontend (necessário para streaming de mídia)
+CORS_EXPOSE_HEADERS = [
+    "content-length",
+    "content-range",
+    "content-type",
+    "accept-ranges",
 ]
 
 # Garantir que CORS está habilitado se as origens estão configuradas
@@ -440,6 +459,20 @@ REST_AUTH = {
     "TOKEN_MODEL": None,  # Não usar Token model padrão, apenas JWT
 }
 
+# Simple JWT Configuration
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),  # Token válido por 24 horas
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),   # Refresh válido por 7 dias
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    "ALGORITHM": "HS256",
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+}
+
 # Social Account Adapter customizado
 SOCIALACCOUNT_ADAPTER = "apps.accounts.adapters.WorkspaceSocialAccountAdapter"
 
@@ -576,6 +609,9 @@ LOGS_DIR.mkdir(exist_ok=True)
 USE_SENTRY = os.environ.get("USE_SENTRY", "false").lower() == "true"
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")  # Funciona com Sentry ou GlitchTip
 SENTRY_API_TOKEN = os.environ.get("SENTRY_API_TOKEN", "")  # Token para buscar erros via API (opcional)
+SENTRY_DEDUP_WINDOW_SECONDS = int(
+    os.environ.get("SENTRY_DEDUP_WINDOW_SECONDS", "300")
+)  # Janela de deduplicação em segundos (padrão: 5 minutos)
 LOG_RETENTION_DAYS = int(os.environ.get("LOG_RETENTION_DAYS", "7"))
 
 

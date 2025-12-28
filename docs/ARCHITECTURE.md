@@ -70,9 +70,27 @@ backend/
 └── ...
 
 frontend/             # React SPA + Tailwind CSS (Fase 4)
+
+mobile/               # App React Native + Expo (SupBrainNote Mobile)
+├── src/              # Código fonte
+│   ├── components/   # Componentes reutilizáveis
+│   ├── screens/     # Telas principais
+│   ├── navigation/  # React Navigation
+│   ├── services/    # API, storage, sync, audio
+│   ├── hooks/       # Custom hooks
+│   ├── context/     # Context API
+│   ├── types/       # TypeScript types
+│   ├── theme/       # Design system
+│   └── utils/       # Helpers
+└── app.json         # Config Expo
+
+examples/             # Exemplos de referência
+└── mobile/           # App React Native de referência (Smart Honey)
 ```
 
-**Importante:** Código frontend nunca no backend, código backend nunca no frontend.
+**Importante:**
+- Código frontend nunca no backend, código backend nunca no frontend.
+- A pasta `examples/` contém projetos de referência, não código ativo do projeto.
 
 ### 6. Versionamento de API
 

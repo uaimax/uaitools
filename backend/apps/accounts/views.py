@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.shortcuts import redirect
+from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
@@ -48,6 +49,7 @@ if TYPE_CHECKING:
         401: OpenApiResponse(description="Credenciais inválidas"),
     },
 )
+@csrf_exempt  # APIs REST não precisam de CSRF
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request: Request) -> Response:
@@ -112,6 +114,7 @@ def login_view(request: Request) -> Response:
         200: OpenApiResponse(description="Logout realizado com sucesso"),
     },
 )
+@csrf_exempt  # APIs REST não precisam de CSRF (usa JWT)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def logout_view(request: Request) -> Response:
@@ -132,6 +135,7 @@ def logout_view(request: Request) -> Response:
         400: OpenApiResponse(description="Dados inválidos"),
     },
 )
+@csrf_exempt  # APIs REST não precisam de CSRF
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def register_view(request: Request) -> Response:
@@ -416,6 +420,7 @@ def legal_privacy_view(request: Request) -> Response:
         400: OpenApiResponse(description="Dados inválidos"),
     },
 )
+@csrf_exempt  # APIs REST não precisam de CSRF
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def password_reset_request_view(request: Request) -> Response:
@@ -494,6 +499,7 @@ def password_reset_request_view(request: Request) -> Response:
         400: OpenApiResponse(description="Dados inválidos ou token inválido/expirado"),
     },
 )
+@csrf_exempt  # APIs REST não precisam de CSRF
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def password_reset_confirm_view(request: Request) -> Response:

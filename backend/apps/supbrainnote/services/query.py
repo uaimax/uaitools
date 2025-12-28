@@ -17,7 +17,8 @@ class QueryService:
 
     def __init__(self) -> None:
         """Inicializa o serviço de consulta."""
-        self.api_key = os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
+        # Aceita tanto OPENAI_API_KEY quanto OPENAI_KEY (compatibilidade)
+        self.api_key = os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_KEY") or os.getenv("ANTHROPIC_API_KEY")
         if OPENAI_AVAILABLE and self.api_key:
             self.client = OpenAI(api_key=self.api_key)
         else:
@@ -140,4 +141,5 @@ Responda com base nas anotações acima. Seja objetivo e inclua referências (da
 
         except Exception as e:
             raise Exception(f"Erro ao consultar IA: {str(e)}") from e
+
 

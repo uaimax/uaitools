@@ -11,6 +11,12 @@ Projeto Django 5 + DRF para lançamento rápido de MicroSaaS.
 # Reiniciar tudo (mata sessão existente e recria)
 ./dev-start.sh --restart
 
+# Testar app mobile (padrão: Expo tunnel + ngrok para backend)
+./test-mobile.sh
+# Opções:
+#   --no-backend-tunnel  # Backend IP local (sem ngrok)
+#   --no-tunnel          # Sem tunnels (LAN apenas)
+
 # Executa testes
 ./run-tests.sh
 ```

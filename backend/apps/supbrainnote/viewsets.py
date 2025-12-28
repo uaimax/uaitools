@@ -99,16 +99,39 @@ class NoteViewSet(WorkspaceViewSet):
 
         Rate limit: 10 uploads/hora por workspace.
         """
+        import logging
+        import sentry_sdk
+        logger = logging.getLogger("apps.supbrainnote")
+
+        # Log de entrada detalhado
+        logger.info(f"[UPLOAD] Iniciando upload - user={request.user.id}, workspace={getattr(request, 'workspace', None)}")
+        logger.info(f"[UPLOAD] Request data keys: {list(request.data.keys())}")
+        logger.info(f"[UPLOAD] Files: {list(request.FILES.keys()) if request.FILES else 'None'}")
+
         serializer = NoteUploadSerializer(data=request.data, context={"request": request})
+        if not serializer.is_valid():
+            logger.error(f"[UPLOAD] Validação falhou: {serializer.errors}")
+            sentry_sdk.capture_message(f"Upload validation failed: {serializer.errors}", level="warning")
         serializer.is_valid(raise_exception=True)
 
+        logger.info(f"[UPLOAD] Dados validados: source_type={serializer.validated_data.get('source_type')}, box_id={serializer.validated_data.get('box_id')}")
+
         # Criar anotação
-        note = Note.objects.create(
-            workspace=request.workspace,
-            audio_file=serializer.validated_data["audio_file"],
-            source_type=serializer.validated_data.get("source_type", "memo"),
-            processing_status="pending",
-        )
+        # Se houver erro ao salvar no storage (ex: rate limit R2), o storage fará fallback automático
+        try:
+            logger.info(f"[UPLOAD] Criando Note com workspace_id={request.workspace.id if request.workspace else 'None'}")
+            note = Note.objects.create(
+                workspace=request.workspace,
+                audio_file=serializer.validated_data["audio_file"],
+                source_type=serializer.validated_data.get("source_type", "memo"),
+                processing_status="pending",
+            )
+            logger.info(f"[UPLOAD] Note criada com sucesso: id={note.id}")
+        except Exception as e:
+            # Se ainda assim falhar, logar e re-raise
+            logger.error(f"[UPLOAD] Erro ao criar anotação: {str(e)}", exc_info=True)
+            sentry_sdk.capture_exception(e)
+            raise
 
         # Se box_id foi fornecido, associar
         box_id = serializer.validated_data.get("box_id")
@@ -180,7 +203,6 @@ class QueryViewSet(viewsets.ViewSet):
 
         Rate limit: 50 consultas/hora por workspace.
         """
-        """Consulta inteligente: 'O que já foi dito sobre X?'"""
         serializer = QuerySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

@@ -9,7 +9,7 @@ class WorkspaceSerializer(serializers.ModelSerializer):
     Inclui workspace_id e timestamps automaticamente.
     """
 
-    workspace_id = serializers.IntegerField(source="workspace.id", read_only=True)
+    workspace_id = serializers.UUIDField(source="workspace.id", read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
 
@@ -46,3 +46,17 @@ class ApplicationLogSerializer(serializers.Serializer):
         if value not in ["ERROR", "CRITICAL"]:
             raise serializers.ValidationError("Apenas ERROR e CRITICAL são permitidos")
         return value
+
+
+class ConsoleLogSerializer(serializers.Serializer):
+    """Serializer para receber logs de console do frontend (estruturado em JSON)."""
+
+    timestamp = serializers.DateTimeField()
+    level = serializers.ChoiceField(choices=["DEBUG", "INFO", "WARN", "ERROR"])
+    source = serializers.CharField(default="frontend")
+    message = serializers.CharField()
+    data = serializers.ListField(required=False, allow_null=True, allow_empty=True)
+    stack = serializers.CharField(required=False, allow_null=True)
+    url = serializers.URLField(required=False, allow_null=True, max_length=500)
+    userAgent = serializers.CharField(required=False, allow_null=True, source="user_agent")
+    sessionId = serializers.CharField(required=False, allow_null=True, max_length=255, source="session_id")

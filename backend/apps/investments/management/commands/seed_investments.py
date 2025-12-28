@@ -5,8 +5,9 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from apps.accounts.models import Workspace
-from apps.investments.models import SectorMapping, StrategyTemplate
+from apps.accounts.models import Workspace, User
+from apps.investments.models import SectorMapping, StrategyTemplate, Portfolio, Asset
+from apps.investments.services.brapi_provider import BrapiProvider
 
 
 class Command(BaseCommand):
@@ -18,8 +19,13 @@ class Command(BaseCommand):
         """Adiciona argumentos ao comando."""
         parser.add_argument(
             "--workspace-id",
-            type=int,
-            help="ID do workspace (opcional, cria para todos se não especificado)",
+            type=str,
+            help="ID (UUID) do workspace (opcional, cria para todos se não especificado)",
+        )
+        parser.add_argument(
+            "--workspace-name",
+            type=str,
+            help="Nome do workspace (opcional, ex: 'Super Admin - admin@example.com')",
         )
         parser.add_argument(
             "--clear",
@@ -30,10 +36,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Executa o comando."""
         workspace_id = options.get("workspace_id")
+        workspace_name = options.get("workspace_name")
         clear = options.get("clear", False)
 
         if workspace_id:
             workspaces = Workspace.objects.filter(id=workspace_id)
+        elif workspace_name:
+            workspaces = Workspace.objects.filter(name=workspace_name)
         else:
             workspaces = Workspace.objects.all()
 
@@ -46,6 +55,9 @@ class Command(BaseCommand):
 
         # Popular mapeamento de setores
         self._seed_sector_mapping(workspaces, clear)
+
+        # Popular carteira padrão com ativos de exemplo
+        self._seed_default_portfolio(workspaces, clear)
 
         self.stdout.write(self.style.SUCCESS("Dados iniciais populados com sucesso!"))
 
@@ -190,6 +202,7 @@ class Command(BaseCommand):
             # Financeiro - Seguros
             ("SULA11", "financeiro", "seguros", "SulAmérica"),
             ("IRBR3", "financeiro", "seguros", "IRB Brasil"),
+            ("BBSE3", "financeiro", "seguros", "BB Seguridade"),
             # Energia - Elétricas
             ("TAEE11", "energia", "elétricas", "Taesa"),
             ("ELET3", "energia", "elétricas", "Centrais Elétricas"),
@@ -197,6 +210,7 @@ class Command(BaseCommand):
             ("CMIG4", "energia", "elétricas", "Cemig"),
             ("CPLE6", "energia", "elétricas", "Copel"),
             ("EGIE3", "energia", "elétricas", "Engie Brasil"),
+            ("CPFE3", "energia", "elétricas", "CPFL Energia"),
             # Energia - Petróleo
             ("PETR4", "energia", "petróleo", "Petrobras"),
             ("PETR3", "energia", "petróleo", "Petrobras"),
@@ -242,4 +256,78 @@ class Command(BaseCommand):
                     self.stdout.write(f"Mapeamento {ticker} → {sector} criado para workspace {workspace.name}")
 
         self.stdout.write(f"Total de {len(sector_mappings)} mapeamentos processados por workspace.")
+
+    def _seed_default_portfolio(self, workspaces, clear: bool):
+        """Popula carteira padrão com ativos de exemplo."""
+        brapi = BrapiProvider()
+
+        # Ativos padrão baseados na imagem
+        default_assets = [
+            {"ticker": "BBAS3", "quantity": 71, "average_price": Decimal("23.25")},
+            {"ticker": "BBDC4", "quantity": 44, "average_price": Decimal("16.25")},
+            {"ticker": "BBSE3", "quantity": 19, "average_price": Decimal("36.78")},
+            {"ticker": "CPFE3", "quantity": 0, "average_price": Decimal("40.34")},
+            {"ticker": "ITUB4", "quantity": 29, "average_price": Decimal("37.43")},
+            {"ticker": "TAEE11", "quantity": 30, "average_price": Decimal("35.60")},
+        ]
+
+        for workspace in workspaces:
+            # Buscar ou criar carteira padrão
+            portfolio, created = Portfolio.objects.get_or_create(
+                workspace=workspace,
+                name="Carteira Principal",
+                defaults={
+                    "portfolio_type": "acoes_br",
+                },
+            )
+
+            if created:
+                self.stdout.write(f"Carteira 'Carteira Principal' criada para workspace {workspace.name}")
+
+            if clear:
+                # Limpar ativos existentes
+                portfolio.assets.all().delete()
+                self.stdout.write(f"Ativos antigos removidos da carteira {portfolio.name}")
+
+            # Adicionar ativos padrão
+            for asset_data in default_assets:
+                ticker = asset_data["ticker"]
+                quantity = asset_data["quantity"]
+                average_price = asset_data["average_price"]
+
+                # Tentar buscar preço atual da API se não tiver quantidade 0
+                if quantity > 0:
+                    try:
+                        quote = brapi.get_quote(ticker, use_cache=False)
+                        if quote and quote.get("price"):
+                            # Usar preço atual se disponível, senão usar o preço médio fornecido
+                            average_price = quote["price"]
+                    except Exception as e:
+                        self.stdout.write(
+                            self.style.WARNING(f"Erro ao buscar cotação de {ticker}: {e}. Usando preço médio fornecido.")
+                        )
+
+                asset, created = Asset.objects.get_or_create(
+                    workspace=workspace,
+                    portfolio=portfolio,
+                    ticker=ticker,
+                    defaults={
+                        "quantity": Decimal(str(quantity)),
+                        "average_price": average_price,
+                    },
+                )
+
+                if created:
+                    self.stdout.write(
+                        f"Ativo {ticker} ({quantity} ações, R$ {average_price:.2f}) adicionado à carteira {portfolio.name}"
+                    )
+                elif not clear:
+                    # Se não está limpando, atualizar quantidade e preço se mudou
+                    if asset.quantity != Decimal(str(quantity)) or asset.average_price != average_price:
+                        asset.quantity = Decimal(str(quantity))
+                        asset.average_price = average_price
+                        asset.save()
+                        self.stdout.write(f"Ativo {ticker} atualizado na carteira {portfolio.name}")
+
+        self.stdout.write(f"Total de {len(default_assets)} ativos processados por workspace.")
 

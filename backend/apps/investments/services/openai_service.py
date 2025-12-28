@@ -30,22 +30,20 @@ class OpenAIService:
 
     def generate_investment_recommendation(
         self,
-        strategy_text: str,
-        strategy_rules: Dict[str, Any],
-        portfolio_data: Dict[str, Any],
+        context: Dict[str, Any],
+        strategy: Dict[str, Any],
         market_data: Dict[str, Any],
         amount: Decimal,
-        question: str = "Onde devo investir este valor?",
+        user_preferences: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Gera recomendação de investimento usando OpenAI.
+        """Gera recomendação de investimento usando OpenAI (modo proativo).
 
         Args:
-            strategy_text: Texto da estratégia do usuário
-            strategy_rules: Regras parseadas da estratégia
-            portfolio_data: Dados da carteira atual
-            market_data: Dados de mercado (cotações, fundamentalistas)
+            context: Contexto completo analisado (profile, portfolio_health, market_context)
+            strategy: Estratégia selecionada e adaptada (com adapted_criteria)
+            market_data: Dados de mercado (cotações, fundamentalistas) de candidatos
             amount: Valor a ser investido
-            question: Pergunta do usuário
+            user_preferences: Preferências do usuário (excluded_sectors, etc.)
 
         Returns:
             Dicionário com recomendação estruturada
@@ -57,65 +55,102 @@ class OpenAIService:
             }
 
         try:
-            # Construir contexto estruturado para a IA
-            context = {
-                "strategy": {
-                    "text": strategy_text,
-                    "type": strategy_rules.get("strategy_type", "dividendos"),
-                    "criteria": strategy_rules.get("criteria", {}),
-                },
-                "portfolio": portfolio_data,
-                "market": market_data,
-                "amount": float(amount),
-                "question": question,
-            }
+            # Extrair informações do contexto
+            profile = context.get("profile", {})
+            portfolio_health = context.get("portfolio_health", {})
+            market_context = context.get("market_context", {})
+            current_allocations = {a["ticker"]: a["allocation_pct"] for a in portfolio_health.get("allocations", [])}
 
-            # Prompt completo baseado no exemplo do Gemini, com exemplos de output
-            system_prompt = """Você é um agente de investimento autônomo responsável por operar um micro web app de renda passiva por dividendos. O usuário informa um valor que deseja investir (ex: "Quero investir R$X"), e seu papel é responder com o que fazer agora, respeitando a estratégia pré-definida, o estado atual da carteira e os dados de mercado.
+            # Estratégia adaptada
+            strategy_name = strategy.get("name", "Estratégia Personalizada")
+            strategy_category = strategy.get("category", "dividendos")
+            adapted_criteria = strategy.get("adapted_criteria", {})
+            base_criteria = strategy.get("base_criteria", {})
 
----
-🎯 Objetivo:
-Gerar instruções diretas de execução para alocação inteligente de capital, com foco em dividendos mensais consistentes, sem violar nenhum critério estratégico.
+            # Construir lista de candidatos elegíveis
+            candidates = []
+            for ticker, data in market_data.items():
+                quote = data.get("quote", {})
+                fundamental = data.get("fundamental", {})
 
----
-📐 Regras da estratégia:
-- Apenas ações da B3
-- Setores defensivos, perenes, excluindo mineração e armas
-- Dividend Yield mínimo desejado: 8%
-- Preço teto de entrada = dividendo / 0.08
-- Só comprar ações:
-  - com cotação ≤ preço-teto
-  - e que estejam abaixo da alocação máxima (target %)
-- Priorizar ações que:
-  1. Estão abaixo do teto
-  2. Estão subalocadas
+                if not quote or not quote.get("price"):
+                    continue
 
----
-🧠 Lógica de decisão:
-1. Receba o valor de aporte (R$X)
-2. Calcule o valor total da carteira atual somando o valor de cada ativo (quantidade * cotação).
-3. Calcule a alocação percentual atual de cada ativo na carteira.
-4. Filtre ações com preço atual (cotação) ≤ preço-teto. O preço-teto é calculado como (dividendo / 0.08).
-5. Dentro desse filtro, selecione as ações cuja alocação percentual atual está abaixo da alocação-alvo.
-6. Distribua o valor do aporte (R$X) proporcionalmente entre essas ações elegíveis, priorizando as que estão mais distantes de sua alocação-alvo.
-7. Calcule quantas unidades inteiras comprar de cada ação selecionada, sem exceder o aporte.
-8. Retorne instruções diretas: o que comprar, quantas unidades, o preço, o custo total por ativo.
-9. Calcule e mostre o saldo restante do aporte.
-10. Se nenhuma ação cumpre os critérios, responda EXATAMENTE com a frase: "🔴 Nenhuma ação recomendada para compra agora. Aguarde recuo ou mantenha em caixa."
+                price = quote.get("price", 0)
+                if not price or price <= 0:
+                    continue
 
----
-🧼 Regras de output:
-- Nunca explique a estratégia no output.
-- Use emojis para clareza visual: ✅ para compra imediata, 🔴 para não fazer nada, 💰 para saldo restante.
-- Nunca ultrapasse a alocação máxima definida por ativo com este aporte.
-- Mostrar saldo restante se sobrar capital.
-- Não sugerir reinvestimento em ações acima do preço-teto.
-- O output deve ser apenas a lista de ações a tomar ou a mensagem de "nenhuma ação recomendada". Sem introduções ou conclusões.
+                dy = fundamental.get("dividend_yield") if fundamental else None
+                pe_ratio = fundamental.get("pe_ratio") if fundamental else None
+                pb_ratio = fundamental.get("price_to_book") if fundamental else None
+
+                current_allocation = current_allocations.get(ticker, 0)
+
+                candidates.append({
+                    "ticker": ticker,
+                    "price": float(price) if price else 0.0,
+                    "dividend_yield": float(dy) if dy is not None and dy != 0 else None,
+                    "pe_ratio": float(pe_ratio) if pe_ratio is not None and pe_ratio != 0 else None,
+                    "price_to_book": float(pb_ratio) if pb_ratio is not None and pb_ratio != 0 else None,
+                    "current_allocation_pct": float(current_allocation) if current_allocation else 0.0,
+                })
+
+            # Prompt proativo - IA como cérebro autônomo
+            system_prompt = """Você é um assessor de investimentos inteligente e proativo. Seu papel é analisar o contexto completo do investidor (carteira, perfil, mercado) e gerar recomendações de alocação dinâmica baseadas em oportunidades reais de mercado, sem depender de alocações-alvo fixas.
+
+🎯 PRINCÍPIO FUNDAMENTAL:
+Você NÃO usa alocações-alvo fixas. Em vez disso, você:
+1. Analisa oportunidades de mercado ATUAIS
+2. Considera a carteira existente e diversificação
+3. Gera alocações dinamicamente baseadas em:
+   - Oportunidades de valor (preço justo, DY atrativo)
+   - Necessidade de diversificação
+   - Critérios da estratégia adaptada
+   - Preferências do usuário
+
+🧠 PROCESSO DE DECISÃO:
+1. Analise os candidatos disponíveis e seus dados de mercado
+2. Identifique oportunidades de valor (DY atrativo, P/L razoável, preço justo)
+3. Considere a diversificação atual da carteira
+4. Respeite os critérios da estratégia (DY mínimo, setores permitidos, etc.)
+5. Respeite as preferências do usuário (setores excluídos, etc.)
+6. Distribua o capital de forma inteligente, priorizando:
+   - Maior oportunidade de valor
+   - Melhor diversificação
+   - Respeito aos critérios estratégicos
+
+📐 REGRAS DA ESTRATÉGIA:
+Você receberá critérios adaptados da estratégia. Respeite-os, mas seja flexível:
+- DY mínimo/máximo desejado (se disponível nos dados)
+- P/L máximo aceitável (se disponível nos dados)
+- Setores permitidos/excluídos
+- Diversificação mínima
+- Concentração máxima por ativo/setor
+
+⚠️ IMPORTANTE: Se os dados fundamentais (DY, P/L, P/VP) não estiverem disponíveis para um candidato:
+- Ainda assim considere o candidato se ele estiver em setores permitidos
+- Use critérios alternativos: preço atual, setor, histórico conhecido
+- Seja mais flexível com critérios numéricos quando dados não estão disponíveis
+- Priorize diversificação e setores defensivos quando dados fundamentais estão ausentes
+
+💡 LÓGICA DE ALOCAÇÃO DINÂMICA:
+- NÃO distribua baseado em alocações-alvo fixas
+- DISTRIBUJA baseado em:
+  * Oportunidade de valor atual (DY, P/L, preço)
+  * Necessidade de diversificação (evitar concentração excessiva)
+  * Critérios da estratégia
+  * Preferências do usuário
+
+🧼 REGRAS DE OUTPUT:
+- Use emojis: ✅ para compra, 🔴 para nenhuma ação, 💰 para saldo
+- Seja objetivo e direto
+- Explique o "porquê" de cada recomendação
+- Se nenhuma ação atende critérios, retorne mensagem clara
 
 ---
 💬 Exemplo de output ideal (quando há ações válidas):
-✅ Compre 5 ações de BBDC4 por R$16,25 cada (R$81,25)
-✅ Compre 2 ações de BBSE3 por R$36,78 cada (R$73,56)
+✅ Compre 5 ações de BBDC4 por R$16,25 cada (R$81,25) - DY 8.2%, oportunidade de valor
+✅ Compre 2 ações de BBSE3 por R$36,78 cada (R$73,56) - Diversificação em setor financeiro
 💰 Saldo restante: R$45,19
 
 ---
@@ -124,60 +159,85 @@ Gerar instruções diretas de execução para alocação inteligente de capital,
 
 ---
 Formato de resposta esperado (JSON):
-{
-  "recommendation": {
+{{
+  "recommendation": {{
     "total_amount": 0.0,
     "allocations": [
-      {
+      {{
         "ticker": "TAEE11",
         "quantity": 10,
         "unit_price": 35.50,
         "amount": 355.00,
-        "reason": "Explicação do porquê desta recomendação"
-      }
+        "reason": "DY 7.9% acima da média, setor defensivo, contrato regulado de 30 anos"
+      }}
     ],
     "remaining_balance": 0.0,
-    "reasoning": "Explicação geral da recomendação",
-    "message": "Mensagem opcional para o usuário (se nenhuma ação recomendada, use: 🔴 Nenhuma ação recomendada para compra agora. Aguarde recuo ou mantenha em caixa.)"
-  }
-}"""
+    "reasoning": "Explicação geral da recomendação baseada em contexto completo",
+    "message": "Mensagem opcional para o usuário"
+  }}
+}}"""
 
-            # Preparar alocação-alvo para incluir no prompt
-            from apps.investments.services.constants import TARGET_ALLOCATION
-
-            user_prompt = f"""Analise a seguinte situação de investimento:
+            # Construir prompt do usuário com contexto completo
+            user_prompt = f"""Analise o contexto completo e gere recomendações de investimento dinâmicas:
 
 ---
-📦 Estado atual da carteira do usuário:
-{json.dumps(portfolio_data, indent=2, ensure_ascii=False)}
+👤 PERFIL DO INVESTIDOR:
+{json.dumps(profile, indent=2, ensure_ascii=False)}
 
 ---
-📊 Alocação-alvo da carteira (%):
-{json.dumps(TARGET_ALLOCATION, indent=2, ensure_ascii=False)}
+📦 SAÚDE DA CARTEIRA ATUAL:
+- Valor total investido: R$ {portfolio_health.get('total_invested', 0):,.2f}
+- Total de ativos: {portfolio_health.get('total_assets', 0)}
+- Score de diversificação: {portfolio_health.get('diversification_score', 0):.2f} (0-1, quanto maior melhor)
+- Risco de concentração: {portfolio_health.get('concentration_risk', 0):.2f} (0-1, quanto menor melhor)
+- DY médio atual: {(portfolio_health.get('average_dividend_yield') or 0)*100:.2f}%
+
+Alocações atuais:
+{json.dumps(portfolio_health.get('allocations', []), indent=2, ensure_ascii=False)}
 
 ---
-📈 Dados de mercado:
-{json.dumps(market_data, indent=2, ensure_ascii=False)}
+📊 CONTEXTO DE MERCADO:
+- Selic: {(market_context.get('selic') or 0)*100:.2f}% ao ano
+- IBOV: {market_context.get('ibov', {}).get('price', 0):,.0f} ({market_context.get('ibov', {}).get('change_percent', 0):.2f}%)
 
 ---
-📐 Regras da estratégia:
-**Estratégia do Usuário (texto livre):**
-{strategy_text}
-
-**Regras Identificadas (estruturadas):**
-{json.dumps(strategy_rules.get('criteria', {}), indent=2, ensure_ascii=False)}
+🎯 ESTRATÉGIA SELECIONADA:
+**Nome:** {strategy_name}
+**Categoria:** {strategy_category}
+**Critérios Adaptados:**
+{json.dumps(adapted_criteria, indent=2, ensure_ascii=False)}
 
 ---
-**Valor Disponível para Investir:**
+📈 CANDIDATOS DISPONÍVEIS:
+{json.dumps(candidates, indent=2, ensure_ascii=False)}
+
+---
+🚫 PREFERÊNCIAS DO USUÁRIO:
+{json.dumps(user_preferences or {}, indent=2, ensure_ascii=False)}
+
+---
+💰 VALOR DISPONÍVEL PARA INVESTIR:
 R$ {amount:,.2f}
 
-**Pergunta do Usuário:**
-{question}
-
 ---
-Com base em um aporte de R$ {amount:,.2f}, quais são as instruções de compra?
+🎯 SUA TAREFA:
+Analise os candidatos disponíveis e gere alocações dinâmicas baseadas em:
+1. Oportunidades de valor (DY, P/L, preço justo - quando disponíveis)
+2. Necessidade de diversificação (evitar concentração excessiva)
+3. Critérios da estratégia adaptada (seja flexível quando dados fundamentais não estão disponíveis)
+4. Preferências do usuário
 
-Forneça uma recomendação estruturada em JSON seguindo o formato especificado. Seja objetivo, baseado em dados e alinhado com a estratégia do usuário. Se nenhuma ação cumpre os critérios, retorne message: "🔴 Nenhuma ação recomendada para compra agora. Aguarde recuo ou mantenha em caixa."."""
+⚠️ FLEXIBILIDADE COM DADOS AUSENTES:
+- Se DY não está disponível, use outros critérios (setor, preço, diversificação)
+- Se P/L não está disponível, foque em setores defensivos e diversificação
+- Priorize ativos em setores permitidos mesmo sem dados fundamentais completos
+- Seja mais permissivo quando dados fundamentais estão ausentes, mas ainda aplique critérios de setor e diversificação
+
+NÃO use alocações-alvo fixas. Gere alocações baseadas em oportunidades reais de mercado.
+
+Se nenhuma ação atende aos critérios (mesmo sendo flexível), retorne message explicando o motivo.
+
+Forneça uma recomendação estruturada em JSON seguindo o formato especificado."""
 
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",  # Modelo mais econômico e rápido
@@ -194,6 +254,13 @@ Forneça uma recomendação estruturada em JSON seguindo o formato especificado.
             content = response.choices[0].message.content
             if content:
                 result = json.loads(content)
+                # Adicionar metadados de debug
+                result["_debug"] = {
+                    "model_used": "gpt-4o-mini",
+                    "candidates_sent": len(candidates),
+                    "prompt_tokens": response.usage.prompt_tokens if hasattr(response, "usage") else None,
+                    "completion_tokens": response.usage.completion_tokens if hasattr(response, "usage") else None,
+                }
                 return result
             else:
                 return {

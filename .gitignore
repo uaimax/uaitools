@@ -58,6 +58,41 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 
+# Mobile Examples (React Native/Expo)
+examples/mobile/node_modules/
+examples/mobile/.expo/
+examples/mobile/.expo-shared/
+examples/mobile/dist/
+examples/mobile/build/
+examples/mobile/*.apk
+examples/mobile/*.aab
+examples/mobile/.gradle/
+examples/mobile/local.properties
+examples/mobile/*.iml
+examples/mobile/.idea/
+examples/mobile/android/app/build/
+examples/mobile/ios/build/
+examples/mobile/ios/Pods/
+examples/mobile/.DS_Store
 
-
+# Mobile App (React Native/Expo)
+mobile/node_modules/
+mobile/.expo/
+mobile/.expo-shared/
+mobile/dist/
+mobile/build/
+mobile/*.apk
+mobile/*.aab
+mobile/.gradle/
+mobile/local.properties
+mobile/*.iml
+mobile/.idea/
+mobile/android/app/build/
+mobile/ios/build/
+mobile/ios/Pods/
+mobile/.DS_Store
+mobile/assets/icon.png
+mobile/assets/splash.png
+mobile/assets/adaptive-icon.png
+mobile/assets/favicon.png
 

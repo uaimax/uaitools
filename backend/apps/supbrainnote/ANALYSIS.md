@@ -336,3 +336,4 @@ apps/supbrainnote/tests/
 | `ClassificationService` | Serviço de classificação (LLM) |
 | `QueryService` | Serviço de consulta inteligente |
 
+

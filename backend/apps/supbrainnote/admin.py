@@ -88,3 +88,4 @@ class NoteAdmin(admin.ModelAdmin):
             return qs.filter(workspace=request.user.workspace)
         return qs.none()
 
+

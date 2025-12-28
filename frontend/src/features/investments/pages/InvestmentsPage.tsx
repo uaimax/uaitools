@@ -26,12 +26,7 @@ export default function InvestmentsPage() {
     }
   }, [portfolios, isLoading, selectedPortfolioId]);
 
-  // Redirecionar para onboarding se não houver carteiras
-  useEffect(() => {
-    if (!isLoading && portfolios.length === 0) {
-      navigate("/investments/onboarding");
-    }
-  }, [portfolios, isLoading, navigate]);
+  // Se não houver carteiras, mostrar mensagem (seed automático deve criar)
 
   if (isLoading) {
     return (
@@ -42,7 +37,15 @@ export default function InvestmentsPage() {
   }
 
   if (portfolios.length === 0) {
-    return null; // Será redirecionado
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">
+            Nenhuma carteira encontrada. Execute o seed para criar dados iniciais.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const handleAddAsset = () => {
@@ -50,10 +53,6 @@ export default function InvestmentsPage() {
     setShowAssetModal(true);
   };
 
-  const handleEditAsset = (asset: any) => {
-    setEditingAsset(asset);
-    setShowAssetModal(true);
-  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -77,7 +76,6 @@ export default function InvestmentsPage() {
           <PortfolioZone
             portfolioId={selectedPortfolioId}
             onAddAsset={handleAddAsset}
-            onEditAsset={handleEditAsset}
           />
         </div>
 

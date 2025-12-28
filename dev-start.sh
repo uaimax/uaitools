@@ -316,8 +316,8 @@ if [ "$HAS_TMUX" = true ]; then
     fi
 
     # Só continua se a sessão foi criada com sucesso
-    if [ "$HAS_TMUX" = true ] && tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
-        # Dividir janela horizontalmente (50% cada)
+    if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+        # Dividir janela horizontalmente (Backend | Frontend)
         tmux split-window -h -t "$TMUX_SESSION:0" -c "$FRONTEND_DIR" \
             "echo -e '${GREEN}✅ Frontend iniciado!${NC}' && \
              echo -e '${BLUE}🌐 http://localhost:$FRONTEND_PORT${NC}' && \
@@ -326,22 +326,79 @@ if [ "$HAS_TMUX" = true ]; then
             echo -e "${YELLOW}⚠️  Erro ao dividir janela tmux. Continuando com backend apenas...${NC}"
         }
 
+        # Dividir painel direito (Frontend) verticalmente (Frontend | Celery Worker)
+        tmux split-window -v -t "$TMUX_SESSION:0.1" -c "$BACKEND_DIR" \
+            "source venv/bin/activate && \
+             echo -e '${GREEN}✅ Celery Worker iniciado!${NC}' && \
+             echo -e '${YELLOW}📌 Processando tasks assíncronas...${NC}' && \
+             echo '' && \
+             celery -A config worker -l info" 2>/dev/null || {
+            echo -e "${YELLOW}⚠️  Erro ao iniciar Celery worker. Continuando sem Celery...${NC}"
+        }
+
+        # Dividir painel do Celery Worker horizontalmente (Worker | Beat)
+        tmux split-window -h -t "$TMUX_SESSION:0.2" -c "$BACKEND_DIR" \
+            "source venv/bin/activate && \
+             echo -e '${GREEN}✅ Celery Beat iniciado!${NC}' && \
+             echo -e '${YELLOW}📌 Agendando tasks periódicas...${NC}' && \
+             echo '' && \
+             celery -A config beat -l info" 2>/dev/null || {
+            echo -e "${YELLOW}⚠️  Erro ao iniciar Celery Beat. Continuando sem Beat...${NC}"
+        }
+
         # Selecionar painel esquerdo (backend) por padrão
         tmux select-pane -t "$TMUX_SESSION:0.0" 2>/dev/null || true
-    fi
+
+        # Configurar captura de logs via pipe-pane (Fase 2: Logs Integrados)
+        LOGS_DIR="$SCRIPT_DIR/logs"
+        mkdir -p "$LOGS_DIR" 2>/dev/null || true
+
+        # Data para rotação diária de logs
+        LOG_DATE=$(date +%Y%m%d)
+
+        # Capturar logs do backend (painel 0.0)
+        # pipe-pane captura stdout/stderr sem perder interatividade
+        tmux pipe-pane -t "$TMUX_SESSION:0.0" -o "cat >> $LOGS_DIR/backend-$LOG_DATE.log" 2>/dev/null || {
+            echo -e "${YELLOW}⚠️  Não foi possível configurar captura de logs do backend${NC}"
+        }
+
+        # Capturar logs do frontend (painel 0.1) se existir
+        if tmux list-panes -t "$TMUX_SESSION:0" | grep -q "0.1"; then
+            tmux pipe-pane -t "$TMUX_SESSION:0.1" -o "cat >> $LOGS_DIR/frontend-$LOG_DATE.log" 2>/dev/null || {
+                echo -e "${YELLOW}⚠️  Não foi possível configurar captura de logs do frontend${NC}"
+            }
+        fi
+
+        # Capturar logs do Celery Worker (painel 0.2) se existir
+        if tmux list-panes -t "$TMUX_SESSION:0" | grep -q "0.2"; then
+            tmux pipe-pane -t "$TMUX_SESSION:0.2" -o "cat >> $LOGS_DIR/celery-worker-$LOG_DATE.log" 2>/dev/null || {
+                echo -e "${YELLOW}⚠️  Não foi possível configurar captura de logs do Celery Worker${NC}"
+            }
+        fi
+
+        # Capturar logs do Celery Beat (painel 0.3) se existir
+        if tmux list-panes -t "$TMUX_SESSION:0" | grep -q "0.3"; then
+            tmux pipe-pane -t "$TMUX_SESSION:0.3" -o "cat >> $LOGS_DIR/celery-beat-$LOG_DATE.log" 2>/dev/null || {
+                echo -e "${YELLOW}⚠️  Não foi possível configurar captura de logs do Celery Beat${NC}"
+            }
+        fi
+
+        echo -e "${GREEN}📝 Captura de logs ativada: $LOGS_DIR/${NC}"
 
         # Resumo
         echo ""
         echo -e "${GREEN}✅ Ambiente de desenvolvimento pronto!${NC}"
         echo ""
         echo -e "${BLUE}📊 Serviços rodando:${NC}"
-        echo -e "   ${GREEN}Backend:${NC}  http://localhost:$BACKEND_PORT"
-        echo -e "   ${GREEN}Frontend:${NC} http://localhost:$FRONTEND_PORT"
-        echo -e "   ${GREEN}Admin:${NC}     http://localhost:$BACKEND_PORT/$ADMIN_PREFIX/ (admin / admin123)"
+        echo -e "   ${GREEN}Backend:${NC}      http://localhost:$BACKEND_PORT"
+        echo -e "   ${GREEN}Frontend:${NC}     http://localhost:$FRONTEND_PORT"
+        echo -e "   ${GREEN}Celery Worker:${NC} Processando tasks assíncronas"
+        echo -e "   ${GREEN}Celery Beat:${NC}   Agendando tasks periódicas (limpeza de áudios às 3h)"
+        echo -e "   ${GREEN}Admin:${NC}         http://localhost:$BACKEND_PORT/$ADMIN_PREFIX/ (admin / admin123)"
         echo ""
         echo -e "${BLUE}💡 Comandos tmux:${NC}"
         echo -e "   ${YELLOW}Ctrl+B + D${NC}     - Detach (sair sem parar serviços)"
-        echo -e "   ${YELLOW}Ctrl+B + ←/→${NC}   - Alternar entre painéis (Backend/Frontend)"
+        echo -e "   ${YELLOW}Ctrl+B + ←/→/↑/↓${NC} - Alternar entre painéis (Backend/Frontend/Celery Worker/Celery Beat)"
         echo -e "   ${YELLOW}Ctrl+B + Q${NC}     - Mostrar números dos painéis"
         echo -e "   ${YELLOW}Ctrl+B + C${NC}     - Criar nova janela"
         echo -e "   ${YELLOW}Ctrl+B + X${NC}     - Fechar painel atual"
@@ -378,11 +435,12 @@ if [ "$HAS_TMUX" = true ]; then
         echo ""
         python manage.py runserver 0.0.0.0:$BACKEND_PORT
     fi
+fi
 
 # ============================================
 # MODO SEM TMUX (FALLBACK)
 # ============================================
-else
+if [ "$HAS_TMUX" = false ]; then
     echo -e "${YELLOW}⚠️  tmux não está instalado${NC}"
     echo -e "${BLUE}💡 Rodando em modo simples (sem tmux)${NC}"
     echo -e "${YELLOW}💡 Para melhor experiência, instale: ${NC}sudo apt install tmux${BLUE} (Linux) ou ${NC}brew install tmux${BLUE} (Mac)"

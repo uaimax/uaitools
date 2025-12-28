@@ -17,7 +17,8 @@ class ClassificationService:
 
     def __init__(self) -> None:
         """Inicializa o serviço de classificação."""
-        self.api_key = os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
+        # Aceita tanto OPENAI_API_KEY quanto OPENAI_KEY (compatibilidade)
+        self.api_key = os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_KEY") or os.getenv("ANTHROPIC_API_KEY")
         if OPENAI_AVAILABLE and self.api_key:
             self.client = OpenAI(api_key=self.api_key)
             self.provider = "openai"
@@ -152,4 +153,5 @@ Responda APENAS com JSON no formato especificado."""
             }
         except Exception as e:
             raise Exception(f"Erro ao classificar anotação: {str(e)}") from e
+
 

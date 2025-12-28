@@ -76,3 +76,4 @@ Usuário pergunta → ChatService monta contexto (Carteira + Estratégia + Merca
 
 *Continua na Parte 3: Interface e Roadmap.*
 
+

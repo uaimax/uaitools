@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate, Link, useSearchParams } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { useLoginMutation } from "../hooks/use-auth-queries"
 import { useToast } from "@/stores/toast-store"
@@ -24,9 +24,13 @@ import { getAuthErrorMessage } from "@/i18n/query-errors"
 export function LoginForm() {
   const { t } = useTranslation(["auth", "common"])
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const loginMutation = useLoginMutation()
   const { toast } = useToast()
   const { data: providers = [], isLoading: providersLoading } = useSocialProviders()
+
+  // Pegar destino original da URL ou usar padrão
+  const redirectTo = searchParams.get("redirect") || "/admin/dashboard"
 
   // Criar schema dentro do componente para ter acesso às traduções
   const zodMessages = getZodMessages()
@@ -52,7 +56,7 @@ export function LoginForm() {
         title: t("auth:toasts.login_success"),
         variant: "default",
       })
-      navigate("/admin/dashboard")
+      navigate(redirectTo)
     } catch (error: any) {
       // Usar função especializada para obter mensagem de erro amigável
       let errorMessage: string;

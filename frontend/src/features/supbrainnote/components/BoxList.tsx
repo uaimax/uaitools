@@ -1,6 +1,7 @@
 /** Componente para listar caixinhas. */
 
 import { useBoxes } from "../hooks/use-boxes";
+import { useNotes } from "../hooks/use-notes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
@@ -13,7 +14,17 @@ interface BoxListProps {
 }
 
 export function BoxList({ onSelectBox, selectedBoxId, onCreateBox }: BoxListProps) {
-  const { data: boxes, isLoading } = useBoxes();
+  const { data: boxes, isLoading, error: boxesError } = useBoxes();
+  const { data: inboxNotes, error: notesError } = useNotes({ inbox: true });
+
+  // Garantir que são arrays
+  const boxesArray = Array.isArray(boxes) ? boxes : [];
+  const inboxNotesArray = Array.isArray(inboxNotes) ? inboxNotes : [];
+
+  // Se houver erro, mostrar mensagem mas não quebrar
+  if (boxesError) {
+    console.error("Erro ao carregar caixinhas:", boxesError);
+  }
 
   if (isLoading) {
     return (
@@ -39,13 +50,13 @@ export function BoxList({ onSelectBox, selectedBoxId, onCreateBox }: BoxListProp
         <CardContent className="p-4 min-w-[120px]">
           <div className="text-sm font-medium">Inbox</div>
           <div className="text-xs text-muted-foreground mt-1">
-            {boxes?.filter((b) => !b.box).length || 0} itens
+            {inboxNotesArray.length} anotações
           </div>
         </CardContent>
       </Card>
 
       {/* Caixinhas */}
-      {boxes?.map((box) => (
+      {boxesArray.map((box) => (
         <Card
           key={box.id}
           className={`flex-shrink-0 cursor-pointer transition-all ${
@@ -59,11 +70,22 @@ export function BoxList({ onSelectBox, selectedBoxId, onCreateBox }: BoxListProp
           <CardContent className="p-4 min-w-[120px]">
             <div className="text-sm font-medium">{box.name}</div>
             <div className="text-xs text-muted-foreground mt-1">
-              {box.notes_count} anotações
+              {box.notes_count || 0} anotações
             </div>
           </CardContent>
         </Card>
       ))}
+
+      {/* Mensagem de erro (não quebra a página) */}
+      {boxesError && (
+        <Card className="border-destructive flex-shrink-0">
+          <CardContent className="p-4 min-w-[200px]">
+            <div className="text-xs text-destructive">
+              Erro ao carregar caixinhas
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Botão criar */}
       {onCreateBox && (

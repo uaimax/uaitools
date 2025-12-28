@@ -19,9 +19,17 @@ export function useBoxes() {
   return useQuery<Box[]>({
     queryKey: ["supbrainnote", "boxes"],
     queryFn: async () => {
-      const response = await apiClient.get("/supbrainnote/boxes/");
-      return response.data;
+      try {
+        const response = await apiClient.get("/supbrainnote/boxes/");
+        // API pode retornar paginado (results) ou array direto
+        const data = response.data?.results || response.data || [];
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Erro ao buscar caixinhas:", error);
+        return [];
+      }
     },
+    retry: 1,
   });
 }
 

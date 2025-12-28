@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 
 from django.db import models
+from django.utils import timezone
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -199,4 +200,105 @@ class ApplicationLogViewSet(WorkspaceViewSet):
         )
 
         return Response({"status": "logged"}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"], url_path="frontend/console")
+    def log_console(self, request):
+        """Endpoint para receber logs de console do frontend (estruturado em JSON).
+
+        Aceita logs de todos os níveis (DEBUG, INFO, WARN, ERROR).
+        Salva apenas em arquivo de log (não envia para Sentry/banco).
+        """
+        from apps.core.serializers import ConsoleLogSerializer
+        import json
+        from pathlib import Path
+        from django.conf import settings
+
+        serializer = ConsoleLogSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Criar diretório de logs se não existir
+        logs_dir = Path(settings.BASE_DIR).parent / "logs"
+        logs_dir.mkdir(exist_ok=True)
+
+        # Salvar log em arquivo JSONL (uma linha por log)
+        log_file = logs_dir / f"frontend-{timezone.now().strftime('%Y%m%d')}.log"
+
+        log_entry = {
+            **serializer.validated_data,
+            "received_at": timezone.now().isoformat(),
+            "workspace_id": getattr(request, "workspace", {}).id if hasattr(request, "workspace") and request.workspace else None,
+            "user_id": request.user.id if request.user.is_authenticated else None,
+        }
+
+        try:
+            with open(log_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+        except Exception:
+            # Não quebrar aplicação se falhar ao salvar log
+            pass
+
+        return Response({"status": "logged"}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"], url_path="stream")
+    def stream_logs(self, request):
+        """Endpoint para streaming de logs em tempo real (SSE para LLMs).
+
+        Query params:
+        - source: Filtrar por source (backend, frontend)
+        - level: Filtrar por nível (DEBUG, INFO, WARN, ERROR)
+        - limit: Número máximo de logs (padrão: 100)
+        - since: Timestamp Unix (retornar apenas logs após este timestamp)
+        - stream: true para SSE em tempo real, false para batch (padrão: false)
+        """
+        from apps.core.services.log_aggregator import get_aggregator
+        from django.http import StreamingHttpResponse
+        import json
+
+        aggregator = get_aggregator()
+
+        # Obter parâmetros de filtro
+        source = request.query_params.get("source")
+        level = request.query_params.get("level")
+        limit = int(request.query_params.get("limit", 100))
+        since = request.query_params.get("since")
+        since_float = float(since) if since else None
+
+        # Modo streaming (SSE) ou batch
+        stream_mode = request.query_params.get("stream", "false").lower() == "true"
+
+        if stream_mode:
+            # Streaming em tempo real (SSE)
+            def generate():
+                try:
+                    for log_entry in aggregator.stream_logs(source=source, level=level):
+                        yield f"data: {json.dumps(log_entry, ensure_ascii=False)}\n\n"
+                except Exception as e:
+                    yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+            response = StreamingHttpResponse(
+                generate(),
+                content_type="text/event-stream",
+            )
+            response["Cache-Control"] = "no-cache"
+            response["X-Accel-Buffering"] = "no"
+            return response
+        else:
+            # Batch (retornar logs recentes)
+            logs = aggregator.get_recent_logs(
+                limit=limit,
+                source=source,
+                level=level,
+                since=since_float,
+            )
+
+            return Response({
+                "logs": logs,
+                "count": len(logs),
+                "filters": {
+                    "source": source,
+                    "level": level,
+                    "limit": limit,
+                    "since": since,
+                },
+            }, status=status.HTTP_200_OK)
 

@@ -14,3 +14,4 @@ router.register(r"query", QueryViewSet, basename="query")
 
 urlpatterns = router.urls
 
+

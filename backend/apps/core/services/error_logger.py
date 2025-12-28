@@ -1,5 +1,7 @@
 """Service para logging híbrido: Sentry ou banco de dados."""
 
+import hashlib
+import time
 import traceback
 from typing import Any, Dict, Optional
 
@@ -10,6 +12,91 @@ from django.http import HttpRequest
 from apps.core.models import ApplicationLog
 
 User = get_user_model()
+
+# Cache de logs recentes para deduplicação (evitar rate limiting)
+_log_cache: Dict[str, float] = {}
+
+# Tempo de deduplicação em segundos (padrão: 5 minutos)
+# Pode ser configurado via variável de ambiente SENTRY_DEDUP_WINDOW_SECONDS
+DEDUP_WINDOW_SECONDS = int(
+    getattr(settings, "SENTRY_DEDUP_WINDOW_SECONDS", 5 * 60)
+)  # 5 minutos padrão
+
+
+def _cleanup_log_cache() -> None:
+    """Limpa entradas antigas do cache de logs."""
+    now = time.time()
+    expired_keys = [
+        key for key, timestamp in _log_cache.items()
+        if now - timestamp > DEDUP_WINDOW_SECONDS
+    ]
+    for key in expired_keys:
+        _log_cache.pop(key, None)
+
+
+def _generate_error_fingerprint(
+    message: str,
+    error_type: Optional[str] = None,
+    stack_trace: Optional[str] = None,
+) -> str:
+    """Gera fingerprint único para um erro (mensagem + tipo + stack trace).
+
+    Args:
+        message: Mensagem do erro
+        error_type: Tipo do erro (ex: "ValueError")
+        stack_trace: Stack trace completo (opcional)
+
+    Returns:
+        Hash MD5 do conteúdo do erro
+    """
+    # Usar apenas as primeiras linhas do stack trace para evitar variações
+    # (ex: números de linha podem mudar, mas a estrutura geral é a mesma)
+    stack_lines = ""
+    if stack_trace:
+        stack_lines = "\n".join(stack_trace.split("\n")[:5])
+
+    # Criar conteúdo único
+    content = f"{message}|{error_type or ''}|{stack_lines}"
+
+    # Gerar hash MD5
+    return hashlib.md5(content.encode("utf-8")).hexdigest()
+
+
+def _is_duplicate_error(
+    message: str,
+    error_type: Optional[str] = None,
+    stack_trace: Optional[str] = None,
+) -> bool:
+    """Verifica se um erro já foi enviado recentemente.
+
+    Args:
+        message: Mensagem do erro
+        error_type: Tipo do erro
+        stack_trace: Stack trace completo
+
+    Returns:
+        True se é um erro duplicado, False caso contrário
+    """
+    # Limpar cache periodicamente (a cada 100 verificações)
+    if len(_log_cache) > 1000:
+        _cleanup_log_cache()
+
+    fingerprint = _generate_error_fingerprint(message, error_type, stack_trace)
+    now = time.time()
+
+    if fingerprint in _log_cache:
+        age = now - _log_cache[fingerprint]
+        if age < DEDUP_WINDOW_SECONDS:
+            # Erro duplicado dentro da janela de tempo
+            return True
+        else:
+            # Janela expirou - atualizar timestamp
+            _log_cache[fingerprint] = now
+            return False
+    else:
+        # Primeira ocorrência - registrar
+        _log_cache[fingerprint] = now
+        return False
 
 
 def _get_client_ip(request: Optional[HttpRequest]) -> Optional[str]:
@@ -35,6 +122,11 @@ def _log_to_sentry(
     request: Optional[HttpRequest] = None,
 ) -> None:
     """Envia log para Sentry ou GlitchTip (compatível com API do Sentry)."""
+    # Deduplicação: verificar se já enviamos este erro recentemente
+    if _is_duplicate_error(message, error_type, stack_trace):
+        # Erro duplicado - não enviar para evitar rate limiting
+        return
+
     try:
         import sentry_sdk
 
