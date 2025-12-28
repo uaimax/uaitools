@@ -70,17 +70,24 @@ export default function App() {
         console.log('[SHARE INTENT] Áudio recebido:', { audioUri, audioName, shareIntent });
         
         // Navegar para tela de processamento
-        setTimeout(() => {
+        // Usar um intervalo para garantir que navegação está pronta
+        const navigateInterval = setInterval(() => {
           if (navigationRef.current) {
+            console.log('[SHARE INTENT] Navegando para AudioReceivedScreen');
             navigationRef.current.navigate('Main', {
               screen: 'AudioReceived',
               params: { audioUri, audioName },
             });
+            clearInterval(navigateInterval);
+            // Limpar dados compartilhados após navegar
+            resetShareIntent();
           }
-        }, 1000);
+        }, 500);
         
-        // Limpar dados compartilhados após processar
-        resetShareIntent();
+        // Timeout de segurança (máximo 5 segundos)
+        setTimeout(() => {
+          clearInterval(navigateInterval);
+        }, 5000);
       } else if (shareIntent.text) {
         console.log('[SHARE INTENT] Texto compartilhado (não é áudio):', shareIntent.text);
         resetShareIntent();
