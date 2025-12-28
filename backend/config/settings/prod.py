@@ -43,6 +43,9 @@ else:
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+# CSRF cookie settings - importante para funcionar corretamente
+CSRF_COOKIE_SAMESITE = "Lax"  # Permite envio em requisições cross-site GET
+CSRF_USE_SESSIONS = False  # Usar cookie CSRF (padrão)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
@@ -91,9 +94,14 @@ logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS_ENV (stripped): '{CSRF_TRUSTED_ORIGINS
 
 if CSRF_TRUSTED_ORIGINS_ENV:
     # Usar lista da variável de ambiente
-    CSRF_TRUSTED_ORIGINS = [
-        origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(",") if origin.strip()
-    ]
+    # Normalizar origens: remover espaços, trailing slashes, e garantir lowercase
+    CSRF_TRUSTED_ORIGINS = []
+    for origin in CSRF_TRUSTED_ORIGINS_ENV.split(","):
+        origin = origin.strip()
+        if origin:
+            # Remover trailing slash se existir (Django é sensível a isso)
+            origin = origin.rstrip("/")
+            CSRF_TRUSTED_ORIGINS.append(origin)
     # #region agent log (apenas se arquivo existir)
     log_data = {
         "origins_list": CSRF_TRUSTED_ORIGINS,
@@ -165,4 +173,7 @@ if os.path.exists(os.path.dirname(debug_log_path)):
 
 # Log final (sempre, para debug)
 logger.info(f"[CSRF] ✅ CSRF_TRUSTED_ORIGINS final: {CSRF_TRUSTED_ORIGINS}")
+logger.info(f"[CSRF] 📊 Total de origens confiáveis: {len(CSRF_TRUSTED_ORIGINS)}")
+for i, origin in enumerate(CSRF_TRUSTED_ORIGINS, 1):
+    logger.info(f"[CSRF]   {i}. {origin} (len={len(origin)})")
 
