@@ -136,7 +136,8 @@ class NoteListSerializer(serializers.ModelSerializer):
             "id",
             "box",
             "box_name",
-            "transcript_preview",
+            "transcript",  # Campo completo da transcrição (frontend espera isso)
+            "transcript_preview",  # Preview (mantido para compatibilidade)
             "source_type",
             "source_type_display",
             "processing_status",
