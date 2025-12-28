@@ -52,18 +52,22 @@
         {
           "action": "android.intent.action.SEND",
           "type": "audio/*",
-          "category": ["android.intent.category.DEFAULT"]
+          "category": [
+            "android.intent.category.DEFAULT"
+          ]
         },
         {
           "action": "android.intent.action.SEND_MULTIPLE",
           "type": "audio/*",
-          "category": ["android.intent.category.DEFAULT"]
+          "category": [
+            "android.intent.category.DEFAULT"
+          ]
         }
       ],
       "versionCode": 1
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       [
@@ -77,8 +81,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "49aa7c31-abfa-4475-92dd-e646698d692a"
       }
-    }
+    },
+    "owner": "uaimax"
   }
 }

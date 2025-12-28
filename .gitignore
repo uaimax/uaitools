@@ -91,8 +91,9 @@ mobile/android/app/build/
 mobile/ios/build/
 mobile/ios/Pods/
 mobile/.DS_Store
-mobile/assets/icon.png
-mobile/assets/splash.png
-mobile/assets/adaptive-icon.png
-mobile/assets/favicon.png
+# Assets devem estar no repositório para builds EAS
+# mobile/assets/icon.png
+# mobile/assets/splash.png
+# mobile/assets/adaptive-icon.png
+# mobile/assets/favicon.png
 
