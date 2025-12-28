@@ -8,7 +8,7 @@ import { Toaster } from "./components/ui/toaster";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
-import { queryClient } from "./lib/query-client";
+import { queryClient } from "@/lib/query-client";
 // Auth pages
 import Login from "./features/auth/pages/Login";
 import Register from "./features/auth/pages/Register";

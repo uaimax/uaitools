@@ -1,7 +1,7 @@
 /** Zona 1: Ação Principal - Input de investimento e resultado. */
 
 import { useState } from "react";
-import { ArrowRight, Loader2, Plus } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -146,7 +146,7 @@ export function InvestmentActionZone({ portfolioId }: InvestmentActionZoneProps)
         {smartRecommendation.isSuccess && !hasRecommendation && (
           <div className="mt-6 p-4 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">
-              {recommendation.recommendation.reasoning ||
+              {recommendation?.recommendation?.reasoning ||
                 "Nenhuma ação recomendada no momento. Aguarde melhores oportunidades."}
             </p>
           </div>

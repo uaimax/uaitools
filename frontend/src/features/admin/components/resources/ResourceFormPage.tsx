@@ -172,7 +172,7 @@ export function ResourceFormPage<T extends Record<string, any>>({
             ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {config.fields.map((field) => (
+                {config.fields.map((field: any) => (
                   <FormField
                     key={field.name}
                     control={form.control}

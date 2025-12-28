@@ -1,7 +1,6 @@
 /** Página principal de investimentos - Interface unificada com 3 zonas verticais. */
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { InvestmentsHeader } from "../components/InvestmentsHeader";
 import { InvestmentActionZone } from "../components/InvestmentActionZone";
 import { PortfolioZone } from "../components/PortfolioZone";
@@ -9,10 +8,8 @@ import { ChatZone } from "../components/ChatZone";
 import { AssetModal } from "../components/AssetModal";
 import { SettingsModal } from "../components/SettingsModal";
 import { usePortfolios } from "../hooks/use-investments";
-import { usePortfolioContext } from "../hooks/use-smart-investments";
 
 export default function InvestmentsPage() {
-  const navigate = useNavigate();
   const { data: portfolios = [], isLoading } = usePortfolios();
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
   const [showAssetModal, setShowAssetModal] = useState(false);

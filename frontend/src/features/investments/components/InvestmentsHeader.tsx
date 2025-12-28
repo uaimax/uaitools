@@ -1,6 +1,5 @@
 /** Header fixo com logo, seletor de carteira e menu do usuário. */
 
-import { useState } from "react";
 import { Sparkles, ChevronDown, Settings, LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";

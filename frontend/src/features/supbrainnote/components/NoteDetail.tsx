@@ -4,7 +4,7 @@ import { useNote } from "../hooks/use-notes";
 import { useBoxes } from "../hooks/use-boxes";
 import { useMoveNote, useDeleteNote } from "../hooks/use-notes";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

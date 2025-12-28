@@ -15,7 +15,7 @@ interface BoxListProps {
 
 export function BoxList({ onSelectBox, selectedBoxId, onCreateBox }: BoxListProps) {
   const { data: boxes, isLoading, error: boxesError } = useBoxes();
-  const { data: inboxNotes, error: notesError } = useNotes({ inbox: true });
+  const { data: inboxNotes } = useNotes({ inbox: true });
 
   // Garantir que são arrays
   const boxesArray = Array.isArray(boxes) ? boxes : [];

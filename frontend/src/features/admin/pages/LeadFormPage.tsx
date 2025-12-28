@@ -151,7 +151,7 @@ export default function LeadFormPage() {
             ) : (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {leadResource.fields.map((field) => (
+                  {leadResource.fields.map((field: any) => (
                     <FormField
                       key={field.name}
                       control={form.control}

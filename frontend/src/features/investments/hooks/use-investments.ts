@@ -203,7 +203,7 @@ export function useCreatePortfolio() {
       const response = await apiClient.post<Portfolio>("/investments/portfolios/", data);
       return response.data;
     },
-    onSuccess: (newPortfolio) => {
+    onSuccess: () => {
       // Invalidar todas as queries relacionadas para forçar atualização
       queryClient.invalidateQueries({ queryKey: investmentsKeys.portfolios.all() });
       // Também invalidar estratégias pois uma nova estratégia pode ter sido criada

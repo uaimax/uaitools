@@ -22,7 +22,7 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
   );
 
   // Só buscar perfil se não estiver em rota pública e tiver token
-  const hasToken = typeof window !== 'undefined' && localStorage.getItem('access_token');
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
   const shouldFetchProfile = !isPublicRoute && hasToken;
 
   const { data: user, isLoading, isError } = useProfile({

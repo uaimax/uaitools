@@ -1,6 +1,6 @@
 /** Layout mínimo para SupBrainNote - Single-purpose app. */
 
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Settings, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";

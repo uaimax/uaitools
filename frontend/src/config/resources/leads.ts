@@ -93,12 +93,12 @@ export function getLeadResource(): ResourceConfig<Lead> {
       {
         key: "phone",
         label: t("leads:fields.phone"),
-        render: (value) => value || "-",
+        render: (value: any) => value || "-",
       },
       {
         key: "status",
         label: t("leads:fields.status"),
-        render: (value) => {
+        render: (value: any) => {
           const statusMap: Record<string, { label: string; color: string }> = {
             new: { label: t("leads:status.new"), color: "bg-blue-100 text-blue-800" },
             contacted: { label: t("leads:status.contacted"), color: "bg-yellow-100 text-yellow-800" },
@@ -119,7 +119,7 @@ export function getLeadResource(): ResourceConfig<Lead> {
       {
         key: "created_at",
         label: t("common:labels.created_at"),
-        render: (value) => {
+        render: (value: any) => {
           if (!value) return "-"
           const date = new Date(value)
           // Usar locale do i18next
@@ -148,7 +148,7 @@ export function getLeadResource(): ResourceConfig<Lead> {
     defaultOrdering: "-created_at",
     initialPageSize: 20,
 
-    rowKey: (row) => row.id,
+    rowKey: (row: any) => row.id,
   }
 }
 

@@ -75,8 +75,9 @@ export function useNote(id: string | null) {
       return response.data;
     },
     enabled: !!id,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Se está processando, refetch a cada 3 segundos
+      const data = query.state.data;
       if (data?.processing_status === "pending" || data?.processing_status === "processing") {
         return 3000;
       }

@@ -4,7 +4,6 @@ import { useBoxes } from "../hooks/use-boxes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface BoxListCompactProps {

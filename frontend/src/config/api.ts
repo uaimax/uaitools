@@ -134,9 +134,7 @@ apiClient.interceptors.response.use(
 
     // Se for erro de CORS ou network, criar um erro mais descritivo
     if (isCorsError || isNetworkError) {
-      // Verificar se o backend está acessível
       const backendUrl = error.config?.baseURL || API_URL;
-      const isBackendReachable = backendUrl.startsWith("http://localhost:8001") || backendUrl.startsWith("http://127.0.0.1:8001");
 
       const errorMessage = isCorsError
         ? `Erro de CORS: O backend em ${backendUrl} não está permitindo requisições do frontend (${window.location.origin}). Verifique a configuração de CORS_ALLOWED_ORIGINS no backend.`
@@ -159,7 +157,7 @@ apiClient.interceptors.response.use(
     const isUnexpected400 = error.response?.status === 400;
     let shouldLog400 = false;
 
-    if (isUnexpected400) {
+    if (isUnexpected400 && error.response) {
       const errorData = error.response.data;
       const errorMessage = typeof errorData === 'object'
         ? JSON.stringify(errorData)

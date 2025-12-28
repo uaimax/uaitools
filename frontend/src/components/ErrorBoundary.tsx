@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
     // Logar erro para GlitchTip ou banco
     try {
       logError(error, {
-        componentStack: errorInfo.componentStack,
+        componentStack: errorInfo.componentStack || undefined,
         errorBoundary: true,
       });
     } catch (logError) {

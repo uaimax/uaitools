@@ -259,8 +259,8 @@ export function useStrategyPerformance() {
     any,
     [string, string, string, string | undefined, string | undefined]
   >({
-    queryKey: ["investments", "smart", "strategy-performance"],
-    queryFn: async ({ queryKey }) => {
+    queryKey: ["investments", "smart", "strategy-performance", undefined, undefined],
+    queryFn: async () => {
       // Este hook será usado com parâmetros dinâmicos
       return null;
     },
