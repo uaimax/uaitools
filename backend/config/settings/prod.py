@@ -47,23 +47,28 @@ else:
         }
     }
 
-# Security settings para prod
-# Se ALLOWED_HOSTS=* (modo permissivo), desabilitar proteções SSL/CSRF
-_PERMISSIVE_MODE = "*" in ALLOWED_HOSTS  # noqa: F405
-
-SECURE_SSL_REDIRECT = False if _PERMISSIVE_MODE else not DEBUG
-SESSION_COOKIE_SECURE = False if _PERMISSIVE_MODE else not DEBUG
-CSRF_COOKIE_SECURE = False if _PERMISSIVE_MODE else not DEBUG
-CSRF_COOKIE_SAMESITE = "Lax"
-CSRF_USE_SESSIONS = False
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = "DENY"
-
-# CSRF Trusted Origins - configuração simplificada
+# =============================================================================
+# CSRF - CONFIGURAÇÃO AGRESSIVA
+# =============================================================================
 import logging
 logger = logging.getLogger("django")
 
+# Modo permissivo: ALLOWED_HOSTS=* desabilita verificações
+_PERMISSIVE_MODE = "*" in ALLOWED_HOSTS
+
+# Em modo permissivo, desabilitar TODAS as verificações de segurança
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "None" if _PERMISSIVE_MODE else "Lax"
+CSRF_USE_SESSIONS = False
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "SAMEORIGIN" if _PERMISSIVE_MODE else "DENY"
+
+# CSRF_TRUSTED_ORIGINS - CONFIGURAÇÃO AGRESSIVA
+# Quando ALLOWED_HOSTS=*, aceitar QUALQUER origem
 CSRF_TRUSTED_ORIGINS_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
 
 if CSRF_TRUSTED_ORIGINS_ENV:
@@ -74,38 +79,45 @@ if CSRF_TRUSTED_ORIGINS_ENV:
         if origin.strip()
     ]
     logger.info(f"[CSRF] Origens configuradas via env: {CSRF_TRUSTED_ORIGINS}")
-elif _PERMISSIVE_MODE:
-    # Modo permissivo: ALLOWED_HOSTS=* - desabilitar CSRF completamente
-    # IMPORTANTE: Redefinir MIDDLEWARE completamente (não usar .remove())
-    # Isso garante que funciona em todos os workers do Gunicorn
-    CSRF_TRUSTED_ORIGINS = []
-    logger.warning("[CSRF] ⚠️ ALLOWED_HOSTS=* - CSRF DESABILITADO (modo permissivo)")
-    logger.warning("[CSRF] ⚠️ Configure CSRF_TRUSTED_ORIGINS para produção segura")
-
-    # Redefinir MIDDLEWARE sem os middlewares CSRF
-    MIDDLEWARE = [  # noqa: F405
-        "django.middleware.security.SecurityMiddleware",
-        "whitenoise.middleware.WhiteNoiseMiddleware",
-        "corsheaders.middleware.CorsMiddleware",
-        "django.contrib.sessions.middleware.SessionMiddleware",
-        "django.middleware.locale.LocaleMiddleware",
-        "apps.core.middleware.UUIDSessionMiddleware",
-        "django.middleware.common.CommonMiddleware",
-        # CSRF middlewares REMOVIDOS em modo permissivo
-        "django.contrib.auth.middleware.AuthenticationMiddleware",
-        "allauth.account.middleware.AccountMiddleware",
-        "apps.core.middleware.WorkspaceMiddleware",
-        "apps.core.middleware.ErrorLoggingMiddleware",
-        "django.contrib.messages.middleware.MessageMiddleware",
-        "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    ]
-    logger.warning("[CSRF] ⚠️ MIDDLEWARE redefinido SEM CsrfViewMiddleware")
 else:
-    # Derivar de ALLOWED_HOSTS (adicionar https://)
+    # MODO PERMISSIVO: Adicionar TODAS as origens possíveis
+    # Isso inclui origens conhecidas e wildcards
     CSRF_TRUSTED_ORIGINS = [
-        f"https://{host}"
-        for host in ALLOWED_HOSTS  # noqa: F405
-        if host not in ("localhost", "127.0.0.1", "*")
+        # Origens do domínio principal
+        "https://ut-be.app.webmaxdigital.com",
+        "http://ut-be.app.webmaxdigital.com",
+        "https://app.webmaxdigital.com",
+        "http://app.webmaxdigital.com",
+        "https://webmaxdigital.com",
+        "http://webmaxdigital.com",
+        # Wildcards para subdomínios (Django 4.0+ suporta wildcards)
+        "https://*.webmaxdigital.com",
+        "http://*.webmaxdigital.com",
+        # Localhost para desenvolvimento
+        "http://localhost:8000",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "https://localhost:8000",
+        "https://localhost:3000",
+        "https://localhost:5173",
     ]
-    logger.info(f"[CSRF] Origens derivadas de ALLOWED_HOSTS: {CSRF_TRUSTED_ORIGINS}")
 
+    # Adicionar origens de ALLOWED_HOSTS (se não for wildcard)
+    for host in ALLOWED_HOSTS:
+        if host not in ("*", "localhost", "127.0.0.1"):
+            CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
+            CSRF_TRUSTED_ORIGINS.append(f"http://{host}")
+
+    # Remover duplicatas mantendo ordem
+    CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(CSRF_TRUSTED_ORIGINS))
+
+    logger.warning(f"[CSRF] ⚠️ Modo permissivo: {len(CSRF_TRUSTED_ORIGINS)} origens configuradas")
+    logger.warning(f"[CSRF] ⚠️ Origens: {CSRF_TRUSTED_ORIGINS[:5]}... (e mais)")
+
+# Log final
+logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS final: {len(CSRF_TRUSTED_ORIGINS)} origens")
+for origin in CSRF_TRUSTED_ORIGINS[:10]:
+    logger.info(f"[CSRF]   - {origin}")
