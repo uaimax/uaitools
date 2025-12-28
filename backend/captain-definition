@@ -32,8 +32,11 @@
     "# Expor porta",
     "EXPOSE 80",
     "",
-    "# Comando para iniciar aplicação",
-    "CMD [\"gunicorn\", \"--bind\", \"0.0.0.0:80\", \"--workers\", \"3\", \"--timeout\", \"120\", \"--access-logfile\", \"-\", \"--error-logfile\", \"-\", \"config.wsgi:application\"]"
+    "# Script de inicialização que aplica migrations antes de iniciar",
+    "RUN echo '#!/bin/bash\\nset -e\\necho \"📦 Aplicando migrations...\"\\npython manage.py migrate --noinput\\necho \"✅ Migrations aplicadas\"\\necho \"🚀 Iniciando Gunicorn...\"\\nexec gunicorn --bind 0.0.0.0:80 --workers 3 --timeout 120 --access-logfile - --error-logfile - config.wsgi:application' > /app/start.sh && chmod +x /app/start.sh",
+    "",
+    "# Comando para iniciar aplicação (executa migrations antes)",
+    "CMD [\"/app/start.sh\"]"
   ]
 }
 
