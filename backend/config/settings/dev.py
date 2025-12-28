@@ -1,6 +1,14 @@
 """Development settings.
 
 SQLite database (fallback) ou PostgreSQL via DATABASE_URL, DEBUG=True, CORS permissivo.
+
+⚠️ REGRA CRÍTICA: NUNCA sobrescrever listas definidas em base.py!
+- CSRF_TRUSTED_ORIGINS: apenas adicionar (usar .append())
+- CORS_ALLOWED_ORIGINS: apenas adicionar (usar .append())
+- MIDDLEWARE: apenas adicionar/modificar ordem (não redefinir)
+- INSTALLED_APPS: apenas adicionar (usar .append())
+
+Sobrescrever listas remove configurações importantes de base.py e quebra produção!
 """
 
 import os
@@ -51,13 +59,19 @@ CSRF_COOKIE_SECURE = False
 # Permitir cookies em requisições cross-origin
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
-# CSRF Trusted Origins - ADICIONAR às origens já definidas em base.py
-# NÃO sobrescrever, apenas adicionar origens de desenvolvimento
-# base.py já tem a origem de produção e outras necessárias
+# =============================================================================
+# CSRF_TRUSTED_ORIGINS - APENAS ADICIONAR (NUNCA SOBRESCREVER!)
+# =============================================================================
+# ⚠️ CRÍTICO: base.py já define origens de produção e outras necessárias.
+# NUNCA fazer: CSRF_TRUSTED_ORIGINS = [...] (isso remove todas as origens!)
+# SEMPRE usar: CSRF_TRUSTED_ORIGINS.append(...) ou verificar antes de adicionar
+# =============================================================================
 if "http://localhost:5173" not in CSRF_TRUSTED_ORIGINS:  # noqa: F405
     CSRF_TRUSTED_ORIGINS.append("http://localhost:5173")  # noqa: F405
 if "http://127.0.0.1:5173" not in CSRF_TRUSTED_ORIGINS:  # noqa: F405
     CSRF_TRUSTED_ORIGINS.append("http://127.0.0.1:5173")  # noqa: F405
+# Expo adiciona automaticamente origens do tunnel
+# Para desenvolvimento mobile, CORS_ALLOW_ALL_ORIGINS pode ser True temporariamente
 # Expo adiciona automaticamente origens do tunnel
 # Para desenvolvimento mobile, CORS_ALLOW_ALL_ORIGINS pode ser True temporariamente
 
@@ -71,7 +85,22 @@ if "SUPBRAINNOTE_QUERY_RATE" not in os.environ:
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["anon"] = "10000/hour"  # noqa: F405
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["user"] = "10000/hour"  # noqa: F405
 
+# =============================================================================
+# VALIDAÇÃO: Garantir que listas importantes não foram sobrescritas
+# =============================================================================
+# Verificar se CSRF_TRUSTED_ORIGINS contém a origem de produção
+# Se não contém, significa que foi sobrescrito incorretamente
+_CSRF_HAS_PRODUCTION_ORIGIN = "https://ut-be.app.webmaxdigital.com" in CSRF_TRUSTED_ORIGINS  # noqa: F405
+if not _CSRF_HAS_PRODUCTION_ORIGIN:
+    import logging
+    logger = logging.getLogger("django")
+    logger.error("[DEV] ⚠️ ERRO CRÍTICO: CSRF_TRUSTED_ORIGINS não contém origem de produção!")
+    logger.error("[DEV] ⚠️ Isso indica que a lista foi sobrescrita incorretamente")
+    logger.error("[DEV] ⚠️ Verifique se está usando .append() ao invés de = [...]")
+
+# =============================================================================
 # CORS para desenvolvimento mobile (Expo)
+# =============================================================================
 # ⚠️ ATENÇÃO: Apenas para desenvolvimento! NUNCA em produção!
 # Expo tunnel adiciona origens dinamicamente, então permitir todas facilita testes
 # Para produção, use CORS_ALLOWED_ORIGINS com lista específica

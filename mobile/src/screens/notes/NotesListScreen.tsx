@@ -75,6 +75,8 @@ export const NotesListScreen: React.FC = () => {
                 onPress={() =>
                   navigation.navigate('NoteDetail', { noteId: note.id })
                 }
+                onDelete={refresh}
+                onMove={refresh}
               />
             ))}
           </View>

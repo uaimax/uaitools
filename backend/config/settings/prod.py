@@ -6,8 +6,14 @@ IMPORTANTE: Este arquivo é carregado apenas quando ENVIRONMENT=production.
 As variáveis de ambiente são lidas em RUNTIME (quando o container inicia),
 não durante o build do Docker.
 
-SIMPLIFICADO: Apenas adiciona configurações específicas de produção.
-O base.py já tem CSRF_TRUSTED_ORIGINS e MIDDLEWARE configurados corretamente.
+⚠️ REGRA CRÍTICA: NUNCA sobrescrever listas definidas em base.py!
+- CSRF_TRUSTED_ORIGINS: base.py já define todas as origens necessárias
+- MIDDLEWARE: base.py já define a ordem correta
+- INSTALLED_APPS: base.py já define todos os apps necessários
+- CORS_ALLOWED_ORIGINS: base.py já define as origens
+
+Este arquivo apenas adiciona/modifica configurações específicas de produção.
+Sobrescrever listas remove configurações importantes e quebra o sistema!
 """
 
 import logging
@@ -83,6 +89,17 @@ CSRF_USE_SESSIONS = False
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "SAMEORIGIN"  # Permite iframe (necessário para alguns casos)
+
+# =============================================================================
+# VALIDAÇÃO: Garantir que listas importantes não foram sobrescritas
+# =============================================================================
+# Verificar se CSRF_TRUSTED_ORIGINS contém a origem de produção
+# Se não contém, significa que foi sobrescrito incorretamente
+_CSRF_HAS_PRODUCTION_ORIGIN = "https://ut-be.app.webmaxdigital.com" in CSRF_TRUSTED_ORIGINS  # noqa: F405
+if not _CSRF_HAS_PRODUCTION_ORIGIN:
+    logger.error("[PROD] ⚠️ ERRO CRÍTICO: CSRF_TRUSTED_ORIGINS não contém origem de produção!")
+    logger.error("[PROD] ⚠️ Isso indica que a lista foi sobrescrita incorretamente em dev.py ou prod.py")
+    logger.error("[PROD] ⚠️ Verifique se está usando .append() ao invés de = [...]")
 
 # =============================================================================
 # LOGGING

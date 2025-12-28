@@ -227,14 +227,14 @@ def transcribe_audio(note_id: str) -> Dict[str, Any]:
                 "E",
             )
             # #endregion
-            
+
             # Buscar caixinhas do workspace para incluir nomes no prompt do Whisper
             # Isso ajuda o Whisper a transcrever corretamente nomes de caixinhas mencionados
             boxes = Box.objects.filter(
                 workspace=note.workspace, deleted_at__isnull=True
             )
             box_names = [box.name for box in boxes]
-            
+
             # Criar prompt com nomes das caixinhas
             # O prompt do Whisper ajuda a melhorar a transcrição de palavras específicas
             whisper_prompt = None
@@ -255,7 +255,7 @@ def transcribe_audio(note_id: str) -> Dict[str, Any]:
                     "E",
                 )
                 # #endregion
-            
+
             result = transcription_service.transcribe(
                 audio_path, language="pt", prompt=whisper_prompt
             )

@@ -1,5 +1,6 @@
 /**
  * Tela Home - Tela principal do app
+ * Versão com paginação local e ações rápidas
  */
 
 import React, { useState } from 'react';
@@ -10,9 +11,10 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, Inbox } from 'lucide-react-native';
+import { Settings, Inbox, ChevronRight } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { RecordButton, RecordingOverlay } from '@/components/recording';
 import { NoteCard } from '@/components/notes';
@@ -24,6 +26,9 @@ import { saveNoteLocal } from '@/services/storage/database';
 import { useToast } from '@/context/ToastContext';
 import { colors, typography, spacing } from '@/theme';
 
+const INITIAL_NOTES_COUNT = 4;
+const NOTES_PER_PAGE = 4;
+
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
   const { showToast } = useToast();
@@ -32,7 +37,8 @@ export const HomeScreen: React.FC = () => {
   const { isOnline, pendingCount, sync, queueItem } = useOfflineSync();
   const [showOverlay, setShowOverlay] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const isUploadingRef = React.useRef(false); // Proteção contra múltiplas chamadas
+  const [displayedNotesCount, setDisplayedNotesCount] = useState(INITIAL_NOTES_COUNT);
+  const isUploadingRef = React.useRef(false);
 
   React.useEffect(() => {
     if (recordingState === 'recording') {
@@ -43,7 +49,6 @@ export const HomeScreen: React.FC = () => {
   }, [recordingState]);
 
   const handleSendRecording = React.useCallback(async () => {
-    // Previne múltiplas chamadas simultâneas
     if (isUploadingRef.current || isUploading) {
       console.log('Upload já em andamento, ignorando chamada duplicada');
       return;
@@ -63,7 +68,6 @@ export const HomeScreen: React.FC = () => {
     try {
       setShowOverlay(false);
 
-      // Salva localmente primeiro (offline-first)
       const noteId = `local_${Date.now()}`;
       await saveNoteLocal({
         id: noteId,
@@ -74,40 +78,16 @@ export const HomeScreen: React.FC = () => {
       if (isOnline) {
         showToast('Enviando gravação...', 'info');
         try {
-          // #region agent log
-          console.log('[DEBUG] Starting upload', { uri, noteId });
-          fetch('http://127.0.0.1:7243/ingest/8a2091d5-0f0b-4303-b859-a6756e62cd84',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'HomeScreen.tsx:68',message:'Starting audio upload',data:{uri,noteId,isOnline},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
-
           const result = await uploadAudio(uri);
-
-          // #region agent log
-          console.log('[DEBUG] Upload success', { result });
-          fetch('http://127.0.0.1:7243/ingest/8a2091d5-0f0b-4303-b859-a6756e62cd84',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'HomeScreen.tsx:75',message:'Upload success',data:{result},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-          // #endregion
-
           console.log('Upload result:', result);
           showToast('Nota salva com sucesso!', 'success');
-
-          // Fazer refresh imediato para mostrar a nota
           await refresh();
-
-          // O polling automático do useNotes vai verificar quando a transcrição estiver pronta
-          // Não precisamos mais do setTimeout, o polling cuida disso
         } catch (error: any) {
-          // #region agent log
-          console.error('[DEBUG] Upload error', { error: error.message, code: error.code, response: error.response?.data });
-          fetch('http://127.0.0.1:7243/ingest/8a2091d5-0f0b-4303-b859-a6756e62cd84',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'HomeScreen.tsx:83',message:'Upload error',data:{error:error.message,code:error.code,response:error.response?.data,networkError:error.code === 'ERR_NETWORK'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
-
           console.error('Erro no upload:', error);
-          console.error('Erro detalhado:', error.response?.data || error.message);
-          // Se falhar, adiciona à fila
           await queueItem('note_upload', { audio_uri: uri });
           showToast('Nota salva localmente. Sincronizando...', 'warning');
         }
       } else {
-        // Offline: adiciona à fila
         await queueItem('note_upload', { audio_uri: uri });
         showToast('Nota salva localmente. Sincronizará quando online.', 'warning');
       }
@@ -125,7 +105,20 @@ export const HomeScreen: React.FC = () => {
     setShowOverlay(false);
   };
 
-  const recentNotes = (notes || []).slice(0, 4);
+  const handleLoadMore = () => {
+    const newCount = displayedNotesCount + NOTES_PER_PAGE;
+    const maxCount = (notes || []).length;
+    setDisplayedNotesCount(Math.min(newCount, maxCount));
+  };
+
+  const handleRefresh = async () => {
+    setDisplayedNotesCount(INITIAL_NOTES_COUNT);
+    await refresh();
+  };
+
+  const displayedNotes = (notes || []).slice(0, displayedNotesCount);
+  const hasMoreNotes = displayedNotesCount < (notes || []).length;
+  const totalNotes = (notes || []).length;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -158,7 +151,7 @@ export const HomeScreen: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refresh} />
+          <RefreshControl refreshing={loading} onRefresh={handleRefresh} />
         }
       >
         <View style={styles.recordSection}>
@@ -174,28 +167,48 @@ export const HomeScreen: React.FC = () => {
           )}
         </View>
 
-        {recentNotes.length > 0 && (
+        {displayedNotes.length > 0 && (
           <View style={styles.notesSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Últimas notas</Text>
-              {(notes || []).length > 4 && (
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('NotesList' as never)}
-                >
-                  <Text style={styles.seeMore}>Ver mais ({(notes || []).length})</Text>
-                </TouchableOpacity>
-              )}
+              <View style={styles.sectionHeaderLeft}>
+                <Text style={styles.sectionTitle}>Últimas notas</Text>
+                {totalNotes > 0 && (
+                  <Text style={styles.sectionSubtitle}>
+                    {displayedNotes.length} de {totalNotes}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity
+                style={styles.seeAllButton}
+                onPress={() => navigation.navigate('NotesList' as never)}
+              >
+                <Text style={styles.seeAllText}>Ver todas</Text>
+                <ChevronRight size={16} color={colors.primary.default} />
+              </TouchableOpacity>
             </View>
 
-            {recentNotes.map((note) => (
+            {displayedNotes.map((note) => (
               <NoteCard
                 key={note.id}
                 note={note}
                 onPress={() =>
                   navigation.navigate('NoteDetail' as never, { noteId: note.id } as never)
                 }
+                onDelete={handleRefresh}
+                onMove={handleRefresh}
               />
             ))}
+
+            {hasMoreNotes && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={handleLoadMore}
+              >
+                <Text style={styles.loadMoreText}>
+                  Ver mais ({totalNotes - displayedNotesCount} restantes)
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </ScrollView>
@@ -272,13 +285,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing[4],
   },
+  sectionHeaderLeft: {
+    flex: 1,
+  },
   sectionTitle: {
     ...typography.title3,
     color: colors.text.primary,
   },
-  seeMore: {
+  sectionSubtitle: {
     ...typography.caption,
+    color: colors.text.tertiary,
+    marginTop: spacing[1],
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[2],
+  },
+  seeAllText: {
+    ...typography.bodySmall,
     color: colors.primary.default,
+    fontWeight: '600',
+  },
+  loadMoreButton: {
+    backgroundColor: colors.bg.elevated,
+    borderRadius: 12,
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[4],
+    alignItems: 'center',
+    marginTop: spacing[2],
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  loadMoreText: {
+    ...typography.bodySmall,
+    color: colors.primary.default,
+    fontWeight: '500',
   },
   bottomBar: {
     paddingHorizontal: spacing[4],
@@ -358,4 +402,3 @@ const styles = StyleSheet.create({
     marginTop: spacing[1],
   },
 });
-

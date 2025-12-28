@@ -71,9 +71,10 @@ export const NoteDetailScreen: React.FC = () => {
   const loadBoxes = async () => {
     try {
       const data = await getBoxes();
-      setBoxes(data);
+      setBoxes(data || []);
     } catch (error: any) {
       console.error('Erro ao carregar caixinhas:', error);
+      setBoxes([]);
     }
   };
 
@@ -288,7 +289,7 @@ export const NoteDetailScreen: React.FC = () => {
           </TouchableOpacity>
 
           {/* Lista de Caixinhas */}
-          {boxes.map((box) => (
+          {(boxes || []).map((box) => (
             <TouchableOpacity
               key={box.id}
               style={[

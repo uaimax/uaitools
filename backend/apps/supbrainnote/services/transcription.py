@@ -106,11 +106,11 @@ class TranscriptionService:
                     "file": audio_file,
                     "language": language,
                 }
-                
+
                 # Adicionar prompt se fornecido (ajuda Whisper a transcrever palavras específicas)
                 if prompt:
                     api_params["prompt"] = prompt
-                
+
                 transcript = self.client.audio.transcriptions.create(**api_params)
 
             # #region agent log

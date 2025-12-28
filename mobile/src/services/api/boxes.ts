@@ -10,8 +10,20 @@ import type { Box, CreateBoxRequest, UpdateBoxRequest } from '@/types';
  * Lista todas as caixinhas
  */
 export async function getBoxes(): Promise<Box[]> {
-  const response = await apiClient.get<Box[]>(API_ENDPOINTS.boxes);
-  return response.data;
+  const response = await apiClient.get<{ results?: Box[] } | Box[]>(API_ENDPOINTS.boxes);
+
+  // DRF pode retornar paginado (com results) ou array direto
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+
+  // Se for objeto paginado, retornar results
+  if (response.data && typeof response.data === 'object' && 'results' in response.data) {
+    return (response.data as { results: Box[] }).results || [];
+  }
+
+  // Fallback: retornar array vazio
+  return [];
 }
 
 /**

@@ -1,8 +1,9 @@
 /**
  * Tela Inbox - Notas não classificadas
+ * Padrão consistente com ações sempre visíveis
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,39 +16,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Check } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NoteCard } from '@/components/notes';
-import { BoxSelector } from '@/components/boxes';
 import { FAB } from '@/components/common';
 import { useNotes } from '@/hooks/useNotes';
 import { useBoxes } from '@/hooks/useBoxes';
-import { useRecording } from '@/hooks/useRecording';
-import { moveNote } from '@/services/api/notes';
-import { useToast } from '@/context/ToastContext';
 import { colors, typography, spacing } from '@/theme';
 
 export const InboxScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { showToast } = useToast();
-  // useMemo para estabilizar o objeto de filtros e evitar re-renderizações
   const inboxFilter = useMemo(() => ({ inbox: true }), []);
   const { notes, loading, refresh } = useNotes(inboxFilter);
-  const { boxes, refresh: refreshBoxes } = useBoxes();
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
-
-  const handleMoveNote = async (noteId: string, boxId: string | null) => {
-    try {
-      await moveNote(noteId, boxId);
-      const box = boxes.find((b) => b.id === boxId);
-      showToast(`Movido para ${box?.name || 'Inbox'}`, 'success');
-      setSelectedNoteId(null);
-      await refresh();
-      await refreshBoxes();
-    } catch (error: any) {
-      showToast('Erro ao mover nota', 'error');
-      console.error('Erro ao mover nota:', error);
-    }
-  };
+  const { refresh: refreshBoxes } = useBoxes();
 
   const inboxNotes = (notes || []).filter((note) => !note.box_id);
+
+  const handleRefresh = async () => {
+    await refresh();
+    await refreshBoxes();
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -67,7 +52,7 @@ export const InboxScreen: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refresh} />
+          <RefreshControl refreshing={loading} onRefresh={handleRefresh} />
         }
       >
         {inboxNotes.length === 0 ? (
@@ -80,32 +65,15 @@ export const InboxScreen: React.FC = () => {
           </View>
         ) : (
           inboxNotes.map((note) => (
-            <View key={note.id}>
-              <NoteCard
-                note={note}
-                onPress={() =>
-                  navigation.navigate('NoteDetail' as never, { noteId: note.id } as never)
-                }
-              />
-              {selectedNoteId === note.id && (
-                <BoxSelector
-                  boxes={boxes}
-                  onSelect={(boxId) => handleMoveNote(note.id, boxId)}
-                  onCreateNew={() => {
-                    // TODO: Abrir modal de criar caixinha
-                    navigation.navigate('BoxesManagement' as never);
-                  }}
-                />
-              )}
-              {selectedNoteId !== note.id && (
-                <TouchableOpacity
-                  style={styles.selectButton}
-                  onPress={() => setSelectedNoteId(note.id)}
-                >
-                  <Text style={styles.selectButtonText}>Mover para caixinha</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            <NoteCard
+              key={note.id}
+              note={note}
+              onPress={() =>
+                navigation.navigate('NoteDetail' as never, { noteId: note.id } as never)
+              }
+              onDelete={handleRefresh}
+              onMove={handleRefresh}
+            />
           ))
         )}
       </ScrollView>
@@ -113,7 +81,7 @@ export const InboxScreen: React.FC = () => {
       <FAB
         onPress={() => {
           // TODO: Abrir gravação (mesma lógica da Home)
-          showToast('Gravação será implementada', 'info');
+          navigation.navigate('Home' as never);
         }}
       />
     </SafeAreaView>
@@ -168,15 +136,4 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: 'center',
   },
-  selectButton: {
-    marginTop: spacing[2],
-    marginBottom: spacing[4],
-    paddingVertical: spacing[2],
-  },
-  selectButtonText: {
-    ...typography.caption,
-    color: colors.primary.default,
-    textAlign: 'center',
-  },
 });
-

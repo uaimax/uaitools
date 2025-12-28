@@ -1,6 +1,21 @@
 """Base settings for Django project.
 
-Configuracoes compartilhadas entre dev e prod.
+Configurações compartilhadas entre dev e prod.
+
+⚠️ LISTAS PROTEGIDAS - NUNCA SOBRESCREVER em dev.py ou prod.py:
+================================================================
+As seguintes listas são definidas aqui e NUNCA devem ser sobrescritas:
+- CSRF_TRUSTED_ORIGINS: contém origens de produção e desenvolvimento
+- MIDDLEWARE: ordem crítica para funcionamento correto
+- INSTALLED_APPS: apps essenciais do sistema
+- CORS_ALLOWED_ORIGINS: origens permitidas para CORS
+- CORS_ALLOW_HEADERS: headers permitidos para CORS
+
+Para adicionar itens a essas listas:
+- Use: LISTA.append("novo-item") ou LISTA.extend(["item1", "item2"])
+- NUNCA faça: LISTA = [...] (isso remove todas as configurações de base.py!)
+
+Se precisar modificar uma lista, sempre verifique se o item já existe antes de adicionar.
 """
 
 import os
@@ -30,6 +45,10 @@ else:
 # =============================================================================
 # CSRF_TRUSTED_ORIGINS - SEMPRE CONFIGURAR COM ORIGENS NECESSÁRIAS
 # =============================================================================
+# ⚠️ REGRA CRÍTICA: Esta lista NUNCA deve ser sobrescrita em dev.py ou prod.py!
+# Se precisar adicionar origens, use: CSRF_TRUSTED_ORIGINS.append("nova-origem")
+# NUNCA faça: CSRF_TRUSTED_ORIGINS = [...] (isso remove todas as origens de base.py)
+#
 # Simplificado: sempre adicionar as origens necessárias, independente de ALLOWED_HOSTS
 # Isso garante que o CSRF funcione corretamente
 _CSRF_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
