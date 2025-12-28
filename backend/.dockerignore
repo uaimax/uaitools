@@ -1,0 +1,81 @@
+# =============================================================================
+# .dockerignore - Arquivos a ignorar durante o build do Docker
+# =============================================================================
+# Isso acelera o build e reduz o tamanho da imagem
+
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Database (local)
+*.sqlite3
+db.sqlite3
+
+# Static files (serão coletados em runtime)
+staticfiles/
+
+# Media files (produção deve usar S3/R2)
+media/
+
+# Logs
+*.log
+logs/
+
+# Documentação
+docs/
+*.md
+!README.md
+
+# Arquivos de configuração local
+.env.local
+.env.*.local
+*.local.py
+
+# Scripts de desenvolvimento
+*.sh
+!entrypoint.sh
+
+# Arquivos temporários
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Node (se houver frontend no mesmo repo)
+node_modules/
+
+# Jupyter Notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+

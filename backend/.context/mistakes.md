@@ -337,6 +337,77 @@ CSRF_TRUSTED_ORIGINS = [
 
 ---
 
+## ❌ Executar collectstatic Durante Build no Docker (CapRover)
+
+**Data**: 2025-12-28
+**Categoria**: backend, devops
+**Tags**: [docker, caprover, deploy, csrf, environment-variables]
+**Severidade**: critical
+
+### Contexto
+Deploy no CapRover falha ou admin login não funciona por erro de CSRF, mesmo com variáveis de ambiente configuradas no painel.
+
+### Problema
+O Dockerfile original tentava executar `collectstatic` durante o build:
+
+```dockerfile
+# ❌ ERRADO - Durante o build, variáveis de ambiente não estão disponíveis!
+RUN python manage.py collectstatic --noinput
+```
+
+O CapRover passa variáveis como `--build-arg`, mas o Dockerfile não declarava `ARG` para consumi-las. Resultado:
+- `ALLOWED_HOSTS` vazio → erro de validação ou `*` como fallback
+- `CSRF_TRUSTED_ORIGINS` vazio → login do admin bloqueado
+- `DATABASE_URL` vazio → fallback para SQLite
+
+**Warning típico:**
+```
+[Warning] One or more build-args [ALLOWED_HOSTS, DATABASE_URL, ...] were not consumed
+```
+
+### Solução
+**NUNCA executar collectstatic ou migrations durante o build**. Mover para script de entrada (entrypoint):
+
+```dockerfile
+# ✅ CORRETO - Não executar collectstatic no build
+# Copiar código e dependências
+COPY . .
+
+# Script de entrada executa em RUNTIME (variáveis disponíveis)
+CMD ["/app/entrypoint.sh"]
+```
+
+```bash
+# entrypoint.sh - Executado em RUNTIME
+#!/bin/bash
+python manage.py collectstatic --noinput  # ✅ Variáveis disponíveis aqui
+python manage.py migrate --noinput
+exec gunicorn config.wsgi:application --bind 0.0.0.0:80
+```
+
+### Por Que É Crítico
+- **Build-time vs Runtime**: Docker `ARG` só existe durante build, `ENV` persiste
+- **CapRover**: Passa variáveis como `--build-arg`, não como `ENV`
+- **Django**: Precisa das variáveis para carregar settings corretamente
+- **CSRF**: Sem `CSRF_TRUSTED_ORIGINS` correto, login do admin falha
+
+### Lições Aprendidas
+- **SEMPRE** mover collectstatic e migrations para script de entrada
+- **NUNCA** assumir que variáveis de ambiente estarão disponíveis durante build
+- Se precisar de variável no build, declarar explicitamente com `ARG`
+- CapRover passa variáveis como `--build-arg`, não como variáveis de ambiente
+- Warning "build-args not consumed" = Dockerfile não está usando as variáveis
+
+### Dockerfile Ideal para CapRover + Django
+Ver: `backend/Dockerfile` (atualizado em 2025-12-28)
+
+### Referências
+- `backend/Dockerfile`
+- `backend/config/settings/base.py` (CSRF_TRUSTED_ORIGINS)
+- https://justdjango.com/blog/deploy-django-caprover
+
+---
+
 ## ❌ Não Criar Arquivos > 300 Linhas
 
 **Data**: 2025-01-27

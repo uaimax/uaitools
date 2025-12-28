@@ -1,49 +1,134 @@
+# =============================================================================
+# DOCKERFILE IDEAL PARA DJANGO + CAPROVER
+# =============================================================================
+# Este Dockerfile segue as melhores práticas para deploy no CapRover:
+# - Variáveis de ambiente são lidas apenas em RUNTIME (não no build)
+# - collectstatic e migrations são executados pelo script de entrada
+# - Build leve e rápido (usa cache eficientemente)
+# =============================================================================
+
 FROM python:3.12-slim
 
-# Variáveis de ambiente
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-# ENVIRONMENT=production garante que config/settings/prod.py será carregado
-# Pode ser sobrescrito por variável de ambiente do CapRover se necessário
-ENV ENVIRONMENT=production
+# -----------------------------------------------------------------------------
+# Variáveis de ambiente básicas (não dependem de config externa)
+# -----------------------------------------------------------------------------
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    # PIP configs para instalação mais rápida
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# -----------------------------------------------------------------------------
 # Instalar dependências do sistema
-RUN apt-get update && apt-get install -y \
+# -----------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Para compilar pacotes Python com extensões C
     gcc \
+    # Cliente PostgreSQL (psycopg2)
+    libpq-dev \
     postgresql-client \
+    # Supervisor para gerenciar múltiplos processos (Gunicorn + Celery)
     supervisor \
+    # Limpar cache do apt para reduzir tamanho da imagem
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# -----------------------------------------------------------------------------
 # Criar diretório de trabalho
+# -----------------------------------------------------------------------------
 WORKDIR /app
 
-# Copiar requirements e instalar dependências Python
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir gunicorn
+# -----------------------------------------------------------------------------
+# Instalar dependências Python (antes de copiar código para usar cache)
+# -----------------------------------------------------------------------------
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    pip install gunicorn
 
+# -----------------------------------------------------------------------------
 # Copiar código da aplicação
-COPY . /app/
+# -----------------------------------------------------------------------------
+COPY . .
 
-# Coletar arquivos estáticos em modo produção
-# Nota: collectstatic pode falhar durante o build se apps precisarem de banco de dados
-# Nesse caso, será executado no start.sh após migrations
-# Tentamos aqui primeiro para otimizar (build cache), mas não falhamos o build se der erro
-RUN python manage.py collectstatic --noinput 2>&1 || echo "⚠️ collectstatic será executado no start.sh"
+# -----------------------------------------------------------------------------
+# NÃO executar collectstatic aqui!
+# As variáveis de ambiente (ALLOWED_HOSTS, DATABASE_URL, etc.) só estão
+# disponíveis em RUNTIME, não durante o build.
+# O collectstatic será executado pelo entrypoint.sh
+# -----------------------------------------------------------------------------
 
-# Expor porta
+# -----------------------------------------------------------------------------
+# Expor porta (CapRover usa porta 80 por padrão)
+# -----------------------------------------------------------------------------
 EXPOSE 80
 
-# Configurar supervisor para gerenciar Gunicorn + Celery
-RUN mkdir -p /etc/supervisor/conf.d
+# -----------------------------------------------------------------------------
+# Criar script de entrada (entrypoint)
+# Este script é executado em RUNTIME quando as variáveis de ambiente estão disponíveis
+# -----------------------------------------------------------------------------
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "🚀 Iniciando aplicação Django..."\n\
+echo "📍 Ambiente: ${ENVIRONMENT:-production}"\n\
+\n\
+# Coletar arquivos estáticos\n\
+echo "📦 Coletando arquivos estáticos..."\n\
+python manage.py collectstatic --noinput\n\
+echo "✅ Arquivos estáticos coletados"\n\
+\n\
+# Aplicar migrations\n\
+echo "📦 Aplicando migrations..."\n\
+python manage.py migrate --noinput\n\
+echo "✅ Migrations aplicadas"\n\
+\n\
+# Verificar modo de execução do Celery\n\
+CELERY_MODE=${CELERY_MODE:-same}\n\
+\n\
+if [ "$CELERY_MODE" = "separate" ]; then\n\
+    # Modo separado: apenas Gunicorn (quando Celery roda em container separado)\n\
+    echo "🚀 Modo separado: Iniciando apenas Gunicorn..."\n\
+    exec gunicorn config.wsgi:application \\\n\
+        --bind 0.0.0.0:80 \\\n\
+        --workers ${GUNICORN_WORKERS:-3} \\\n\
+        --timeout ${GUNICORN_TIMEOUT:-120} \\\n\
+        --access-logfile - \\\n\
+        --error-logfile -\n\
+else\n\
+    # Modo mesmo container: Supervisor gerencia Gunicorn + Celery\n\
+    echo "🚀 Modo mesmo container: Iniciando Gunicorn + Celery..."\n\
+    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf\n\
+fi' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
-# Script de inicialização que aplica migrations e inicia supervisor
-RUN echo '#!/bin/bash\nset -e\n\n# Aplicar migrations\necho "📦 Aplicando migrations..."\npython manage.py migrate --noinput\necho "✅ Migrations aplicadas"\n\n# Coletar arquivos estáticos (se não foi feito durante o build)\necho "📦 Coletando arquivos estáticos..."\npython manage.py collectstatic --noinput || echo "⚠️ collectstatic falhou (continuando...)"\necho "✅ Arquivos estáticos coletados"\n\n# Verificar se deve rodar Celery no mesmo container\nCELERY_MODE=${CELERY_MODE:-same}\n\nif [ "$CELERY_MODE" = "separate" ]; then\n    # Modo separado: apenas Gunicorn (para quando tiver serviço Celery separado)\n    echo "🚀 Modo separado: Iniciando apenas Gunicorn..."\n    exec gunicorn --bind 0.0.0.0:80 --workers 3 --timeout 120 --access-logfile - --error-logfile - config.wsgi:application\nelse\n    # Modo mesmo container: Supervisor gerencia Gunicorn + Celery\n    echo "🚀 Modo mesmo container: Iniciando Gunicorn + Celery Worker..."\n    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf\nfi' > /app/start.sh && chmod +x /app/start.sh
+# -----------------------------------------------------------------------------
+# Configuração do Supervisor (Gunicorn + Celery no mesmo container)
+# -----------------------------------------------------------------------------
+RUN mkdir -p /etc/supervisor/conf.d && \
+    echo '[supervisord]\n\
+nodaemon=true\n\
+\n\
+[program:gunicorn]\n\
+command=gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120 --access-logfile - --error-logfile -\n\
+directory=/app\n\
+autostart=true\n\
+autorestart=true\n\
+stderr_logfile=/dev/stderr\n\
+stderr_logfile_maxbytes=0\n\
+stdout_logfile=/dev/stdout\n\
+stdout_logfile_maxbytes=0\n\
+\n\
+[program:celery]\n\
+command=celery -A config worker -l info\n\
+directory=/app\n\
+autostart=true\n\
+autorestart=true\n\
+stderr_logfile=/dev/stderr\n\
+stderr_logfile_maxbytes=0\n\
+stdout_logfile=/dev/stdout\n\
+stdout_logfile_maxbytes=0' > /etc/supervisor/conf.d/supervisord.conf
 
-# Configuração do Supervisor (Gunicorn + Celery)
-RUN echo '[supervisord]\nnodaemon=true\n\n[program:gunicorn]\ncommand=gunicorn --bind 0.0.0.0:80 --workers 3 --timeout 120 --access-logfile - --error-logfile - config.wsgi:application\ndirectory=/app\nautostart=true\nautorestart=true\nstderr_logfile=/dev/stderr\nstderr_logfile_maxbytes=0\nstdout_logfile=/dev/stdout\nstdout_logfile_maxbytes=0\n\n[program:celery]\ncommand=celery -A config worker -l info\ndirectory=/app\nautostart=true\nautorestart=true\nstderr_logfile=/dev/stderr\nstderr_logfile_maxbytes=0\nstdout_logfile=/dev/stdout\nstdout_logfile_maxbytes=0' > /etc/supervisor/conf.d/supervisord.conf
-
-# Comando para iniciar aplicação (executa migrations antes)
-CMD ["/app/start.sh"]
-
+# -----------------------------------------------------------------------------
+# Comando de entrada
+# -----------------------------------------------------------------------------
+CMD ["/app/entrypoint.sh"]
