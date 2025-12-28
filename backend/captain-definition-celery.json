@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 2,
+  "dockerfileLines": [
+    "FROM python:3.12-slim",
+    "",
+    "# Variáveis de ambiente",
+    "ENV PYTHONUNBUFFERED=1",
+    "ENV PYTHONDONTWRITEBYTECODE=1",
+    "ENV ENVIRONMENT=production",
+    "",
+    "# Instalar dependências do sistema",
+    "RUN apt-get update && apt-get install -y \\",
+    "    gcc \\",
+    "    postgresql-client \\",
+    "    && rm -rf /var/lib/apt/lists/*",
+    "",
+    "# Criar diretório de trabalho",
+    "WORKDIR /app",
+    "",
+    "# Copiar requirements e instalar dependências Python",
+    "COPY requirements.txt /app/",
+    "RUN pip install --no-cache-dir --upgrade pip && \\",
+    "    pip install --no-cache-dir -r requirements.txt",
+    "",
+    "# Copiar código da aplicação",
+    "COPY . /app/",
+    "",
+    "# Script de inicialização do Celery Worker",
+    "RUN echo '#!/bin/bash\\nset -e\\necho \"📦 Aplicando migrations...\"\\npython manage.py migrate --noinput\\necho \"✅ Migrations aplicadas\"\\necho \"🚀 Iniciando Celery Worker...\"\\ncelery -A config worker -l info' > /app/start-celery.sh && chmod +x /app/start-celery.sh",
+    "",
+    "# Comando para iniciar Celery Worker",
+    "CMD [\"/app/start-celery.sh\"]"
+  ]
+}
+

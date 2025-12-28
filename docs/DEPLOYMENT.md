@@ -122,6 +122,19 @@ Veja o guia completo: [REDIS_SETUP.md](REDIS_SETUP.md)
 3. Se a senha tiver caracteres especiais, use URL encoding
 4. DB 0 = Celery, DB 1 = Cache
 
+## ⚙️ Celery Worker Configuration
+
+**IMPORTANTE:** Se você usar funcionalidades que requerem processamento assíncrono (ex: SupBrainNote), precisa configurar o Celery Worker.
+
+Veja o guia completo: [CELERY_SETUP.md](CELERY_SETUP.md)
+
+**Resumo rápido:**
+1. Crie um novo app no CapRover: `ut-be-celery`
+2. Configure Captain Definition File: `backend/captain-definition-celery.json`
+3. Copie todas as variáveis de ambiente do backend (especialmente `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`, `OPENAI_API_KEY`)
+4. Faça deploy do app
+5. Verifique os logs para confirmar que o worker está rodando
+
 
 
 
