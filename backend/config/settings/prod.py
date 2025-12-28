@@ -50,12 +50,17 @@ X_FRAME_OPTIONS = "DENY"
 # CSRF Trusted Origins - obrigatório em produção
 # Pode ser configurado via variável de ambiente CSRF_TRUSTED_ORIGINS (lista separada por vírgula)
 # Se não configurado, deriva de ALLOWED_HOSTS adicionando https://
-CSRF_TRUSTED_ORIGINS_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
 if CSRF_TRUSTED_ORIGINS_ENV:
     # Usar lista da variável de ambiente
     CSRF_TRUSTED_ORIGINS = [
         origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(",") if origin.strip()
     ]
+    # Log para debug (apenas em desenvolvimento)
+    if DEBUG:  # noqa: F405
+        import logging
+        logger = logging.getLogger("django")
+        logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS configurado: {CSRF_TRUSTED_ORIGINS}")
 else:
     # Derivar de ALLOWED_HOSTS (adicionar https:// para cada host)
     # Ignorar wildcards (*) e localhost
@@ -70,4 +75,14 @@ else:
         # Fallback: tentar usar ALLOWED_HOSTS mesmo com wildcard
         # Isso é menos seguro, mas pode ser necessário em alguns casos
         CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host != "*"]  # noqa: F405
+    
+    # Log para debug (apenas em desenvolvimento)
+    if DEBUG:  # noqa: F405
+        import logging
+        logger = logging.getLogger("django")
+        logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS derivado de ALLOWED_HOSTS: {CSRF_TRUSTED_ORIGINS}")
+
+# Garantir que CSRF_TRUSTED_ORIGINS é uma lista (não pode ser None)
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = []
 
