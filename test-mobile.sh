@@ -27,16 +27,23 @@ EXPO_PORT=8081
 # Padrão: usar tunnel para Expo E ngrok para backend
 USE_TUNNEL=true
 USE_BACKEND_TUNNEL=true
-if [[ "$1" == "--no-tunnel" ]] || [[ "$1" == "-n" ]]; then
-    USE_TUNNEL=false
-    USE_BACKEND_TUNNEL=false
-elif [[ "$1" == "--no-backend-tunnel" ]] || [[ "$1" == "-nb" ]]; then
-    USE_BACKEND_TUNNEL=false
-    # Mantém tunnel do Expo
-elif [[ "$1" == "--backend-tunnel" ]] || [[ "$1" == "-b" ]]; then
-    USE_BACKEND_TUNNEL=true
-    # Já é o padrão, mas mantém para compatibilidade
-fi
+FORCE_ENV=false
+
+# Verificar todos os argumentos
+for arg in "$@"; do
+    if [[ "$arg" == "--no-tunnel" ]] || [[ "$arg" == "-n" ]]; then
+        USE_TUNNEL=false
+        USE_BACKEND_TUNNEL=false
+    elif [[ "$arg" == "--no-backend-tunnel" ]] || [[ "$arg" == "-nb" ]]; then
+        USE_BACKEND_TUNNEL=false
+        # Mantém tunnel do Expo
+    elif [[ "$arg" == "--backend-tunnel" ]] || [[ "$arg" == "-b" ]]; then
+        USE_BACKEND_TUNNEL=true
+        # Já é o padrão, mas mantém para compatibilidade
+    elif [[ "$arg" == "--force-env" ]] || [[ "$arg" == "-f" ]]; then
+        FORCE_ENV=true
+    fi
+done
 
 echo -e "${BLUE}📱 SupBrainNote Mobile - Ambiente de Teste${NC}"
 echo -e "${YELLOW}💡 Padrão: Expo tunnel + ngrok para backend${NC}"
@@ -321,48 +328,89 @@ setup_mobile() {
         npm install
     fi
 
-    # Criar/atualizar .env do mobile
-    echo -e "${YELLOW}   📝 Configurando .env do mobile...${NC}"
+    # Verificar se já existe .env com URL de produção
+    PRODUCTION_URL="https://ut-be.app.webmaxdigital.com"
+    HAS_PRODUCTION_ENV=false
 
-    # Determinar URL da API
-    if [ "$USE_BACKEND_TUNNEL" = true ]; then
-        # Usar ngrok tunnel para backend
-        if [ -f /tmp/ngrok-backend-url.txt ]; then
-            API_URL=$(cat /tmp/ngrok-backend-url.txt)
-            echo -e "${BLUE}   🌐 Backend via NGROK: $API_URL${NC}"
+    if [ -f "$MOBILE_DIR/.env" ]; then
+        # Verificar se .env contém URL de produção
+        if grep -q "EXPO_PUBLIC_API_URL.*$PRODUCTION_URL" "$MOBILE_DIR/.env" 2>/dev/null; then
+            HAS_PRODUCTION_ENV=true
+            echo -e "${YELLOW}   ⚠️  .env já existe com URL de produção configurada${NC}"
+            echo -e "${YELLOW}   💡 Mantendo configuração de produção (não será sobrescrita)${NC}"
+            echo -e "${BLUE}   💡 Para testar localmente, edite manualmente o .env ou use --force-env${NC}"
+        fi
+    fi
+    
+    # Exportar HAS_PRODUCTION_ENV para uso em outras funções
+    export HAS_PRODUCTION_ENV
+
+    # Se não for produção ou se --force-env foi passado, configurar para desenvolvimento
+    if [ "$HAS_PRODUCTION_ENV" = false ] || [ "$FORCE_ENV" = true ]; then
+        # Criar/atualizar .env do mobile
+        echo -e "${YELLOW}   📝 Configurando .env do mobile para desenvolvimento...${NC}"
+
+        # Determinar URL da API
+        if [ "$USE_BACKEND_TUNNEL" = true ]; then
+            # Usar ngrok tunnel para backend
+            if [ -f /tmp/ngrok-backend-url.txt ]; then
+                API_URL=$(cat /tmp/ngrok-backend-url.txt)
+                echo -e "${BLUE}   🌐 Backend via NGROK: $API_URL${NC}"
+            else
+                echo -e "${RED}   ❌ URL do ngrok não encontrada${NC}"
+                API_URL="http://$LOCAL_IP:$BACKEND_PORT"
+                echo -e "${YELLOW}   💡 Usando IP local como fallback${NC}"
+            fi
         else
-            echo -e "${RED}   ❌ URL do ngrok não encontrada${NC}"
+            # Usar IP local (requer mesma rede ou firewall configurado)
             API_URL="http://$LOCAL_IP:$BACKEND_PORT"
-            echo -e "${YELLOW}   💡 Usando IP local como fallback${NC}"
+            if [ "$USE_TUNNEL" = true ]; then
+                echo -e "${BLUE}   🌐 Modo TUNNEL: Backend em http://$LOCAL_IP:$BACKEND_PORT${NC}"
+                echo -e "${YELLOW}   💡 Tunnel é apenas para código do app, HTTP usa IP local${NC}"
+                echo -e "${YELLOW}   💡 Se não conectar, use --backend-tunnel para usar ngrok${NC}"
+            else
+                echo -e "${BLUE}   🌐 Modo LAN: Backend em http://$LOCAL_IP:$BACKEND_PORT${NC}"
+                echo -e "${YELLOW}   💡 Certifique-se de que backend está acessível neste IP${NC}"
+            fi
         fi
-    else
-        # Usar IP local (requer mesma rede ou firewall configurado)
-        API_URL="http://$LOCAL_IP:$BACKEND_PORT"
-        if [ "$USE_TUNNEL" = true ]; then
-            echo -e "${BLUE}   🌐 Modo TUNNEL: Backend em http://$LOCAL_IP:$BACKEND_PORT${NC}"
-            echo -e "${YELLOW}   💡 Tunnel é apenas para código do app, HTTP usa IP local${NC}"
-            echo -e "${YELLOW}   💡 Se não conectar, use --backend-tunnel para usar ngrok${NC}"
-        else
-            echo -e "${BLUE}   🌐 Modo LAN: Backend em http://$LOCAL_IP:$BACKEND_PORT${NC}"
-            echo -e "${YELLOW}   💡 Certifique-se de que backend está acessível neste IP${NC}"
+
+        # Obter SENTRY_DSN do .env principal
+        SENTRY_DSN=""
+        if [ -f "$SCRIPT_DIR/.env" ]; then
+            SENTRY_DSN=$(grep -E "^SENTRY_DSN=" "$SCRIPT_DIR/.env" | cut -d"'" -f2 | cut -d'"' -f2)
         fi
-    fi
 
-    # Obter SENTRY_DSN do .env principal
-    SENTRY_DSN=""
-    if [ -f "$SCRIPT_DIR/.env" ]; then
-        SENTRY_DSN=$(grep -E "^SENTRY_DSN=" "$SCRIPT_DIR/.env" | cut -d"'" -f2 | cut -d'"' -f2)
-    fi
-
-    # Criar .env
-    cat > "$MOBILE_DIR/.env" << EOF
+        # Criar .env (sobrescreve se --force-env foi passado)
+        cat > "$MOBILE_DIR/.env" << EOF
 # Configuração para teste mobile
 # Gerado automaticamente por test-mobile.sh
+# Para usar produção, edite manualmente e defina:
+# EXPO_PUBLIC_API_URL=https://ut-be.app.webmaxdigital.com
 EXPO_PUBLIC_API_URL=$API_URL
 EXPO_PUBLIC_SENTRY_DSN=$SENTRY_DSN
 EOF
 
-    echo -e "${GREEN}   ✅ Mobile configurado${NC}"
+        echo -e "${GREEN}   ✅ Mobile configurado para desenvolvimento${NC}"
+    else
+        # Manter configuração existente (produção)
+        # Ler SENTRY_DSN do .env existente primeiro
+        SENTRY_DSN=""
+        if [ -f "$MOBILE_DIR/.env" ]; then
+            SENTRY_DSN=$(grep -E "^EXPO_PUBLIC_SENTRY_DSN=" "$MOBILE_DIR/.env" | cut -d'=' -f2 | tr -d '"' | tr -d "'" | xargs)
+        fi
+        # Se não encontrou no .env do mobile, tentar do .env principal
+        if [ -z "$SENTRY_DSN" ] && [ -f "$SCRIPT_DIR/.env" ]; then
+            SENTRY_DSN=$(grep -E "^SENTRY_DSN=" "$SCRIPT_DIR/.env" | cut -d"'" -f2 | cut -d'"' -f2)
+            # Adicionar SENTRY_DSN ao .env existente se não tiver
+            if [ -n "$SENTRY_DSN" ] && ! grep -q "EXPO_PUBLIC_SENTRY_DSN" "$MOBILE_DIR/.env" 2>/dev/null; then
+                echo "" >> "$MOBILE_DIR/.env"
+                echo "EXPO_PUBLIC_SENTRY_DSN=$SENTRY_DSN" >> "$MOBILE_DIR/.env"
+                echo -e "${GREEN}   ✅ SENTRY_DSN adicionado ao .env${NC}"
+            fi
+        fi
+        echo -e "${GREEN}   ✅ Mantendo configuração de produção (URL e SENTRY_DSN preservados)${NC}"
+    fi
+
     if [ -n "$SENTRY_DSN" ]; then
         echo -e "${GREEN}   ✅ Sentry/GlitchTip configurado${NC}"
     else
@@ -592,9 +640,12 @@ cleanup() {
     echo ""
     echo -e "${YELLOW}🧹 Limpando...${NC}"
     stop_expo
-    stop_celery
-    stop_backend
-    stop_backend_tunnel
+    # Só parar backend/celery se não estiver usando produção
+    if [ "$HAS_PRODUCTION_ENV" = false ]; then
+        stop_celery
+        stop_backend
+        stop_backend_tunnel
+    fi
     exit 0
 }
 trap cleanup SIGINT SIGTERM
@@ -605,49 +656,77 @@ if ! check_port $BACKEND_PORT "Backend"; then
 fi
 
 # Setup
-setup_backend
 setup_mobile
 
-# SEMPRE tentar iniciar backend (mesmo se check_backend_running retornar true)
-# Isso garante que o backend está realmente rodando
-start_backend
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Falha ao iniciar backend${NC}"
-    echo -e "${YELLOW}💡 Verifique os logs em: $BACKEND_LOG_FILE${NC}"
-    exit 1
+# Verificar se está usando produção
+PRODUCTION_URL="https://ut-be.app.webmaxdigital.com"
+HAS_PRODUCTION_ENV=false
+if [ -f "$MOBILE_DIR/.env" ]; then
+    if grep -q "EXPO_PUBLIC_API_URL.*$PRODUCTION_URL" "$MOBILE_DIR/.env" 2>/dev/null; then
+        HAS_PRODUCTION_ENV=true
+    fi
 fi
 
-# Iniciar Celery worker para processar transcrições
-start_celery
-if [ $? -ne 0 ]; then
-    echo -e "${YELLOW}⚠️  Celery Worker não iniciou, mas continuando...${NC}"
-    echo -e "${YELLOW}💡 Transcrições não funcionarão sem o Celery Worker${NC}"
-fi
+# Se estiver usando produção, pular backend e celery
+if [ "$HAS_PRODUCTION_ENV" = true ]; then
+    echo -e "${GREEN}✅ Usando backend de produção: $PRODUCTION_URL${NC}"
+    echo -e "${YELLOW}💡 Backend local e Celery não serão iniciados${NC}"
+    echo -e "${BLUE}💡 Apenas Expo será iniciado com tunnel${NC}"
+    echo ""
+else
+    # Setup e iniciar backend apenas se não for produção
+    setup_backend
 
-# Iniciar Celery Beat para tarefas periódicas
-start_celery_beat
-if [ $? -ne 0 ]; then
-    echo -e "${YELLOW}⚠️  Celery Beat não iniciou, mas continuando...${NC}"
-    echo -e "${YELLOW}💡 Tarefas periódicas não funcionarão sem o Celery Beat${NC}"
-fi
+    # SEMPRE tentar iniciar backend (mesmo se check_backend_running retornar true)
+    # Isso garante que o backend está realmente rodando
+    start_backend
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Falha ao iniciar backend${NC}"
+        echo -e "${YELLOW}💡 Verifique os logs em: $BACKEND_LOG_FILE${NC}"
+        exit 1
+    fi
 
-# Iniciar ngrok tunnel para backend se solicitado
-if [ "$USE_BACKEND_TUNNEL" = true ]; then
-    start_backend_tunnel
-    if [ $? -eq 0 ]; then
-        # Atualizar .env com URL do ngrok
-        if [ -f /tmp/ngrok-backend-url.txt ]; then
-            API_URL=$(cat /tmp/ngrok-backend-url.txt)
-            cat > "$MOBILE_DIR/.env" << EOF
+    # Iniciar Celery worker para processar transcrições
+    start_celery
+    if [ $? -ne 0 ]; then
+        echo -e "${YELLOW}⚠️  Celery Worker não iniciou, mas continuando...${NC}"
+        echo -e "${YELLOW}💡 Transcrições não funcionarão sem o Celery Worker${NC}"
+    fi
+
+    # Iniciar Celery Beat para tarefas periódicas
+    start_celery_beat
+    if [ $? -ne 0 ]; then
+        echo -e "${YELLOW}⚠️  Celery Beat não iniciou, mas continuando...${NC}"
+        echo -e "${YELLOW}💡 Tarefas periódicas não funcionarão sem o Celery Beat${NC}"
+    fi
+
+    # Iniciar ngrok tunnel para backend se solicitado (apenas em desenvolvimento)
+    if [ "$USE_BACKEND_TUNNEL" = true ]; then
+        start_backend_tunnel
+        if [ $? -eq 0 ]; then
+            # Atualizar .env com URL do ngrok apenas se não for produção
+            if [ -f /tmp/ngrok-backend-url.txt ]; then
+                API_URL=$(cat /tmp/ngrok-backend-url.txt)
+                if [ "$FORCE_ENV" = true ]; then
+                    # Obter SENTRY_DSN do .env principal
+                    SENTRY_DSN=""
+                    if [ -f "$SCRIPT_DIR/.env" ]; then
+                        SENTRY_DSN=$(grep -E "^SENTRY_DSN=" "$SCRIPT_DIR/.env" | cut -d"'" -f2 | cut -d'"' -f2)
+                    fi
+                    cat > "$MOBILE_DIR/.env" << EOF
 # Configuração para teste mobile
 # Gerado automaticamente por test-mobile.sh
+# Para usar produção, edite manualmente e defina:
+# EXPO_PUBLIC_API_URL=https://ut-be.app.webmaxdigital.com
 EXPO_PUBLIC_API_URL=$API_URL
 EXPO_PUBLIC_SENTRY_DSN=$SENTRY_DSN
 EOF
-            echo -e "${GREEN}   ✅ .env atualizado com URL do ngrok${NC}"
+                    echo -e "${GREEN}   ✅ .env atualizado com URL do ngrok${NC}"
+                fi
+            fi
+        else
+            echo -e "${YELLOW}⚠️  Continuando sem tunnel do backend (usando IP local)${NC}"
         fi
-    else
-        echo -e "${YELLOW}⚠️  Continuando sem tunnel do backend (usando IP local)${NC}"
     fi
 fi
 
@@ -684,19 +763,28 @@ echo -e "   2. Ou pressione ${YELLOW}a${NC} para Android, ${YELLOW}i${NC} para i
 echo ""
 echo -e "${BLUE}📋 Debug & Logs:${NC}"
 echo -e "   • ${GREEN}Mobile/Expo:${NC}  $EXPO_LOG_FILE"
-echo -e "   • ${GREEN}Backend:${NC}      $BACKEND_LOG_FILE"
-echo -e "   • ${GREEN}Celery Worker:${NC} $CELERY_WORKER_LOG_FILE"
-echo -e "   • ${GREEN}Celery Beat:${NC}   $CELERY_BEAT_LOG_FILE"
+if [ "$HAS_PRODUCTION_ENV" = false ]; then
+    echo -e "   • ${GREEN}Backend:${NC}      $BACKEND_LOG_FILE"
+    echo -e "   • ${GREEN}Celery Worker:${NC} $CELERY_WORKER_LOG_FILE"
+    echo -e "   • ${GREEN}Celery Beat:${NC}   $CELERY_BEAT_LOG_FILE"
+fi
 echo -e "   • ${GREEN}GlitchTip:${NC}    https://app.glitchtip.com (erros do backend)"
 echo ""
 echo -e "   ${YELLOW}Acompanhar logs em tempo real:${NC}"
 echo -e "   tail -f $EXPO_LOG_FILE        # Mobile"
-echo -e "   tail -f $BACKEND_LOG_FILE     # Backend"
-echo -e "   tail -f $CELERY_WORKER_LOG_FILE      # Celery Worker (transcrições)"
-echo -e "   tail -f $CELERY_BEAT_LOG_FILE # Celery Beat (tarefas periódicas)"
+if [ "$HAS_PRODUCTION_ENV" = false ]; then
+    echo -e "   tail -f $BACKEND_LOG_FILE     # Backend"
+    echo -e "   tail -f $CELERY_WORKER_LOG_FILE      # Celery Worker (transcrições)"
+    echo -e "   tail -f $CELERY_BEAT_LOG_FILE # Celery Beat (tarefas periódicas)"
+fi
 echo ""
 echo -e "${YELLOW}⚠️  Importante:${NC}"
-if [ "$USE_BACKEND_TUNNEL" = true ]; then
+if [ "$HAS_PRODUCTION_ENV" = true ]; then
+    echo -e "   • ✅ Usando backend de PRODUÇÃO: $PRODUCTION_URL"
+    echo -e "   • ✅ Expo usa tunnel para código do app"
+    echo -e "   • ✅ Requisições HTTP vão para backend de produção"
+    echo -e "   • ${BLUE}Backend local e Celery não são necessários${NC}"
+elif [ "$USE_BACKEND_TUNNEL" = true ]; then
     echo -e "   • ✅ Backend acessível via ngrok tunnel (padrão)"
     echo -e "   • ✅ Funciona de qualquer rede (não precisa mesma Wi-Fi)"
     echo -e "   • ✅ Expo usa tunnel para código do app"

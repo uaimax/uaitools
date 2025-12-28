@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.microsoft",
     "allauth.socialaccount.providers.instagram",
     "allauth.socialaccount.providers.linkedin_oauth2",
+    "django_celery_beat",  # Celery Beat scheduler (DatabaseScheduler)
     "dj_rest_auth",
     "dj_rest_auth.registration",
     "rest_framework_simplejwt",
