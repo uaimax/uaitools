@@ -173,6 +173,17 @@ module.exports = {
       ],
       'expo-secure-store',
       'expo-sqlite',
+      [
+        'expo-share-intent',
+        {
+          ios: {
+            appGroupIdentifier: 'group.com.uaitools.supbrainnote',
+          },
+          android: {
+            mimeTypes: ['audio/*'],
+          },
+        },
+      ],
       // Plugin customizado para garantir intent filters
       withAndroidIntentFilters,
     ],

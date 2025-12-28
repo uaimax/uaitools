@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
+import { useShareIntent } from 'expo-share-intent';
 import * as Sentry from '@sentry/react-native';
 import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
@@ -48,6 +49,44 @@ try {
 
 export default function App() {
   const navigationRef = useRef<any>(null);
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+
+  // Handler para arquivos compartilhados via expo-share-intent
+  useEffect(() => {
+    if (hasShareIntent && shareIntent) {
+      console.log('[SHARE INTENT] Dados compartilhados recebidos:', shareIntent);
+      
+      // shareIntent pode ter:
+      // - files: array de objetos com path, mimeType, fileName, etc.
+      // - text: texto compartilhado
+      // - type: tipo do compartilhamento
+      
+      if (shareIntent.files && shareIntent.files.length > 0) {
+        // Pegar o primeiro arquivo (áudio)
+        const firstFile = shareIntent.files[0];
+        const audioUri = firstFile.path;
+        const audioName = firstFile.fileName || firstFile.path.split('/').pop() || 'Áudio recebido';
+        
+        console.log('[SHARE INTENT] Áudio recebido:', { audioUri, audioName, shareIntent });
+        
+        // Navegar para tela de processamento
+        setTimeout(() => {
+          if (navigationRef.current) {
+            navigationRef.current.navigate('Main', {
+              screen: 'AudioReceived',
+              params: { audioUri, audioName },
+            });
+          }
+        }, 1000);
+        
+        // Limpar dados compartilhados após processar
+        resetShareIntent();
+      } else if (shareIntent.text) {
+        console.log('[SHARE INTENT] Texto compartilhado (não é áudio):', shareIntent.text);
+        resetShareIntent();
+      }
+    }
+  }, [hasShareIntent, shareIntent, resetShareIntent]);
 
   useEffect(() => {
     // Inicializa banco de dados ao iniciar app (com tratamento robusto)
@@ -91,7 +130,7 @@ export default function App() {
     testConnectivity();
     // #endregion
 
-    // Handler para deep linking e compartilhamento
+    // Handler para deep linking e compartilhamento via URL
     const handleUrl = async (event: { url: string }) => {
       console.log('[SHARE] URL recebida:', event.url);
 
@@ -104,7 +143,7 @@ export default function App() {
         const audioName = (queryParams?.name || queryParams?.filename || queryParams?.title || 'Áudio recebido') as string;
 
         if (audioUri) {
-          console.log('[SHARE] Áudio recebido:', { audioUri, audioName, fullUrl: event.url });
+          console.log('[SHARE] Áudio recebido via URL:', { audioUri, audioName, fullUrl: event.url });
 
           // Navegar para tela de processamento
           // Usar setTimeout para garantir que navegação está pronta
