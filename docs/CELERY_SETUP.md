@@ -9,7 +9,31 @@ O Celery Worker é necessário para processar tarefas assíncronas, como:
 
 ## 🔧 Configuração no CapRover
 
-### Opção 1: Serviço Separado (Recomendado)
+### ⚡ Configuração Padrão: Mesmo Container (Recomendado para MVP)
+
+**Por padrão, o Celery Worker roda no mesmo container do backend** usando Supervisor para gerenciar ambos os processos (Gunicorn + Celery).
+
+**Vantagens:**
+- ✅ Simplicidade: Um único app no CapRover
+- ✅ Economia: Menos recursos consumidos
+- ✅ Deploy único: Menos complexidade
+- ✅ Adequado para baixo/médio tráfego
+
+**Como funciona:**
+- O `captain-definition` já está configurado com Supervisor
+- Supervisor gerencia Gunicorn (backend HTTP) e Celery Worker simultaneamente
+- Auto-restart automático em caso de falha
+- Logs separados por processo
+
+**Nenhuma configuração adicional necessária!** Apenas certifique-se de que as variáveis de ambiente do Redis estão configuradas:
+```bash
+CELERY_BROKER_URL=redis://:SENHA@srv-captain--redis:6379/0
+CELERY_RESULT_BACKEND=redis://:SENHA@srv-captain--redis:6379/0
+```
+
+### Opção 2: Serviço Separado (Para Escala Futura)
+
+**Quando usar:** Quando a carga for alta (>500 uploads/dia) ou precisar escalar workers independentemente.
 
 Crie um **novo app** no CapRover chamado `ut-be-celery` (ou outro nome de sua escolha):
 
@@ -28,9 +52,17 @@ Crie um **novo app** no CapRover chamado `ut-be-celery` (ou outro nome de sua es
      ENVIRONMENT=production
      ```
 
-3. **Deploy:**
-   - Faça deploy do novo app
-   - O Celery worker iniciará automaticamente
+3. **Configurar modo separado no backend:**
+   - No app backend, adicione variável de ambiente:
+     ```bash
+     CELERY_MODE=separate
+     ```
+   - Isso fará o backend rodar apenas Gunicorn (sem Celery)
+
+4. **Deploy:**
+   - Faça deploy do novo app Celery
+   - Faça deploy do backend (com `CELERY_MODE=separate`)
+   - O Celery worker iniciará automaticamente no serviço separado
 
 ### Opção 2: Mesmo Container (Não Recomendado)
 
