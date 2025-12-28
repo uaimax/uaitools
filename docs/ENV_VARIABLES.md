@@ -37,9 +37,18 @@ A variável `ENVIRONMENT` é a única variável necessária para definir o ambie
 
 ### Cache (Redis)
 ```bash
+# Redis sem senha (desenvolvimento)
 REDIS_CACHE_URL=redis://localhost:6379/1
+
+# Redis com senha (produção - CapRover)
+# Formato: redis://:SENHA@HOSTNAME:PORTA/DB_NUMBER
+REDIS_CACHE_URL=redis://:senha123@srv-captain--redis:6379/1
+
+# Se a senha tiver caracteres especiais, use URL encoding
 CACHE_DEFAULT_TIMEOUT=300  # 5 minutos
 ```
+
+**Nota:** Veja [REDIS_SETUP.md](REDIS_SETUP.md) para guia completo de configuração no CapRover.
 
 ### Rate Limiting
 ```bash
@@ -102,9 +111,21 @@ AUDIT_LOG_RETENTION_DAYS=1095  # 3 anos (mínimo: 365)
 ## ⚙️ Celery (Jobs Assíncronos)
 
 ```bash
+# Redis sem senha (desenvolvimento)
 CELERY_BROKER_URL=redis://localhost:6379/0
 CELERY_RESULT_BACKEND=redis://localhost:6379/0
+
+# Redis com senha (produção - CapRover)
+# Formato: redis://:SENHA@HOSTNAME:PORTA/DB_NUMBER
+CELERY_BROKER_URL=redis://:senha123@srv-captain--redis:6379/0
+CELERY_RESULT_BACKEND=redis://:senha123@srv-captain--redis:6379/0
+
+# Se a senha tiver caracteres especiais, use URL encoding:
+# @ → %40, # → %23, $ → %24, % → %25, & → %26, + → %2B, = → %3D, ? → %3F, / → %2F, : → %3A
+# Exemplo: senha@123# → senha%40123%23
 ```
+
+**Nota:** Veja [REDIS_SETUP.md](REDIS_SETUP.md) para guia completo de configuração no CapRover.
 
 ## 📝 Branding
 

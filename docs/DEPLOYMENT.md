@@ -105,6 +105,23 @@ Isso facilita:
 - Identificação clara de rotas de API
 - Migração futura sem quebrar URLs
 
+## 🔴 Redis Configuration
+
+**IMPORTANTE:** Se você usar Celery ou Cache, precisa configurar Redis.
+
+Veja o guia completo: [REDIS_SETUP.md](REDIS_SETUP.md)
+
+**Resumo rápido:**
+1. Configure as variáveis de ambiente no app backend:
+   ```bash
+   CELERY_BROKER_URL=redis://:SENHA@srv-captain--redis:6379/0
+   CELERY_RESULT_BACKEND=redis://:SENHA@srv-captain--redis:6379/0
+   REDIS_CACHE_URL=redis://:SENHA@srv-captain--redis:6379/1
+   ```
+2. Substitua `SENHA` pela senha do seu Redis
+3. Se a senha tiver caracteres especiais, use URL encoding
+4. DB 0 = Celery, DB 1 = Cache
+
 
 
 
