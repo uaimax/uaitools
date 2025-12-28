@@ -40,28 +40,7 @@
     "RUN echo '#!/bin/bash\\nset -e\\n\\n# Aplicar migrations\\necho \"📦 Aplicando migrations...\"\\npython manage.py migrate --noinput\\necho \"✅ Migrations aplicadas\"\\n\\n# Verificar se deve rodar Celery no mesmo container\\nCELERY_MODE=${CELERY_MODE:-same}\\n\\nif [ \"$CELERY_MODE\" = \"separate\" ]; then\\n    # Modo separado: apenas Gunicorn (para quando tiver serviço Celery separado)\\n    echo \"🚀 Modo separado: Iniciando apenas Gunicorn...\"\\n    exec gunicorn --bind 0.0.0.0:80 --workers 3 --timeout 120 --access-logfile - --error-logfile - config.wsgi:application\\nelse\\n    # Modo mesmo container: Supervisor gerencia Gunicorn + Celery\\n    echo \"🚀 Modo mesmo container: Iniciando Gunicorn + Celery Worker...\"\\n    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf\\nfi' > /app/start.sh && chmod +x /app/start.sh",
     "",
     "# Configuração do Supervisor (Gunicorn + Celery)",
-    "RUN echo '[supervisord]\\n\
-nodaemon=true\\n\
-\\n\
-[program:gunicorn]\\n\
-command=gunicorn --bind 0.0.0.0:80 --workers 3 --timeout 120 --access-logfile - --error-logfile - config.wsgi:application\\n\
-directory=/app\\n\
-autostart=true\\n\
-autorestart=true\\n\
-stderr_logfile=/dev/stderr\\n\
-stderr_logfile_maxbytes=0\\n\
-stdout_logfile=/dev/stdout\\n\
-stdout_logfile_maxbytes=0\\n\
-\\n\
-[program:celery]\\n\
-command=celery -A config worker -l info\\n\
-directory=/app\\n\
-autostart=true\\n\
-autorestart=true\\n\
-stderr_logfile=/dev/stderr\\n\
-stderr_logfile_maxbytes=0\\n\
-stdout_logfile=/dev/stdout\\n\
-stdout_logfile_maxbytes=0' > /etc/supervisor/conf.d/supervisord.conf",
+    "RUN echo '[supervisord]\\nnodaemon=true\\n\\n[program:gunicorn]\\ncommand=gunicorn --bind 0.0.0.0:80 --workers 3 --timeout 120 --access-logfile - --error-logfile - config.wsgi:application\\ndirectory=/app\\nautostart=true\\nautorestart=true\\nstderr_logfile=/dev/stderr\\nstderr_logfile_maxbytes=0\\nstdout_logfile=/dev/stdout\\nstdout_logfile_maxbytes=0\\n\\n[program:celery]\\ncommand=celery -A config worker -l info\\ndirectory=/app\\nautostart=true\\nautorestart=true\\nstderr_logfile=/dev/stderr\\nstderr_logfile_maxbytes=0\\nstdout_logfile=/dev/stdout\\nstdout_logfile_maxbytes=0' > /etc/supervisor/conf.d/supervisord.conf",
     "",
     "# Comando para iniciar aplicação (executa migrations antes)",
     "CMD [\"/app/start.sh\"]"
