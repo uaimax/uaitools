@@ -248,3 +248,4 @@ class ErrorLoggingMiddleware:
 
             # Re-raise a exceção para que o Django trate normalmente
             raise
+
