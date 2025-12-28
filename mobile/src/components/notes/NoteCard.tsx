@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Play, Pencil, FolderInput, Trash2, Inbox } from 'lucide-react-native';
+import { Play, Pencil, FolderInput, Trash2, Inbox, Plus, List } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, typography, spacing, elevation } from '@/theme';
@@ -15,7 +15,8 @@ import { BoxBadge } from './BoxBadge';
 import { deleteNote, moveNote } from '@/services/api/notes';
 import { getBoxes } from '@/services/api/boxes';
 import { useToast } from '@/context/ToastContext';
-import { Modal } from '@/components/common';
+import { Modal, Input, Button } from '@/components/common';
+import { useBoxes } from '@/hooks/useBoxes';
 import type { MainStackParamList } from '@/navigation/types';
 import type { Box } from '@/types';
 
@@ -40,9 +41,13 @@ export const NoteCard: React.FC<NoteCardProps> = ({
 }) => {
   const navigation = useNavigation<NavigationProp>();
   const { showToast } = useToast();
+  const { create: createBox } = useBoxes();
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [moving, setMoving] = useState(false);
+  const [showCreateBox, setShowCreateBox] = useState(false);
+  const [newBoxName, setNewBoxName] = useState('');
+  const [creatingBox, setCreatingBox] = useState(false);
 
   const boxName = note.box_name || 'Inbox';
   const boxColor = note.box_color || null;
@@ -102,8 +107,39 @@ export const NoteCard: React.FC<NoteCardProps> = ({
       const data = await getBoxes();
       setBoxes(data || []);
       setShowMoveModal(true);
+      setShowCreateBox(false);
+      setNewBoxName('');
     } catch (error: any) {
       showToast('Erro ao carregar caixinhas', 'error');
+    }
+  };
+
+  const handleCreateAndMove = async () => {
+    if (!newBoxName.trim()) {
+      showToast('Nome da caixinha é obrigatório', 'warning');
+      return;
+    }
+
+    try {
+      setCreatingBox(true);
+      const newBox = await createBox({ name: newBoxName.trim() });
+
+      // Atualizar lista de caixinhas
+      const updatedBoxes = await getBoxes();
+      setBoxes(updatedBoxes || []);
+
+      // Fechar modo criação e mover nota para nova caixinha
+      setShowCreateBox(false);
+      setNewBoxName('');
+
+      // Mover nota automaticamente para a nova caixinha
+      await handleMove(newBox.id);
+
+      showToast('Caixinha criada e nota movida!', 'success');
+    } catch (error: any) {
+      showToast('Erro ao criar caixinha', 'error');
+    } finally {
+      setCreatingBox(false);
     }
   };
 
@@ -135,7 +171,15 @@ export const NoteCard: React.FC<NoteCardProps> = ({
       >
         {/* Header com Badge e Timestamp */}
         <View style={styles.header}>
-          <BoxBadge name={boxName} color={boxColor} />
+          <BoxBadge
+            name={boxName}
+            color={boxColor}
+            onPress={
+              note.box_id
+                ? () => navigation.navigate('NotesList', { boxId: note.box_id })
+                : undefined
+            }
+          />
           <Text style={styles.timestamp}>{formatRelativeTime(note.created_at)}</Text>
         </View>
 
@@ -296,6 +340,51 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             </TouchableOpacity>
           ))}
 
+          {/* Divisor */}
+          <View style={styles.moveModalDivider} />
+
+          {/* Criar Nova Caixinha */}
+          {!showCreateBox ? (
+            <TouchableOpacity
+              style={styles.createBoxButton}
+              onPress={() => setShowCreateBox(true)}
+              disabled={moving || creatingBox}
+            >
+              <View style={styles.createBoxIcon}>
+                <FolderInput size={20} color={colors.primary.default} />
+              </View>
+              <Text style={styles.createBoxText}>Criar nova caixinha</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.createBoxForm}>
+              <Input
+                placeholder="Nome da nova caixinha"
+                value={newBoxName}
+                onChangeText={setNewBoxName}
+                autoFocus
+                style={styles.createBoxInput}
+              />
+              <View style={styles.createBoxActions}>
+                <Button
+                  title="Cancelar"
+                  onPress={() => {
+                    setShowCreateBox(false);
+                    setNewBoxName('');
+                  }}
+                  variant="secondary"
+                  style={styles.createBoxButtonCancel}
+                  disabled={creatingBox}
+                />
+                <Button
+                  title="Criar e mover"
+                  onPress={handleCreateAndMove}
+                  loading={creatingBox}
+                  style={styles.createBoxButtonCreate}
+                />
+              </View>
+            </View>
+          )}
+
           {moving && (
             <View style={styles.movingOverlay}>
               <Text style={styles.movingText}>Movendo...</Text>
@@ -358,6 +447,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[2],
     paddingHorizontal: spacing[2],
     borderRadius: 8,
+  },
+  actionButtonView: {
+    backgroundColor: `${colors.primary.default}15`,
+  },
+  actionButtonView: {
+    backgroundColor: `${colors.primary.default}15`,
   },
   actionButtonEdit: {
     backgroundColor: `${colors.primary.default}15`,
@@ -461,5 +556,51 @@ const styles = StyleSheet.create({
   movingText: {
     ...typography.bodySmall,
     color: colors.text.secondary,
+  },
+  moveModalDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    marginVertical: spacing[3],
+  },
+  createBoxButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[3],
+    borderRadius: 12,
+    backgroundColor: `${colors.primary.default}15`,
+    borderWidth: 1,
+    borderColor: `${colors.primary.default}30`,
+    borderStyle: 'dashed',
+  },
+  createBoxIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${colors.primary.default}20`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing[3],
+  },
+  createBoxText: {
+    ...typography.body,
+    color: colors.primary.default,
+    fontWeight: '500',
+  },
+  createBoxForm: {
+    gap: spacing[3],
+  },
+  createBoxInput: {
+    marginBottom: 0,
+  },
+  createBoxActions: {
+    flexDirection: 'row',
+    gap: spacing[2],
+  },
+  createBoxButtonCancel: {
+    flex: 1,
+  },
+  createBoxButtonCreate: {
+    flex: 1,
   },
 });

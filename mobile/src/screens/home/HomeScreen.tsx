@@ -14,7 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, Inbox, ChevronRight } from 'lucide-react-native';
+import { Settings, Inbox, ChevronRight, Brain } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { RecordButton, RecordingOverlay } from '@/components/recording';
 import { NoteCard } from '@/components/notes';
@@ -130,7 +130,16 @@ export const HomeScreen: React.FC = () => {
               <Text style={styles.syncBadgeText}>{pendingCount}</Text>
             </View>
           )}
-          <TouchableOpacity onPress={() => navigation.navigate('Settings' as never)}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Query' as never)}
+            style={styles.headerActionButton}
+          >
+            <Brain size={24} color={colors.primary.default} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Settings' as never)}
+            style={styles.headerActionButton}
+          >
             <Settings size={24} color={colors.text.secondary} />
           </TouchableOpacity>
         </View>
@@ -367,6 +376,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[2],
+  },
+  headerActionButton: {
+    padding: spacing[1],
   },
   syncBadge: {
     backgroundColor: colors.semantic.warning,

@@ -180,6 +180,11 @@ export const NoteDetailScreen: React.FC = () => {
             <BoxBadge
               name={note.box_name || 'Inbox'}
               color={note.box_color || colors.text.tertiary}
+              onPress={
+                note.box_id
+                  ? () => navigation.navigate('NotesList', { boxId: note.box_id })
+                  : undefined
+              }
             />
             <FolderInput
               size={14}

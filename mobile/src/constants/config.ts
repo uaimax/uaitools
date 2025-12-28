@@ -63,6 +63,9 @@ export const API_ENDPOINTS = {
 
   // Boxes
   boxes: '/api/v1/supbrainnote/boxes/',
+
+  // Query
+  query: '/api/v1/supbrainnote/query/',
 } as const;
 
 // Timeouts

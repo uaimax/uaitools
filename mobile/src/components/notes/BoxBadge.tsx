@@ -3,12 +3,13 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors, typography, spacing } from '@/theme';
 
 interface BoxBadgeProps {
   name: string;
   color: string | null;
+  onPress?: () => void;
 }
 
 /**
@@ -28,11 +29,11 @@ function getBoxColor(name: string): string {
   return colors.box[boxKeys[index]];
 }
 
-export const BoxBadge: React.FC<BoxBadgeProps> = ({ name, color }) => {
+export const BoxBadge: React.FC<BoxBadgeProps> = ({ name, color, onPress }) => {
   const boxColor = color || getBoxColor(name);
   const displayName = name.length > 8 ? `${name.slice(0, 8)}.` : name;
 
-  return (
+  const BadgeContent = (
     <View
       style={[
         styles.badge,
@@ -40,6 +41,7 @@ export const BoxBadge: React.FC<BoxBadgeProps> = ({ name, color }) => {
           backgroundColor: `${boxColor}1A`, // 10% opacity
           borderColor: `${boxColor}4D`, // 30% opacity
         },
+        onPress && styles.badgeClickable,
       ]}
     >
       <Text style={[styles.badgeText, { color: boxColor }]}>
@@ -47,6 +49,16 @@ export const BoxBadge: React.FC<BoxBadgeProps> = ({ name, color }) => {
       </Text>
     </View>
   );
+
+  if (onPress) {
+    return (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        {BadgeContent}
+      </TouchableOpacity>
+    );
+  }
+
+  return BadgeContent;
 };
 
 const styles = StyleSheet.create({
@@ -59,6 +71,9 @@ const styles = StyleSheet.create({
   badgeText: {
     ...typography.captionSmall,
     fontWeight: '600',
+  },
+  badgeClickable: {
+    opacity: 1,
   },
 });
 

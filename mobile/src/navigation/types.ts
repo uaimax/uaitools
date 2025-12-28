@@ -18,6 +18,7 @@ export type MainStackParamList = {
   NoteEdit: { noteId: string };
   BoxesManagement: undefined;
   Settings: undefined;
+  Query: undefined;
 };
 
 export type RootStackParamList = {
