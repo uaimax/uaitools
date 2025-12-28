@@ -33,25 +33,25 @@ if TYPE_CHECKING:
 
 def get_or_create_workspace_for_user(request: "Request") -> "Workspace | None":
     """Obtém ou cria workspace para o usuário.
-    
+
     Segue a mesma lógica do WorkspaceViewSet.perform_create:
     1. Tenta usar request.workspace (do middleware)
     2. Se não houver, tenta usar user.workspace
     3. Se for super admin e não houver workspace, cria automaticamente
     4. Retorna None se nenhum workspace foi encontrado/criado
-    
+
     Args:
         request: Request HTTP com user autenticado
-        
+
     Returns:
         Workspace ou None se não foi possível obter/criar
     """
     from apps.accounts.models import Workspace
     from django.utils.text import slugify
     import logging
-    
+
     logger = logging.getLogger("apps.supbrainnote")
-    
+
     workspace: "Workspace | None" = getattr(request, "workspace", None)
 
     # Se não há workspace no request, tentar usar o workspace do usuário
