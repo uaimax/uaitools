@@ -76,18 +76,30 @@ if CSRF_TRUSTED_ORIGINS_ENV:
     logger.info(f"[CSRF] Origens configuradas via env: {CSRF_TRUSTED_ORIGINS}")
 elif _PERMISSIVE_MODE:
     # Modo permissivo: ALLOWED_HOSTS=* - desabilitar CSRF completamente
+    # IMPORTANTE: Redefinir MIDDLEWARE completamente (não usar .remove())
+    # Isso garante que funciona em todos os workers do Gunicorn
     CSRF_TRUSTED_ORIGINS = []
     logger.warning("[CSRF] ⚠️ ALLOWED_HOSTS=* - CSRF DESABILITADO (modo permissivo)")
     logger.warning("[CSRF] ⚠️ Configure CSRF_TRUSTED_ORIGINS para produção segura")
 
-    # Remover middleware CSRF completamente para garantir que admin funcione
-    if "django.middleware.csrf.CsrfViewMiddleware" in MIDDLEWARE:  # noqa: F405
-        MIDDLEWARE.remove("django.middleware.csrf.CsrfViewMiddleware")  # noqa: F405
-        logger.warning("[CSRF] ⚠️ CsrfViewMiddleware REMOVIDO do MIDDLEWARE")
-
-    # Remover também o debug middleware se existir
-    if "apps.core.middleware.csrf_debug.CsrfDebugMiddleware" in MIDDLEWARE:  # noqa: F405
-        MIDDLEWARE.remove("apps.core.middleware.csrf_debug.CsrfDebugMiddleware")  # noqa: F405
+    # Redefinir MIDDLEWARE sem os middlewares CSRF
+    MIDDLEWARE = [  # noqa: F405
+        "django.middleware.security.SecurityMiddleware",
+        "whitenoise.middleware.WhiteNoiseMiddleware",
+        "corsheaders.middleware.CorsMiddleware",
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.middleware.locale.LocaleMiddleware",
+        "apps.core.middleware.UUIDSessionMiddleware",
+        "django.middleware.common.CommonMiddleware",
+        # CSRF middlewares REMOVIDOS em modo permissivo
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "allauth.account.middleware.AccountMiddleware",
+        "apps.core.middleware.WorkspaceMiddleware",
+        "apps.core.middleware.ErrorLoggingMiddleware",
+        "django.contrib.messages.middleware.MessageMiddleware",
+        "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    ]
+    logger.warning("[CSRF] ⚠️ MIDDLEWARE redefinido SEM CsrfViewMiddleware")
 else:
     # Derivar de ALLOWED_HOSTS (adicionar https://)
     CSRF_TRUSTED_ORIGINS = [
