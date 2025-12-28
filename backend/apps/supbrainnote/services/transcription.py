@@ -28,13 +28,15 @@ class TranscriptionService:
         return OPENAI_AVAILABLE and self.client is not None
 
     def transcribe(
-        self, audio_file_path: str, language: str = "pt"
+        self, audio_file_path: str, language: str = "pt", prompt: str | None = None
     ) -> Dict[str, Any]:
         """Transcreve áudio usando Whisper API.
 
         Args:
             audio_file_path: Caminho do arquivo de áudio
             language: Idioma do áudio (padrão: pt)
+            prompt: Texto opcional com palavras-chave para melhorar transcrição
+                    (especialmente útil para nomes próprios, termos técnicos, etc.)
 
         Returns:
             Dicionário com:
@@ -98,11 +100,18 @@ class TranscriptionService:
                     except (OSError, IOError):
                         pass
                 # #endregion
-                transcript = self.client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    language=language,
-                )
+                # Preparar parâmetros da API
+                api_params = {
+                    "model": "whisper-1",
+                    "file": audio_file,
+                    "language": language,
+                }
+                
+                # Adicionar prompt se fornecido (ajuda Whisper a transcrever palavras específicas)
+                if prompt:
+                    api_params["prompt"] = prompt
+                
+                transcript = self.client.audio.transcriptions.create(**api_params)
 
             # #region agent log
             if os.path.exists(os.path.dirname(debug_log_path)):
