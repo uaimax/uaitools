@@ -121,24 +121,69 @@ Verifique se o CapRover está configurado corretamente para passar headers de or
 - [ ] Logs verificados (se `DEBUG=True`)
 - [ ] Django shell verificado (opcional)
 
+## 🔍 Diagnóstico Rápido
+
+Execute o script de diagnóstico no container:
+
+```bash
+caprover exec -a ut-be "python check_csrf_config.py"
+```
+
+Isso mostrará:
+- Se a variável está sendo lida
+- Se está no formato correto
+- Se a origem esperada está na lista
+- Problemas encontrados
+
 ## 🚨 Se Ainda Não Funcionar
 
-1. **Temporariamente, desabilitar verificação de origem** (NÃO RECOMENDADO EM PRODUÇÃO):
-   ```python
-   # Em prod.py (temporário, apenas para debug)
-   CSRF_TRUSTED_ORIGINS = ["*"]  # NÃO funciona - Django não aceita wildcard
-   ```
+### 1. Verificar Logs Após Redeploy
 
-2. **Verificar se há proxy reverso** que está modificando headers:
-   - CapRover pode estar adicionando headers
-   - Verificar configuração do CapRover
+Após fazer redeploy, verifique os logs para ver o que foi carregado:
 
-3. **Verificar se o Django Admin está acessível via HTTPS**:
-   - Se estiver acessando via HTTP, adicione também `http://` ao `CSRF_TRUSTED_ORIGINS`
+```bash
+caprover logs -a ut-be --tail 100 | grep CSRF
+```
 
-4. **Verificar cookies do browser**:
-   - Limpar cookies do site
-   - Tentar em modo anônimo/privado
+Você deve ver algo como:
+```
+[CSRF] CSRF_TRUSTED_ORIGINS_ENV (raw): 'https://ut-be.app.webmaxdigital.com'
+[CSRF] CSRF_TRUSTED_ORIGINS configurado da variável: ['https://ut-be.app.webmaxdigital.com']
+[CSRF] ✅ CSRF_TRUSTED_ORIGINS final: ['https://ut-be.app.webmaxdigital.com']
+```
+
+### 2. Verificar se Variável Está no CapRover
+
+No dashboard do CapRover:
+1. Vá em "App Configs" → "Environment Variables"
+2. Procure por `CSRF_TRUSTED_ORIGINS`
+3. Verifique se está exatamente: `https://ut-be.app.webmaxdigital.com` (sem espaços)
+
+### 3. Verificar Proxy Reverso (CapRover)
+
+CapRover pode estar modificando headers. Verifique:
+- Se o CapRover está configurado para passar headers de origem
+- Se há algum proxy adicional na frente
+
+### 4. Verificar Cookies do Browser
+
+- Limpar cookies do site
+- Tentar em modo anônimo/privado
+- Verificar se cookies estão sendo bloqueados
+
+### 5. Solução Temporária (NÃO RECOMENDADO)
+
+Se nada funcionar, você pode temporariamente desabilitar verificação de origem apenas para o admin (NÃO RECOMENDADO EM PRODUÇÃO):
+
+```python
+# Em prod.py (temporário, apenas para debug)
+# Adicionar após a configuração de CSRF_TRUSTED_ORIGINS
+if not CSRF_TRUSTED_ORIGINS:
+    # Fallback perigoso - apenas para debug
+    CSRF_TRUSTED_ORIGINS = ["https://ut-be.app.webmaxdigital.com"]
+```
+
+**⚠️ ATENÇÃO:** Isso reduz a segurança. Use apenas temporariamente para debug.
 
 ## 📚 Referências
 
