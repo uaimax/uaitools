@@ -23,6 +23,7 @@ from apps.supbrainnote.serializers import (
     QuerySerializer,
 )
 from apps.supbrainnote.services.query import QueryService
+from apps.supbrainnote.services.transcription import TranscriptionService
 from apps.supbrainnote.tasks import classify_note, transcribe_audio
 from apps.supbrainnote.throttles import SupBrainNoteQueryThrottle, SupBrainNoteUploadThrottle
 
@@ -410,4 +411,80 @@ class QueryViewSet(viewsets.ViewSet):
                 {"error": f"Erro ao consultar IA: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+    @action(detail=False, methods=["post"], url_path="transcribe")
+    def transcribe(self, request: "Request") -> Response:
+        """Transcreve áudio sem criar nota (para perguntas).
+
+        Este endpoint é usado apenas para transcrever áudio de perguntas,
+        não cria uma nota no sistema.
+        """
+        if "audio_file" not in request.FILES:
+            return Response(
+                {"error": "Arquivo de áudio não fornecido"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        audio_file = request.FILES["audio_file"]
+
+        # Validar arquivo (mesma validação do NoteUploadSerializer)
+        allowed_types = [".m4a", ".mp3", ".wav", ".ogg", ".opus", ".webm", ".aac", ".amr", ".flac", ".mpeg", ".mpga"]
+        ext = audio_file.name.lower().split(".")[-1] if "." in audio_file.name else ""
+        if f".{ext}" not in allowed_types:
+            return Response(
+                {"error": f"Tipo de arquivo não permitido. Tipos permitidos: {', '.join(allowed_types)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Tamanho máximo (50MB)
+        max_size = 50 * 1024 * 1024
+        if audio_file.size > max_size:
+            return Response(
+                {"error": f"Arquivo muito grande. Tamanho máximo: 50MB"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Salvar arquivo temporariamente
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as temp_file:
+            for chunk in audio_file.chunks():
+                temp_file.write(chunk)
+            temp_file_path = temp_file.name
+
+        try:
+            # Transcrever usando TranscriptionService
+            transcription_service = TranscriptionService()
+            if not transcription_service.is_available():
+                return Response(
+                    {"error": "Serviço de transcrição não disponível"},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+
+            result = transcription_service.transcribe(temp_file_path, language="pt")
+            transcript = result.get("text", "")
+
+            if not transcript:
+                return Response(
+                    {"error": "Não foi possível transcrever o áudio"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            return Response(
+                {"transcript": transcript},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Erro ao transcrever áudio para query: {e}")
+            return Response(
+                {"error": f"Erro ao transcrever áudio: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        finally:
+            # Limpar arquivo temporário
+            try:
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+            except Exception:
+                pass
 

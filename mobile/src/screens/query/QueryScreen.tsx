@@ -22,8 +22,7 @@ import { Modal, Button } from '@/components/common';
 import { useRecording } from '@/hooks/useRecording';
 import { useBoxes } from '@/hooks/useBoxes';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
-import { askQuery } from '@/services/api/query';
-import { uploadAudio } from '@/services/api/notes';
+import { askQuery, transcribeAudio } from '@/services/api/query';
 import { useToast } from '@/context/ToastContext';
 import { colors, typography, spacing, elevation } from '@/theme';
 import type { MainStackParamList } from '@/navigation/types';
@@ -48,6 +47,7 @@ export const QueryScreen: React.FC = () => {
   const [response, setResponse] = useState<QueryResponse | null>(null);
   const [showOverlay, setShowOverlay] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string>('');
 
   React.useEffect(() => {
     if (recordingState === 'recording') {
@@ -66,11 +66,14 @@ export const QueryScreen: React.FC = () => {
     try {
       setLoading(true);
       setResponse(null);
+      setStatusMessage('Estou buscando em todas as suas notas...');
       const result = await askQuery(question.trim(), selectedBoxId);
       setResponse(result);
+      setStatusMessage('');
     } catch (error: any) {
       showToast('Erro ao consultar. Tente novamente.', 'error');
       console.error('Erro ao consultar:', error);
+      setStatusMessage('');
     } finally {
       setLoading(false);
     }
@@ -92,36 +95,15 @@ export const QueryScreen: React.FC = () => {
       setShowOverlay(false);
       setTranscribing(true);
       setResponse(null);
+      setStatusMessage('Transcrevendo sua pergunta...');
 
-      // Upload do áudio para transcrever
-      showToast('Transcrevendo pergunta...', 'info');
-      const uploadResult = await uploadAudio(uri);
-
-      // Aguardar transcrição (polling simples)
-      let transcript = '';
-      let attempts = 0;
-      const maxAttempts = 30; // 30 tentativas (30 segundos)
-
-      while (attempts < maxAttempts && !transcript) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        attempts++;
-
-        try {
-          // Buscar nota atualizada
-          const { getNote } = await import('@/services/api/notes');
-          const note = await getNote(uploadResult.id);
-          if (note.transcript && note.processing_status === 'completed') {
-            transcript = note.transcript;
-            break;
-          }
-        } catch (e) {
-          // Continua tentando
-        }
-      }
+      // Transcrever áudio sem criar nota
+      const transcript = await transcribeAudio(uri);
 
       if (!transcript) {
         showToast('Erro ao transcrever áudio. Tente novamente.', 'error');
         setTranscribing(false);
+        setStatusMessage('');
         return;
       }
 
@@ -129,13 +111,17 @@ export const QueryScreen: React.FC = () => {
       setTranscribing(false);
       setQuestion(transcript);
       setLoading(true);
+      setStatusMessage('Estou buscando em todas as suas notas...');
       const result = await askQuery(transcript, selectedBoxId);
       setResponse(result);
-      setLoading(false);
+      setStatusMessage('');
     } catch (error: any) {
       showToast('Erro ao processar áudio. Tente novamente.', 'error');
       console.error('Erro ao processar áudio:', error);
       setTranscribing(false);
+      setLoading(false);
+      setStatusMessage('');
+    } finally {
       setLoading(false);
     }
   };
@@ -252,6 +238,16 @@ export const QueryScreen: React.FC = () => {
           loading={loading || transcribing}
           style={styles.askButton}
         />
+
+        {/* Mensagem de Status */}
+        {(loading || transcribing || statusMessage) && (
+          <View style={styles.statusContainer}>
+            <ActivityIndicator size="small" color={colors.primary.default} />
+            <Text style={styles.statusText}>
+              {statusMessage || (transcribing ? 'Transcrevendo sua pergunta...' : 'Estou buscando em todas as suas notas...')}
+            </Text>
+          </View>
+        )}
 
         {/* Resposta */}
         {response && (
@@ -467,7 +463,25 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   askButton: {
-    marginBottom: spacing[6],
+    marginBottom: spacing[4],
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[4],
+    backgroundColor: colors.bg.elevated,
+    borderRadius: 12,
+    marginBottom: spacing[4],
+    borderWidth: 1,
+    borderColor: `${colors.primary.default}20`,
+  },
+  statusText: {
+    ...typography.bodySmall,
+    color: colors.text.secondary,
+    textAlign: 'center',
   },
   responseContainer: {
     backgroundColor: colors.bg.elevated,

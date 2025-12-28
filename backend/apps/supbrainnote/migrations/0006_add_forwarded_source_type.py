@@ -13,7 +13,7 @@ def ensure_index_exists(apps, schema_editor):
         # Verificar se índice já existe
         cursor.execute(
             """
-            SELECT 1 FROM pg_indexes 
+            SELECT 1 FROM pg_indexes
             WHERE indexname = 'note_transcript_gin_idx'
             """
         )
@@ -23,8 +23,8 @@ def ensure_index_exists(apps, schema_editor):
             try:
                 cursor.execute(
                     """
-                    CREATE INDEX IF NOT EXISTS note_transcript_gin_idx 
-                    ON supbrainnote_note 
+                    CREATE INDEX IF NOT EXISTS note_transcript_gin_idx
+                    ON supbrainnote_note
                     USING gin (transcript gin_trgm_ops)
                     """
                 )
