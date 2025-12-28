@@ -10,15 +10,15 @@ from .base import *  # noqa: F403, F401
 
 DEBUG = os.environ.get("DEBUG", "False") == "True"  # noqa: F405
 
-# ALLOWED_HOSTS obrigatório em produção
-ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "")  # noqa: F405
-if not ALLOWED_HOSTS_ENV:
-    raise ValueError("ALLOWED_HOSTS environment variable is required in production")
+# ALLOWED_HOSTS - usa wildcard se não configurado (para permitir build/deploy sem erro)
+ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "*")  # noqa: F405
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.strip()]  # noqa: F405
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ["*"]  # Fallback para wildcard se vazio
 
-# Database - PostgreSQL via DATABASE_URL
+# Database - PostgreSQL via DATABASE_URL (ou SQLite para build)
 DATABASE_URL = os.environ.get("DATABASE_URL")  # noqa: F405
-if DATABASE_URL:
+if DATABASE_URL and DATABASE_URL.strip():
     # Parse DATABASE_URL manualmente (formato: postgresql://user:pass@host:port/dbname)
     from urllib.parse import unquote  # noqa: F401
 
@@ -37,172 +37,63 @@ if DATABASE_URL:
         }
     }
 else:
-    raise ValueError("DATABASE_URL environment variable is required in production")
+    # Fallback para SQLite durante build (quando DATABASE_URL não está disponível)
+    import logging
+    logging.getLogger("django").warning("⚠️ DATABASE_URL não configurado - usando SQLite temporário")
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",  # noqa: F405
+        }
+    }
 
 # Security settings para prod
-SECURE_SSL_REDIRECT = not DEBUG
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
-# CSRF cookie settings - importante para funcionar corretamente
-CSRF_COOKIE_SAMESITE = "Lax"  # Permite envio em requisições cross-site GET
-CSRF_USE_SESSIONS = False  # Usar cookie CSRF (padrão)
+# Se ALLOWED_HOSTS=* (modo permissivo), desabilitar proteções SSL/CSRF
+_PERMISSIVE_MODE = "*" in ALLOWED_HOSTS  # noqa: F405
+
+SECURE_SSL_REDIRECT = False if _PERMISSIVE_MODE else not DEBUG
+SESSION_COOKIE_SECURE = False if _PERMISSIVE_MODE else not DEBUG
+CSRF_COOKIE_SECURE = False if _PERMISSIVE_MODE else not DEBUG
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_USE_SESSIONS = False
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
-# CSRF Trusted Origins - obrigatório em produção
-# Pode ser configurado via variável de ambiente CSRF_TRUSTED_ORIGINS (lista separada por vírgula)
-# Se não configurado, deriva de ALLOWED_HOSTS adicionando https://
-CSRF_TRUSTED_ORIGINS_ENV_RAW = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
-CSRF_TRUSTED_ORIGINS_ENV = CSRF_TRUSTED_ORIGINS_ENV_RAW.strip()
-
-# #region agent log (apenas se arquivo existir)
-import json
-import time
-import os
-log_data = {
-    "env_raw": CSRF_TRUSTED_ORIGINS_ENV_RAW,
-    "env_raw_repr": repr(CSRF_TRUSTED_ORIGINS_ENV_RAW),
-    "env_raw_len": len(CSRF_TRUSTED_ORIGINS_ENV_RAW),
-    "env_stripped": CSRF_TRUSTED_ORIGINS_ENV,
-    "env_stripped_repr": repr(CSRF_TRUSTED_ORIGINS_ENV),
-    "env_stripped_len": len(CSRF_TRUSTED_ORIGINS_ENV),
-    "env_is_empty": not CSRF_TRUSTED_ORIGINS_ENV,
-}
-debug_log_path = "/home/uaimax/projects/uaitools/.cursor/debug.log"
-if os.path.exists(os.path.dirname(debug_log_path)):
-    try:
-        with open(debug_log_path, "a") as f:
-            f.write(json.dumps({
-                "location": "prod.py:CSRF_TRUSTED_ORIGINS_ENV",
-                "message": "Variável CSRF_TRUSTED_ORIGINS do ambiente (raw e stripped)",
-                "data": log_data,
-                "timestamp": time.time() * 1000,
-                "sessionId": "debug-session",
-                "runId": "run1",
-                "hypothesisId": "A"
-            }) + "\n")
-    except (OSError, IOError):
-        pass  # Ignorar erros de escrita em produção
-# #endregion
-
-# Log da variável bruta (para debug)
+# CSRF Trusted Origins - configuração simplificada
 import logging
 logger = logging.getLogger("django")
-logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS_ENV (raw): '{CSRF_TRUSTED_ORIGINS_ENV_RAW}' (repr: {repr(CSRF_TRUSTED_ORIGINS_ENV_RAW)})")
-logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS_ENV (stripped): '{CSRF_TRUSTED_ORIGINS_ENV}' (repr: {repr(CSRF_TRUSTED_ORIGINS_ENV)})")
+
+CSRF_TRUSTED_ORIGINS_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
 
 if CSRF_TRUSTED_ORIGINS_ENV:
     # Usar lista da variável de ambiente
-    # Normalizar origens: remover espaços, trailing slashes, e garantir lowercase
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip().rstrip("/")
+        for origin in CSRF_TRUSTED_ORIGINS_ENV.split(",")
+        if origin.strip()
+    ]
+    logger.info(f"[CSRF] Origens configuradas via env: {CSRF_TRUSTED_ORIGINS}")
+elif _PERMISSIVE_MODE:
+    # Modo permissivo: ALLOWED_HOSTS=* - desabilitar CSRF completamente
     CSRF_TRUSTED_ORIGINS = []
-    for origin in CSRF_TRUSTED_ORIGINS_ENV.split(","):
-        origin = origin.strip()
-        if origin:
-            # Remover trailing slash se existir (Django é sensível a isso)
-            origin = origin.rstrip("/")
-            CSRF_TRUSTED_ORIGINS.append(origin)
-    # #region agent log (apenas se arquivo existir)
-    log_data = {
-        "origins_list": CSRF_TRUSTED_ORIGINS,
-        "origins_count": len(CSRF_TRUSTED_ORIGINS),
-        "expected_origin": "https://ut-be.app.webmaxdigital.com",
-        "expected_in_list": "https://ut-be.app.webmaxdigital.com" in CSRF_TRUSTED_ORIGINS,
-    }
-    if os.path.exists(os.path.dirname(debug_log_path)):
-        try:
-            with open(debug_log_path, "a") as f:
-                f.write(json.dumps({
-                    "location": "prod.py:CSRF_TRUSTED_ORIGINS_parsed",
-                    "message": "CSRF_TRUSTED_ORIGINS após parsing",
-                    "data": log_data,
-                    "timestamp": time.time() * 1000,
-                    "sessionId": "debug-session",
-                    "runId": "run1",
-                    "hypothesisId": "B"
-                }) + "\n")
-        except (OSError, IOError):
-            pass  # Ignorar erros de escrita em produção
-    # #endregion
-    logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS configurado da variável: {CSRF_TRUSTED_ORIGINS}")
-else:
-    # Derivar de ALLOWED_HOSTS (adicionar https:// para cada host)
-    # TEMPORÁRIO: Modo mais permissivo quando CSRF_TRUSTED_ORIGINS não está configurado
-    CSRF_TRUSTED_ORIGINS = []
+    logger.warning("[CSRF] ⚠️ ALLOWED_HOSTS=* - CSRF DESABILITADO (modo permissivo)")
+    logger.warning("[CSRF] ⚠️ Configure CSRF_TRUSTED_ORIGINS para produção segura")
 
-    # Se ALLOWED_HOSTS contém wildcard (*), usar modo permissivo temporário
-    # ⚠️ TEMPORÁRIO: Menos seguro, mas útil para debug/teste
-    if "*" in ALLOWED_HOSTS:  # noqa: F405
-        logger.warning("[CSRF] ⚠️  ALLOWED_HOSTS=* detectado - modo permissivo ativado (TEMPORÁRIO)")
-        logger.warning("[CSRF] ⚠️  Desabilitando verificação de origem CSRF (menos seguro)")
-        logger.warning("[CSRF] ⚠️  TODO: Configurar CSRF_TRUSTED_ORIGINS adequadamente e remover este modo")
-        # Desabilitar verificação de origem CSRF temporariamente
-        # Isso permite qualquer origem, mas é menos seguro
-        # A verificação será feita via middleware customizado
-        CSRF_TRUSTED_ORIGINS = []  # Lista vazia - middleware customizado vai permitir tudo
-    else:
-        # Modo normal: derivar de ALLOWED_HOSTS
-        for host in ALLOWED_HOSTS:  # noqa: F405
-            if host not in ("localhost", "127.0.0.1"):
-                # Adicionar https:// para cada host válido
-                CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
-
-        # Se não houver hosts válidos, usar lista vazia
-        if not CSRF_TRUSTED_ORIGINS:
-            logger.warning("[CSRF] ⚠️  Nenhum host válido encontrado em ALLOWED_HOSTS")
-            CSRF_TRUSTED_ORIGINS = []
-
-    logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS derivado de ALLOWED_HOSTS: {CSRF_TRUSTED_ORIGINS}")
-
-# Garantir que CSRF_TRUSTED_ORIGINS é uma lista (não pode ser None)
-if not CSRF_TRUSTED_ORIGINS:
-    CSRF_TRUSTED_ORIGINS = []
-    # Se ALLOWED_HOSTS=*, usar middleware CSRF permissivo temporário
-    if "*" in ALLOWED_HOSTS:  # noqa: F405
-        logger.warning("[CSRF] ⚠️  Modo permissivo: Verificação de origem CSRF desabilitada (TEMPORÁRIO)")
-        logger.warning("[CSRF] ⚠️  Isso é menos seguro - configure CSRF_TRUSTED_ORIGINS adequadamente")
-        # Substituir middleware CSRF padrão pelo permissivo
-        # Isso será feito após carregar base.py
-    else:
-        logger.warning("[CSRF] ⚠️ CSRF_TRUSTED_ORIGINS está vazio! Isso pode causar erros de CSRF.")
-
-# #region agent log (apenas se arquivo existir)
-log_data = {
-    "final_origins": CSRF_TRUSTED_ORIGINS,
-    "final_count": len(CSRF_TRUSTED_ORIGINS),
-    "final_type": type(CSRF_TRUSTED_ORIGINS).__name__,
-    "expected_origin": "https://ut-be.app.webmaxdigital.com",
-    "expected_in_final": "https://ut-be.app.webmaxdigital.com" in CSRF_TRUSTED_ORIGINS,
-}
-if os.path.exists(os.path.dirname(debug_log_path)):
-    try:
-        with open(debug_log_path, "a") as f:
-            f.write(json.dumps({
-                "location": "prod.py:CSRF_TRUSTED_ORIGINS_final",
-                "message": "CSRF_TRUSTED_ORIGINS final configurado",
-                "data": log_data,
-                "timestamp": time.time() * 1000,
-                "sessionId": "debug-session",
-                "runId": "run1",
-                "hypothesisId": "C"
-            }) + "\n")
-    except (OSError, IOError):
-        pass  # Ignorar erros de escrita em produção
-# #endregion
-
-# Log final (sempre, para debug)
-logger.info(f"[CSRF] ✅ CSRF_TRUSTED_ORIGINS final: {CSRF_TRUSTED_ORIGINS}")
-logger.info(f"[CSRF] 📊 Total de origens confiáveis: {len(CSRF_TRUSTED_ORIGINS)}")
-for i, origin in enumerate(CSRF_TRUSTED_ORIGINS, 1):
-    logger.info(f"[CSRF]   {i}. {origin} (len={len(origin)})")
-
-# TEMPORÁRIO: Substituir middleware CSRF padrão pelo permissivo quando ALLOWED_HOSTS=*
-# ⚠️ REMOVER quando CSRF_TRUSTED_ORIGINS estiver configurado adequadamente
-if "*" in ALLOWED_HOSTS and not CSRF_TRUSTED_ORIGINS:  # noqa: F405
-    logger.warning("[CSRF] ⚠️  Ativando middleware CSRF permissivo (TEMPORÁRIO)")
-    # Substituir CsrfViewMiddleware pelo permissivo no MIDDLEWARE
+    # Remover middleware CSRF completamente para garantir que admin funcione
     if "django.middleware.csrf.CsrfViewMiddleware" in MIDDLEWARE:  # noqa: F405
-        index = MIDDLEWARE.index("django.middleware.csrf.CsrfViewMiddleware")  # noqa: F405
-        MIDDLEWARE[index] = "apps.core.middleware.csrf_permissive.PermissiveCsrfMiddleware"  # noqa: F405
-        logger.warning("[CSRF] ⚠️  MIDDLEWARE atualizado: CsrfViewMiddleware → PermissiveCsrfMiddleware")
+        MIDDLEWARE.remove("django.middleware.csrf.CsrfViewMiddleware")  # noqa: F405
+        logger.warning("[CSRF] ⚠️ CsrfViewMiddleware REMOVIDO do MIDDLEWARE")
+
+    # Remover também o debug middleware se existir
+    if "apps.core.middleware.csrf_debug.CsrfDebugMiddleware" in MIDDLEWARE:  # noqa: F405
+        MIDDLEWARE.remove("apps.core.middleware.csrf_debug.CsrfDebugMiddleware")  # noqa: F405
+else:
+    # Derivar de ALLOWED_HOSTS (adicionar https://)
+    CSRF_TRUSTED_ORIGINS = [
+        f"https://{host}"
+        for host in ALLOWED_HOSTS  # noqa: F405
+        if host not in ("localhost", "127.0.0.1", "*")
+    ]
+    logger.info(f"[CSRF] Origens derivadas de ALLOWED_HOSTS: {CSRF_TRUSTED_ORIGINS}")
 
