@@ -72,9 +72,11 @@ export default function App() {
         // Navegar para tela de processamento
         // Usar um intervalo para garantir que navegação está pronta
         const navigateInterval = setInterval(() => {
-          if (navigationRef.current) {
+          const nav = navigationRef.current?.getNavigation?.();
+          if (nav) {
             console.log('[SHARE INTENT] Navegando para AudioReceivedScreen');
-            navigationRef.current.navigate('Main', {
+            // Navegar para Main primeiro, depois para AudioReceived
+            nav.navigate('Main', {
               screen: 'AudioReceived',
               params: { audioUri, audioName },
             });

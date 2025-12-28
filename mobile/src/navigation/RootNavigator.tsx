@@ -14,6 +14,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export interface RootNavigatorRef {
   navigate: (name: string, params?: any) => void;
+  getNavigation: () => any;
 }
 
 export const RootNavigator = forwardRef<RootNavigatorRef>((props, ref) => {
@@ -26,6 +27,7 @@ export const RootNavigator = forwardRef<RootNavigatorRef>((props, ref) => {
         navigationRef.current.navigate(name, params);
       }
     },
+    getNavigation: () => navigationRef.current,
   }));
 
   if (loading) {
