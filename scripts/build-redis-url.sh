@@ -19,7 +19,8 @@ PORT="$3"
 DB="$4"
 
 # URL encode da senha (caracteres especiais comuns)
-ENCODED_PASSWORD=$(echo "$PASSWORD" | sed 's/@/%40/g; s/#/%23/g; s/\$/%24/g; s/%/%25/g; s/&/%26/g; s/+/%2B/g; s/=/%3D/g; s/?/%3F/g; s/\//%2F/g; s/:/%3A/g')
+# IMPORTANTE: Ordem importa! % deve ser codificado primeiro para evitar double encoding
+ENCODED_PASSWORD=$(echo "$PASSWORD" | sed 's/%/%25/g; s/@/%40/g; s/#/%23/g; s/\$/%24/g; s/&/%26/g; s/+/%2B/g; s/=/%3D/g; s/?/%3F/g; s/\//%2F/g; s/:/%3A/g')
 
 echo "redis://:${ENCODED_PASSWORD}@${HOSTNAME}:${PORT}/${DB}"
 
