@@ -27,6 +27,49 @@ else:
     # Fallback: tenta carregar do diretório atual
     load_dotenv()
 
+# =============================================================================
+# CSRF_TRUSTED_ORIGINS - DEFINIDO AQUI PARA GARANTIR QUE ESTÁ DISPONÍVEL
+# ANTES DE QUALQUER INICIALIZAÇÃO DE MIDDLEWARE
+# =============================================================================
+# Isso é necessário porque o Django pode cachear as origens durante a
+# inicialização do WSGI, antes que prod.py seja carregado completamente.
+_CSRF_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
+_ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "*").strip()
+
+if _CSRF_ENV:
+    # Usar lista da variável de ambiente
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip().rstrip("/")
+        for origin in _CSRF_ENV.split(",")
+        if origin.strip()
+    ]
+elif "*" in _ALLOWED_HOSTS_ENV:
+    # Modo permissivo: ALLOWED_HOSTS=* - adicionar todas as origens possíveis
+    CSRF_TRUSTED_ORIGINS = [
+        # Origens do domínio principal (ADICIONE SEU DOMÍNIO AQUI)
+        "https://ut-be.app.webmaxdigital.com",
+        "http://ut-be.app.webmaxdigital.com",
+        "https://app.webmaxdigital.com",
+        "http://app.webmaxdigital.com",
+        "https://webmaxdigital.com",
+        "http://webmaxdigital.com",
+        # Wildcards para subdomínios (Django 4.0+ suporta)
+        "https://*.webmaxdigital.com",
+        "http://*.webmaxdigital.com",
+        # Localhost para desenvolvimento
+        "http://localhost:8000",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "https://localhost",
+        "http://localhost",
+    ]
+else:
+    # Modo normal: lista vazia (prod.py vai preencher)
+    CSRF_TRUSTED_ORIGINS = []
+
 # SECURITY WARNING: keep the secret key used in production secret!
 # Trata SECRET_KEY removendo aspas se presentes (compatibilidade com CapRover/containers)
 secret_key_raw = os.environ.get("SECRET_KEY", "django-insecure-change-me-in-production")
@@ -75,7 +118,9 @@ INSTALLED_APPS = [
     "apps.supbrainnote",
 ]
 
-MIDDLEWARE = [
+# MIDDLEWARE - Lista condicional baseada no modo permissivo
+# Quando ALLOWED_HOSTS=*, remove os middlewares CSRF para evitar erros
+_MIDDLEWARE_BASE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # WhiteNoise para servir arquivos estáticos
     "corsheaders.middleware.CorsMiddleware",  # CORS deve vir antes de CommonMiddleware
@@ -83,15 +128,25 @@ MIDDLEWARE = [
     "django.middleware.locale.LocaleMiddleware",  # i18n - deve vir após SessionMiddleware
     "apps.core.middleware.UUIDSessionMiddleware",  # Limpa sessões com IDs antigos (antes do auth)
     "django.middleware.common.CommonMiddleware",
-    "apps.core.middleware.csrf_debug.CsrfDebugMiddleware",  # Debug CSRF (antes do CSRF middleware) - temporário para debug
-    "django.middleware.csrf.CsrfViewMiddleware",
+]
+
+# Adicionar middlewares CSRF apenas se NÃO estiver em modo permissivo
+if "*" not in _ALLOWED_HOSTS_ENV:
+    _MIDDLEWARE_BASE.extend([
+        "apps.core.middleware.csrf_debug.CsrfDebugMiddleware",  # Debug CSRF - temporário
+        "django.middleware.csrf.CsrfViewMiddleware",
+    ])
+
+_MIDDLEWARE_BASE.extend([
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "allauth.account.middleware.AccountMiddleware",  # django-allauth
     "apps.core.middleware.WorkspaceMiddleware",  # Multi-tenancy
     "apps.core.middleware.ErrorLoggingMiddleware",  # Captura exceções não tratadas
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
+])
+
+MIDDLEWARE = _MIDDLEWARE_BASE
 
 ROOT_URLCONF = "config.urls"
 
