@@ -309,9 +309,6 @@ class QueryViewSet(viewsets.ViewSet):
                 {"error": "Workspace não disponível"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Usar busca full-text do PostgreSQL para melhor performance
-        from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
-
         notes_queryset = Note.objects.filter(
             workspace=workspace,
             processing_status="completed",
@@ -322,65 +319,89 @@ class QueryViewSet(viewsets.ViewSet):
         if box_id:
             notes_queryset = notes_queryset.filter(box_id=box_id)
 
-        # Busca full-text usando PostgreSQL tsvector (nativo)
-        # Isso é muito mais rápido que buscar em Python
-        try:
-            # Usar full-text search nativo do PostgreSQL
-            # Config 'portuguese' para melhor suporte ao português
-            search_vector = SearchVector('transcript', config='portuguese')
-            search_query = SearchQuery(question, config='portuguese')
+        notes_list = []
 
-            notes_queryset = notes_queryset.annotate(
-                search=search_vector,
-                rank=SearchRank(search_vector, search_query)
-            ).filter(
-                search=search_query
-            ).order_by('-rank')[:limit]
+        # Estratégia de busca em camadas (do mais específico para o mais genérico)
 
-            notes_list = list(notes_queryset)
+        # 1. Busca exata (case-insensitive) - melhor para nomes próprios como "UAIZOUK"
+        question_lower = question.lower()
+        exact_match_queryset = notes_queryset.filter(
+            transcript__icontains=question_lower
+        )[:limit]
+        notes_list = list(exact_match_queryset)
 
-            # Se não encontrou nada, tentar busca com similaridade trigram (pg_trgm)
-            if not notes_list:
-                try:
-                    from django.contrib.postgres.lookups import TrigramSimilarity
+        # 2. Se não encontrou, buscar por nome de caixinha mencionado na pergunta
+        if not notes_list:
+            try:
+                # Buscar caixinhas do workspace que possam estar mencionadas na pergunta
+                boxes = Box.objects.filter(workspace=workspace)
+                for box in boxes:
+                    box_name_lower = box.name.lower()
+                    # Verificar se o nome da caixinha está na pergunta
+                    if box_name_lower in question_lower or question_lower in box_name_lower:
+                        # Buscar notas dessa caixinha
+                        box_notes = notes_queryset.filter(box_id=box.id)[:limit]
+                        notes_list = list(box_notes)
+                        if notes_list:
+                            break
+            except Exception:
+                pass
 
-                    # Buscar notas com similaridade > 0.1 (ajustável)
-                    notes_queryset = Note.objects.filter(
-                        workspace=workspace,
-                        processing_status="completed",
-                        transcript__isnull=False,
-                    ).exclude(transcript="")
+        # 3. Se ainda não encontrou, tentar busca com similaridade trigram (pg_trgm)
+        # Isso é melhor para encontrar variações como "UAIZOUK" vs "Aizouki"
+        if not notes_list:
+            try:
+                from django.contrib.postgres.lookups import TrigramSimilarity
 
-                    if box_id:
-                        notes_queryset = notes_queryset.filter(box_id=box_id)
+                trigram_queryset = notes_queryset.annotate(
+                    similarity=TrigramSimilarity('transcript', question)
+                ).filter(
+                    similarity__gt=0.05  # Threshold mais baixo para capturar mais variações
+                ).order_by('-similarity')[:limit]
 
-                    notes_queryset = notes_queryset.annotate(
-                        similarity=TrigramSimilarity('transcript', question)
-                    ).filter(
-                        similarity__gt=0.1  # Threshold de similaridade
-                    ).order_by('-similarity')[:limit]
+                notes_list = list(trigram_queryset)
+            except Exception:
+                # Se pg_trgm não estiver disponível, continua
+                pass
 
-                    notes_list = list(notes_queryset)
-                except Exception:
-                    # Se pg_trgm não estiver disponível, continua
-                    pass
-        except Exception as e:
-            # Fallback para busca simples se extensão não estiver disponível
-            # Log do erro mas continua funcionando
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.warning(f"Full-text search não disponível, usando fallback: {e}")
+        # 4. Se ainda não encontrou, tentar full-text search (pode ser restritiva para nomes próprios)
+        if not notes_list:
+            try:
+                from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 
-            # Busca simples por palavras-chave (fallback)
-            question_words = question.lower().split()
-            notes_list = []
-            for note in notes_queryset[:limit * 2]:
-                if any(word in note.transcript.lower() for word in question_words):
-                    notes_list.append(note)
-                if len(notes_list) >= limit:
-                    break
+                # Usar full-text search nativo do PostgreSQL
+                # Config 'portuguese' para melhor suporte ao português
+                search_vector = SearchVector('transcript', config='portuguese')
+                search_query = SearchQuery(question, config='portuguese')
 
-        # Se ainda não encontrou nada, retornar últimas anotações
+                fts_queryset = notes_queryset.annotate(
+                    search=search_vector,
+                    rank=SearchRank(search_vector, search_query)
+                ).filter(
+                    search=search_query
+                ).order_by('-rank')[:limit]
+
+                notes_list = list(fts_queryset)
+            except Exception as e:
+                # Log do erro mas continua funcionando
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Full-text search não disponível, usando fallback: {e}")
+
+        # 5. Fallback: busca simples por palavras-chave (case-insensitive)
+        if not notes_list:
+            question_words = [w for w in question_lower.split() if len(w) > 2]  # Ignorar palavras muito curtas
+            if question_words:
+                for note in notes_queryset[:limit * 3]:  # Buscar em mais notas
+                    transcript_lower = note.transcript.lower()
+                    # Contar quantas palavras da pergunta aparecem na transcrição
+                    matches = sum(1 for word in question_words if word in transcript_lower)
+                    if matches > 0:
+                        notes_list.append(note)
+                    if len(notes_list) >= limit:
+                        break
+
+        # 6. Se ainda não encontrou nada, retornar últimas anotações (fallback final)
         if not notes_list:
             notes_list = list(notes_queryset[:limit])
 
