@@ -27,7 +27,70 @@ from apps.supbrainnote.tasks import classify_note, transcribe_audio
 from apps.supbrainnote.throttles import SupBrainNoteQueryThrottle, SupBrainNoteUploadThrottle
 
 if TYPE_CHECKING:
+    from apps.accounts.models import Workspace
     from rest_framework.request import Request
+
+
+def get_or_create_workspace_for_user(request: "Request") -> "Workspace | None":
+    """Obtém ou cria workspace para o usuário.
+    
+    Segue a mesma lógica do WorkspaceViewSet.perform_create:
+    1. Tenta usar request.workspace (do middleware)
+    2. Se não houver, tenta usar user.workspace
+    3. Se for super admin e não houver workspace, cria automaticamente
+    4. Retorna None se nenhum workspace foi encontrado/criado
+    
+    Args:
+        request: Request HTTP com user autenticado
+        
+    Returns:
+        Workspace ou None se não foi possível obter/criar
+    """
+    from apps.accounts.models import Workspace
+    from django.utils.text import slugify
+    import logging
+    
+    logger = logging.getLogger("apps.supbrainnote")
+    
+    workspace: "Workspace | None" = getattr(request, "workspace", None)
+
+    # Se não há workspace no request, tentar usar o workspace do usuário
+    if not workspace and hasattr(request, "user") and request.user.is_authenticated:
+        user = request.user
+        if hasattr(user, "workspace") and user.workspace:
+            workspace = user.workspace
+            logger.debug(f"[get_or_create_workspace] Usando workspace do usuário: {workspace.id} ({workspace.slug})")
+
+    # Se ainda não há workspace e é super admin, criar workspace exclusivo
+    if not workspace and hasattr(request, "user") and request.user.is_authenticated:
+        is_superuser = getattr(request.user, "is_superuser", False)
+        if is_superuser:
+            user_email = request.user.email
+            workspace_name = f"Super Admin - {user_email}"
+            workspace_slug = slugify(f"super-admin-{user_email.split('@')[0]}")
+
+            # Tentar obter workspace existente ou criar novo
+            workspace, created = Workspace.objects.get_or_create(
+                slug=workspace_slug,
+                defaults={
+                    "name": workspace_name,
+                    "is_active": True,
+                    "email": user_email,
+                }
+            )
+
+            if created:
+                logger.info(f"[get_or_create_workspace] Workspace criado automaticamente para super admin: {workspace.id} ({workspace.slug})")
+            else:
+                logger.debug(f"[get_or_create_workspace] Workspace existente encontrado para super admin: {workspace.id} ({workspace.slug})")
+
+            # Associar workspace ao usuário se não estiver associado
+            if hasattr(user, "workspace") and not user.workspace:
+                user.workspace = workspace
+                user.save(update_fields=["workspace"])
+                logger.info(f"[get_or_create_workspace] Workspace associado ao usuário: {workspace.id}")
+
+    return workspace
 
 
 class BoxViewSet(WorkspaceViewSet):
@@ -108,14 +171,15 @@ class NoteViewSet(WorkspaceViewSet):
         logger.info(f"[UPLOAD] Request data keys: {list(request.data.keys())}")
         logger.info(f"[UPLOAD] Files: {list(request.FILES.keys()) if request.FILES else 'None'}")
 
-        # Validar que workspace existe (obrigatório)
-        workspace = getattr(request, "workspace", None)
+        # Obter ou criar workspace (cria automaticamente para super admins)
+        workspace = get_or_create_workspace_for_user(request)
+
+        # Se ainda não há workspace, retornar erro
         if not workspace:
             from rest_framework.exceptions import ValidationError
             workspace_id = request.headers.get("X-Workspace-ID", "").strip()
             error_message = (
-                f"Workspace não encontrado ou inválido. "
-                f"Verifique se o header X-Workspace-ID está correto e se o workspace existe e está ativo. "
+                f"Workspace é obrigatório. Configure o header X-Workspace-ID ou associe um workspace ao usuário. "
                 f"Header recebido: '{workspace_id}'"
             )
             logger.error(f"[UPLOAD] {error_message}")
@@ -182,14 +246,15 @@ class NoteViewSet(WorkspaceViewSet):
     @action(detail=True, methods=["post"], url_path="move")
     def move_to_box(self, request: "Request", pk: str | None = None) -> Response:
         """Move anotação para outra caixinha."""
-        # Validar que workspace existe (obrigatório)
-        workspace = getattr(request, "workspace", None)
+        # Obter ou criar workspace (cria automaticamente para super admins)
+        workspace = get_or_create_workspace_for_user(request)
+
+        # Se ainda não há workspace, retornar erro
         if not workspace:
             from rest_framework.exceptions import ValidationError
             workspace_id = request.headers.get("X-Workspace-ID", "").strip()
             error_message = (
-                f"Workspace não encontrado ou inválido. "
-                f"Verifique se o header X-Workspace-ID está correto e se o workspace existe e está ativo. "
+                f"Workspace é obrigatório. Configure o header X-Workspace-ID ou associe um workspace ao usuário. "
                 f"Header recebido: '{workspace_id}'"
             )
             raise ValidationError({"workspace": error_message})
