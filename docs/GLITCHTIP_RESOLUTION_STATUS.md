@@ -1,6 +1,6 @@
 # Status de Resolução dos Erros do GlitchTip
 
-**Data:** 2025-12-28  
+**Data:** 2025-12-28
 **Última Atualização:** 2025-12-28
 
 ---
@@ -23,8 +23,8 @@
 
 ### Issue #43: HTTP Error 403 - POST /painel/login/ (CSRF)
 
-**Status:** 🔴 Pendente  
-**Severidade:** Crítica  
+**Status:** 🔴 Pendente
+**Severidade:** Crítica
 **Ação Necessária:** Configurar variável de ambiente no CapRover
 
 **Passos:**
@@ -48,8 +48,8 @@
 
 ### Issue #42: ValueError - Storage R2
 
-**Status:** 🔴 Pendente  
-**Severidade:** Crítica  
+**Status:** 🔴 Pendente
+**Severidade:** Crítica
 **Ação Necessária:** Configurar variáveis R2 no CapRover
 
 **Passos:**

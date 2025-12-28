@@ -1,7 +1,7 @@
 # Deep Research: Celery Worker - Serviço Separado vs Mesmo Container
 
-**Data:** 2025-12-28  
-**Contexto:** Avaliar se é necessário serviço separado para Celery Worker no CapRover ou se pode rodar no mesmo container do backend  
+**Data:** 2025-12-28
+**Contexto:** Avaliar se é necessário serviço separado para Celery Worker no CapRover ou se pode rodar no mesmo container do backend
 **Status:** ✅ Análise Completa
 
 ---

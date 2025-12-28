@@ -1,6 +1,6 @@
 # Erros Atuais no GlitchTip - Status e Ações
 
-**Data:** 2025-12-28  
+**Data:** 2025-12-28
 **Total de Erros:** 4
 
 ---
@@ -20,7 +20,7 @@
 
 ### Issue #5: HTTP Error 401 - Login
 
-**Status:** ⚠️ Não crítico  
+**Status:** ⚠️ Não crítico
 **Pode ser resolvido:** Sim (opcional)
 
 **Descrição:**
@@ -36,7 +36,7 @@
 
 ### Issue #8: HTTP Error 404 - Rota Raiz
 
-**Status:** ⚠️ Não crítico  
+**Status:** ⚠️ Não crítico
 **Pode ser resolvido:** Sim (opcional)
 
 **Descrição:**
@@ -52,7 +52,7 @@
 
 ### Issue #43: HTTP Error 403 - CSRF
 
-**Status:** 🔴 Crítica  
+**Status:** 🔴 Crítica
 **Pode ser resolvido:** Não (requer ação manual primeiro)
 
 **Descrição:**
@@ -79,7 +79,7 @@ Origin checking failed - https://ut-be.app.webmaxdigital.com does not match any 
 
 ### Issue #42: ValueError - Storage R2
 
-**Status:** 🔴 Crítica  
+**Status:** 🔴 Crítica
 **Pode ser resolvido:** Não (requer ação manual primeiro)
 
 **Descrição:**

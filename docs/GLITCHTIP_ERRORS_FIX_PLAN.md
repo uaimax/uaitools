@@ -1,6 +1,6 @@
 # Plano de Correção de Erros do GlitchTip
 
-**Data:** 2025-12-28  
+**Data:** 2025-12-28
 **Status:** 🔄 Em Andamento
 
 ---
@@ -9,8 +9,8 @@
 
 ### 1. ⚠️ Issue #5: HTTP Error 401 - POST /api/v1/auth/login/
 
-**Severidade:** Baixa  
-**Status:** Não crítico  
+**Severidade:** Baixa
+**Status:** Não crítico
 **Ocorrências:** 3
 
 **Descrição:**
@@ -26,8 +26,8 @@
 
 ### 2. ⚠️ Issue #8: HTTP Error 404 - GET /
 
-**Severidade:** Baixa  
-**Status:** Não crítico  
+**Severidade:** Baixa
+**Status:** Não crítico
 **Ocorrências:** 3
 
 **Descrição:**
@@ -44,8 +44,8 @@
 
 ### 3. 🔴 Issue #43: HTTP Error 403 - POST /painel/login/ (CSRF)
 
-**Severidade:** Crítica  
-**Status:** Requer ação manual  
+**Severidade:** Crítica
+**Status:** Requer ação manual
 **Ocorrências:** 4
 
 **Descrição:**
@@ -80,13 +80,13 @@ python resolve_glitchtip_issues.py --issue-id 43
 
 ### 4. 🔴 Issue #42: ValueError - Storage R2
 
-**Severidade:** Crítica  
-**Status:** Requer ação manual  
+**Severidade:** Crítica
+**Status:** Requer ação manual
 **Ocorrências:** 1
 
 **Descrição:**
 ```
-Erro ao baixar arquivo do storage: [Errno 2] No such file or directory: 
+Erro ao baixar arquivo do storage: [Errno 2] No such file or directory:
 '/app/media/supbrainnote/audios/...'
 ```
 

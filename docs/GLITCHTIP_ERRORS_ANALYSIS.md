@@ -1,6 +1,6 @@
 # Análise de Erros no GlitchTip
 
-**Data:** 2025-12-28  
+**Data:** 2025-12-28
 **Status:** 🔴 3 erros ativos
 
 ---
@@ -38,7 +38,7 @@ Origin checking failed - https://ut-be.app.webmaxdigital.com does not match any 
 
 **Erro:**
 ```
-ValueError: Erro ao baixar arquivo do storage: [Errno 2] No such file or directory: 
+ValueError: Erro ao baixar arquivo do storage: [Errno 2] No such file or directory:
 '/app/media/supbrainnote/audios/082d9b0c-20cf-45cf-8bc8-4e5970c84e93/2025/12/28/31bd06e4-5d09-4482-9_zKWv1do.m4a'
 ```
 

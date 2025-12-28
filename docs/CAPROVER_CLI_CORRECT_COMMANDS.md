@@ -1,6 +1,6 @@
 # CapRover CLI - Comandos Corretos e Alternativas
 
-**Data:** 2025-12-28  
+**Data:** 2025-12-28
 **Status:** ✅ Documentação Atualizada
 
 ---

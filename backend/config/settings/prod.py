@@ -50,18 +50,62 @@ X_FRAME_OPTIONS = "DENY"
 # CSRF Trusted Origins - obrigatório em produção
 # Pode ser configurado via variável de ambiente CSRF_TRUSTED_ORIGINS (lista separada por vírgula)
 # Se não configurado, deriva de ALLOWED_HOSTS adicionando https://
-CSRF_TRUSTED_ORIGINS_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
+CSRF_TRUSTED_ORIGINS_ENV_RAW = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS_ENV = CSRF_TRUSTED_ORIGINS_ENV_RAW.strip()
+
+# #region agent log
+import json
+import time
+log_data = {
+    "env_raw": CSRF_TRUSTED_ORIGINS_ENV_RAW,
+    "env_raw_repr": repr(CSRF_TRUSTED_ORIGINS_ENV_RAW),
+    "env_raw_len": len(CSRF_TRUSTED_ORIGINS_ENV_RAW),
+    "env_stripped": CSRF_TRUSTED_ORIGINS_ENV,
+    "env_stripped_repr": repr(CSRF_TRUSTED_ORIGINS_ENV),
+    "env_stripped_len": len(CSRF_TRUSTED_ORIGINS_ENV),
+    "env_is_empty": not CSRF_TRUSTED_ORIGINS_ENV,
+}
+with open("/home/uaimax/projects/uaitools/.cursor/debug.log", "a") as f:
+    f.write(json.dumps({
+        "location": "prod.py:CSRF_TRUSTED_ORIGINS_ENV",
+        "message": "Variável CSRF_TRUSTED_ORIGINS do ambiente (raw e stripped)",
+        "data": log_data,
+        "timestamp": time.time() * 1000,
+        "sessionId": "debug-session",
+        "runId": "run1",
+        "hypothesisId": "A"
+    }) + "\n")
+# #endregion
 
 # Log da variável bruta (para debug)
 import logging
 logger = logging.getLogger("django")
-logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS_ENV (raw): '{CSRF_TRUSTED_ORIGINS_ENV}'")
+logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS_ENV (raw): '{CSRF_TRUSTED_ORIGINS_ENV_RAW}' (repr: {repr(CSRF_TRUSTED_ORIGINS_ENV_RAW)})")
+logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS_ENV (stripped): '{CSRF_TRUSTED_ORIGINS_ENV}' (repr: {repr(CSRF_TRUSTED_ORIGINS_ENV)})")
 
 if CSRF_TRUSTED_ORIGINS_ENV:
     # Usar lista da variável de ambiente
     CSRF_TRUSTED_ORIGINS = [
         origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(",") if origin.strip()
     ]
+    # #region agent log
+    log_data = {
+        "origins_list": CSRF_TRUSTED_ORIGINS,
+        "origins_count": len(CSRF_TRUSTED_ORIGINS),
+        "expected_origin": "https://ut-be.app.webmaxdigital.com",
+        "expected_in_list": "https://ut-be.app.webmaxdigital.com" in CSRF_TRUSTED_ORIGINS,
+    }
+    with open("/home/uaimax/projects/uaitools/.cursor/debug.log", "a") as f:
+        f.write(json.dumps({
+            "location": "prod.py:CSRF_TRUSTED_ORIGINS_parsed",
+            "message": "CSRF_TRUSTED_ORIGINS após parsing",
+            "data": log_data,
+            "timestamp": time.time() * 1000,
+            "sessionId": "debug-session",
+            "runId": "run1",
+            "hypothesisId": "B"
+        }) + "\n")
+    # #endregion
     logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS configurado da variável: {CSRF_TRUSTED_ORIGINS}")
 else:
     # Derivar de ALLOWED_HOSTS (adicionar https:// para cada host)
@@ -84,6 +128,26 @@ else:
 if not CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS = []
     logger.warning("[CSRF] ⚠️ CSRF_TRUSTED_ORIGINS está vazio! Isso pode causar erros de CSRF.")
+
+# #region agent log
+log_data = {
+    "final_origins": CSRF_TRUSTED_ORIGINS,
+    "final_count": len(CSRF_TRUSTED_ORIGINS),
+    "final_type": type(CSRF_TRUSTED_ORIGINS).__name__,
+    "expected_origin": "https://ut-be.app.webmaxdigital.com",
+    "expected_in_final": "https://ut-be.app.webmaxdigital.com" in CSRF_TRUSTED_ORIGINS,
+}
+with open("/home/uaimax/projects/uaitools/.cursor/debug.log", "a") as f:
+    f.write(json.dumps({
+        "location": "prod.py:CSRF_TRUSTED_ORIGINS_final",
+        "message": "CSRF_TRUSTED_ORIGINS final configurado",
+        "data": log_data,
+        "timestamp": time.time() * 1000,
+        "sessionId": "debug-session",
+        "runId": "run1",
+        "hypothesisId": "C"
+    }) + "\n")
+# #endregion
 
 # Log final (sempre, para debug)
 logger.info(f"[CSRF] ✅ CSRF_TRUSTED_ORIGINS final: {CSRF_TRUSTED_ORIGINS}")

@@ -83,6 +83,7 @@ MIDDLEWARE = [
     "django.middleware.locale.LocaleMiddleware",  # i18n - deve vir após SessionMiddleware
     "apps.core.middleware.UUIDSessionMiddleware",  # Limpa sessões com IDs antigos (antes do auth)
     "django.middleware.common.CommonMiddleware",
+    "apps.core.middleware.csrf_debug.CsrfDebugMiddleware",  # Debug CSRF (antes do CSRF middleware) - temporário para debug
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "allauth.account.middleware.AccountMiddleware",  # django-allauth
