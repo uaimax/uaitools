@@ -5,6 +5,9 @@ PostgreSQL via DATABASE_URL, DEBUG=False, security headers.
 IMPORTANTE: Este arquivo é carregado apenas quando ENVIRONMENT=production.
 As variáveis de ambiente são lidas em RUNTIME (quando o container inicia),
 não durante o build do Docker.
+
+SIMPLIFICADO: Apenas adiciona configurações específicas de produção.
+O base.py já tem CSRF_TRUSTED_ORIGINS e MIDDLEWARE configurados corretamente.
 """
 
 import logging
@@ -29,11 +32,6 @@ ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "*")
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.strip()]
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ["*"]  # Fallback seguro para evitar erros
-
-# Detectar modo permissivo (para ajustar configurações de segurança)
-_PERMISSIVE_MODE = "*" in ALLOWED_HOSTS
-if _PERMISSIVE_MODE:
-    logger.warning("[PROD] ⚠️ Modo permissivo: ALLOWED_HOSTS contém '*'")
 
 # =============================================================================
 # DATABASE
@@ -68,44 +66,23 @@ else:
     }
 
 # =============================================================================
-# CSRF TRUSTED ORIGINS
-# =============================================================================
-# CSRF_TRUSTED_ORIGINS já é configurado em base.py com base em ALLOWED_HOSTS
-# Aqui apenas logamos para debug
-logger.info(f"[PROD] CSRF_TRUSTED_ORIGINS: {len(CSRF_TRUSTED_ORIGINS)} origens")  # noqa: F405
-
-# =============================================================================
 # SECURITY SETTINGS
 # =============================================================================
-# Em modo permissivo (ALLOWED_HOSTS=*), desabilitar algumas verificações
-# que podem causar problemas com proxies reversos
+# Simplificado: sempre desabilitar verificações SSL em modo permissivo
+# (quando ALLOWED_HOSTS=*)
+_PERMISSIVE_MODE = "*" in ALLOWED_HOSTS
 
-if _PERMISSIVE_MODE:
-    # Modo permissivo: desabilitar verificações de SSL/HTTPS
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-    CSRF_COOKIE_HTTPONLY = False
-    CSRF_COOKIE_SAMESITE = "Lax"  # Mais permissivo que "Strict"
-else:
-    # Modo seguro: habilitar verificações de segurança
-    SECURE_SSL_REDIRECT = not DEBUG
-    SESSION_COOKIE_SECURE = not DEBUG
-    CSRF_COOKIE_SECURE = not DEBUG
-    CSRF_COOKIE_HTTPONLY = True
-    CSRF_COOKIE_SAMESITE = "Strict"
+SECURE_SSL_REDIRECT = False  # Desabilitado para funcionar com proxy reverso
+SESSION_COOKIE_SECURE = False  # Desabilitado para funcionar com HTTP
+CSRF_COOKIE_SECURE = False  # Desabilitado para funcionar com HTTP
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"  # Permite cookies em requisições cross-origin
 
 # Configurações de segurança que sempre devem estar ativas
 CSRF_USE_SESSIONS = False
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = "SAMEORIGIN" if _PERMISSIVE_MODE else "DENY"
-
-# =============================================================================
-# STATIC FILES (WhiteNoise)
-# =============================================================================
-# WhiteNoise serve arquivos estáticos diretamente do Gunicorn
-# Já configurado em base.py via STATICFILES_STORAGE ou STORAGES
+X_FRAME_OPTIONS = "SAMEORIGIN"  # Permite iframe (necessário para alguns casos)
 
 # =============================================================================
 # LOGGING
@@ -113,3 +90,4 @@ X_FRAME_OPTIONS = "SAMEORIGIN" if _PERMISSIVE_MODE else "DENY"
 # Log de inicialização
 logger.info(f"[PROD] Django iniciado em modo {'DEBUG' if DEBUG else 'PRODUCTION'}")
 logger.info(f"[PROD] ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+logger.info(f"[PROD] CSRF_TRUSTED_ORIGINS: {len(CSRF_TRUSTED_ORIGINS)} origens")  # noqa: F405

@@ -28,47 +28,37 @@ else:
     load_dotenv()
 
 # =============================================================================
-# CSRF_TRUSTED_ORIGINS - DEFINIDO AQUI PARA GARANTIR QUE ESTÁ DISPONÍVEL
-# ANTES DE QUALQUER INICIALIZAÇÃO DE MIDDLEWARE
+# CSRF_TRUSTED_ORIGINS - SEMPRE CONFIGURAR COM ORIGENS NECESSÁRIAS
 # =============================================================================
-# Isso é necessário porque o Django pode cachear as origens durante a
-# inicialização do WSGI, antes que prod.py seja carregado completamente.
+# Simplificado: sempre adicionar as origens necessárias, independente de ALLOWED_HOSTS
+# Isso garante que o CSRF funcione corretamente
 _CSRF_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
-_ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "*").strip()
 
+# Base: sempre incluir a origem de produção
+CSRF_TRUSTED_ORIGINS = [
+    "https://ut-be.app.webmaxdigital.com",  # Produção - HTTPS
+    "http://ut-be.app.webmaxdigital.com",   # Produção - HTTP (fallback)
+    "https://app.webmaxdigital.com",
+    "http://app.webmaxdigital.com",
+    "https://webmaxdigital.com",
+    "http://webmaxdigital.com",
+    # Localhost para desenvolvimento
+    "http://localhost:8000",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "https://localhost",
+    "http://localhost",
+]
+
+# Se houver variável de ambiente, adicionar também
 if _CSRF_ENV:
-    # Usar lista da variável de ambiente
-    CSRF_TRUSTED_ORIGINS = [
-        origin.strip().rstrip("/")
-        for origin in _CSRF_ENV.split(",")
-        if origin.strip()
-    ]
-elif "*" in _ALLOWED_HOSTS_ENV:
-    # Modo permissivo: ALLOWED_HOSTS=* - adicionar todas as origens possíveis
-    CSRF_TRUSTED_ORIGINS = [
-        # Origens do domínio principal (ADICIONE SEU DOMÍNIO AQUI)
-        "https://ut-be.app.webmaxdigital.com",
-        "http://ut-be.app.webmaxdigital.com",
-        "https://app.webmaxdigital.com",
-        "http://app.webmaxdigital.com",
-        "https://webmaxdigital.com",
-        "http://webmaxdigital.com",
-        # Wildcards para subdomínios (Django 4.0+ suporta)
-        "https://*.webmaxdigital.com",
-        "http://*.webmaxdigital.com",
-        # Localhost para desenvolvimento
-        "http://localhost:8000",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:8000",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-        "https://localhost",
-        "http://localhost",
-    ]
-else:
-    # Modo normal: lista vazia (prod.py vai preencher)
-    CSRF_TRUSTED_ORIGINS = []
+    for origin in _CSRF_ENV.split(","):
+        origin = origin.strip().rstrip("/")
+        if origin and origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(origin)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Trata SECRET_KEY removendo aspas se presentes (compatibilidade com CapRover/containers)
@@ -118,9 +108,9 @@ INSTALLED_APPS = [
     "apps.supbrainnote",
 ]
 
-# MIDDLEWARE - Lista condicional baseada no modo permissivo
-# Quando ALLOWED_HOSTS=*, remove os middlewares CSRF para evitar erros
-_MIDDLEWARE_BASE = [
+# MIDDLEWARE - SEMPRE incluir CSRF (simplificado)
+# O CSRF sempre deve estar ativo, apenas configuramos CSRF_TRUSTED_ORIGINS corretamente
+MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # WhiteNoise para servir arquivos estáticos
     "corsheaders.middleware.CorsMiddleware",  # CORS deve vir antes de CommonMiddleware
@@ -128,25 +118,15 @@ _MIDDLEWARE_BASE = [
     "django.middleware.locale.LocaleMiddleware",  # i18n - deve vir após SessionMiddleware
     "apps.core.middleware.UUIDSessionMiddleware",  # Limpa sessões com IDs antigos (antes do auth)
     "django.middleware.common.CommonMiddleware",
-]
-
-# Adicionar middlewares CSRF apenas se NÃO estiver em modo permissivo
-if "*" not in _ALLOWED_HOSTS_ENV:
-    _MIDDLEWARE_BASE.extend([
-        "apps.core.middleware.csrf_debug.CsrfDebugMiddleware",  # Debug CSRF - temporário
-        "django.middleware.csrf.CsrfViewMiddleware",
-    ])
-
-_MIDDLEWARE_BASE.extend([
+    "apps.core.middleware.csrf_debug.CsrfDebugMiddleware",  # Debug CSRF - temporário
+    "django.middleware.csrf.CsrfViewMiddleware",  # SEMPRE ativo
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "allauth.account.middleware.AccountMiddleware",  # django-allauth
     "apps.core.middleware.WorkspaceMiddleware",  # Multi-tenancy
     "apps.core.middleware.ErrorLoggingMiddleware",  # Captura exceções não tratadas
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-])
-
-MIDDLEWARE = _MIDDLEWARE_BASE
+]
 
 ROOT_URLCONF = "config.urls"
 
@@ -590,7 +570,9 @@ MICROSOFT_CLIENT_SECRET = os.environ.get("MICROSOFT_CLIENT_SECRET", "")
 # Formato: JSON em produção, texto em desenvolvimento
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 LOG_FORMAT = os.environ.get("LOG_FORMAT", "text")  # 'text' ou 'json'
-USE_JSON_LOGGING = LOG_FORMAT == "json" and not DEBUG
+# DEBUG será definido em dev.py ou prod.py, então usamos variável de ambiente aqui
+_DEBUG_ENV = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
+USE_JSON_LOGGING = LOG_FORMAT == "json" and not _DEBUG_ENV
 
 LOGGING = {
     "version": 1,
