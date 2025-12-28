@@ -82,7 +82,8 @@
     "extra": {
       "eas": {
         "projectId": "49aa7c31-abfa-4475-92dd-e646698d692a"
-      }
+      },
+      "EXPO_PUBLIC_API_URL": "https://ut-be.app.webmaxdigital.com"
     },
     "owner": "uaimax"
   }

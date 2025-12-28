@@ -24,9 +24,13 @@ const getApiUrl = (): string => {
       // Por enquanto, retorna localhost (funciona apenas em emulador)
       return 'http://localhost:8001';
     }
-    throw new Error(
-      'EXPO_PUBLIC_API_URL não configurada. Configure no arquivo .env ou app.json'
+    // Em produção, se não tiver configurado, usa uma URL padrão
+    // Isso evita crash, mas o app não funcionará até configurar corretamente
+    console.warn(
+      '[CONFIG] EXPO_PUBLIC_API_URL não configurada. Usando URL padrão. Configure no app.json ou eas.json'
     );
+    // URL padrão - deve ser configurada via app.json ou eas.json
+    return 'https://ut-be.app.webmaxdigital.com';
   }
 
   // Remove trailing slash

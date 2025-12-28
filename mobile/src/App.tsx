@@ -12,38 +12,54 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { ToastContainer } from '@/components/common/ToastContainer';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { initDatabase } from '@/services/storage/database';
 import { colors } from '@/theme';
 import { API_BASE_URL, SENTRY_DSN } from '@/constants/config';
 
-// Inicializa Sentry/GlitchTip para captura de erros
-Sentry.init({
-  dsn: SENTRY_DSN,
-  debug: __DEV__, // Logs detalhados em dev
-  environment: __DEV__ ? 'development' : 'production',
-  // Captura erros não tratados automaticamente
-  enableAutoSessionTracking: true,
-  // Breadcrumbs para rastrear ações do usuário
-  enableNativeCrashHandling: true,
-  // Não enviar dados sensíveis
-  beforeSend(event) {
-    // Remove dados sensíveis se necessário
-    if (event.request?.headers) {
-      delete event.request.headers['Authorization'];
-    }
-    return event;
-  },
-});
-
-console.log('[SENTRY] Inicializado', { dsn: SENTRY_DSN ? 'configurado' : 'não configurado' });
+// Inicializa Sentry/GlitchTip para captura de erros (com tratamento de erro)
+try {
+  if (SENTRY_DSN) {
+    Sentry.init({
+      dsn: SENTRY_DSN,
+      debug: __DEV__, // Logs detalhados em dev
+      environment: __DEV__ ? 'development' : 'production',
+      // Captura erros não tratados automaticamente
+      enableAutoSessionTracking: true,
+      // Breadcrumbs para rastrear ações do usuário
+      enableNativeCrashHandling: true,
+      // Não enviar dados sensíveis
+      beforeSend(event) {
+        // Remove dados sensíveis se necessário
+        if (event.request?.headers) {
+          delete event.request.headers['Authorization'];
+        }
+        return event;
+      },
+    });
+    console.log('[SENTRY] Inicializado com sucesso');
+  } else {
+    console.warn('[SENTRY] DSN não configurado. Erros não serão enviados.');
+  }
+} catch (error) {
+  console.error('[SENTRY] Erro ao inicializar Sentry:', error);
+  // Não crashar o app se Sentry falhar
+}
 
 export default function App() {
   const navigationRef = useRef<any>(null);
 
   useEffect(() => {
-    // Inicializa banco de dados ao iniciar app
+    // Inicializa banco de dados ao iniciar app (com tratamento robusto)
     initDatabase().catch((error) => {
-      console.error('Erro ao inicializar banco:', error);
+      console.error('[APP] Erro ao inicializar banco:', error);
+      // Reportar para Sentry se disponível
+      if (SENTRY_DSN) {
+        Sentry.captureException(error, {
+          tags: { component: 'App', action: 'initDatabase' },
+        });
+      }
+      // Não crashar o app se o banco falhar - tentará novamente quando necessário
     });
 
     // #region agent log - Teste de conectividade ao iniciar app
@@ -121,16 +137,18 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <AuthProvider>
-          <ToastProvider>
-            <StatusBar style="light" backgroundColor={colors.bg.base} />
-            <RootNavigator ref={navigationRef} />
-            <ToastContainer />
-          </ToastProvider>
-        </AuthProvider>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <AuthProvider>
+            <ToastProvider>
+              <StatusBar style="light" backgroundColor={colors.bg.base} />
+              <RootNavigator ref={navigationRef} />
+              <ToastContainer />
+            </ToastProvider>
+          </AuthProvider>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
