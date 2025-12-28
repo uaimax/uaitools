@@ -108,6 +108,20 @@ class NoteViewSet(WorkspaceViewSet):
         logger.info(f"[UPLOAD] Request data keys: {list(request.data.keys())}")
         logger.info(f"[UPLOAD] Files: {list(request.FILES.keys()) if request.FILES else 'None'}")
 
+        # Validar que workspace existe (obrigatório)
+        workspace = getattr(request, "workspace", None)
+        if not workspace:
+            from rest_framework.exceptions import ValidationError
+            workspace_id = request.headers.get("X-Workspace-ID", "").strip()
+            error_message = (
+                f"Workspace não encontrado ou inválido. "
+                f"Verifique se o header X-Workspace-ID está correto e se o workspace existe e está ativo. "
+                f"Header recebido: '{workspace_id}'"
+            )
+            logger.error(f"[UPLOAD] {error_message}")
+            sentry_sdk.capture_message(f"Upload failed: workspace not found - {workspace_id}", level="error")
+            raise ValidationError({"workspace": error_message})
+
         serializer = NoteUploadSerializer(data=request.data, context={"request": request})
         if not serializer.is_valid():
             logger.error(f"[UPLOAD] Validação falhou: {serializer.errors}")
@@ -119,9 +133,9 @@ class NoteViewSet(WorkspaceViewSet):
         # Criar anotação
         # Se houver erro ao salvar no storage (ex: rate limit R2), o storage fará fallback automático
         try:
-            logger.info(f"[UPLOAD] Criando Note com workspace_id={request.workspace.id if request.workspace else 'None'}")
+            logger.info(f"[UPLOAD] Criando Note com workspace_id={workspace.id}")
             note = Note.objects.create(
-                workspace=request.workspace,
+                workspace=workspace,
                 audio_file=serializer.validated_data["audio_file"],
                 source_type=serializer.validated_data.get("source_type", "memo"),
                 processing_status="pending",
@@ -137,7 +151,7 @@ class NoteViewSet(WorkspaceViewSet):
         box_id = serializer.validated_data.get("box_id")
         if box_id:
             try:
-                box = Box.objects.get(id=box_id, workspace=request.workspace)
+                box = Box.objects.get(id=box_id, workspace=workspace)
                 note.box = box
                 note.save(update_fields=["box"])
             except Box.DoesNotExist:
@@ -168,6 +182,18 @@ class NoteViewSet(WorkspaceViewSet):
     @action(detail=True, methods=["post"], url_path="move")
     def move_to_box(self, request: "Request", pk: str | None = None) -> Response:
         """Move anotação para outra caixinha."""
+        # Validar que workspace existe (obrigatório)
+        workspace = getattr(request, "workspace", None)
+        if not workspace:
+            from rest_framework.exceptions import ValidationError
+            workspace_id = request.headers.get("X-Workspace-ID", "").strip()
+            error_message = (
+                f"Workspace não encontrado ou inválido. "
+                f"Verifique se o header X-Workspace-ID está correto e se o workspace existe e está ativo. "
+                f"Header recebido: '{workspace_id}'"
+            )
+            raise ValidationError({"workspace": error_message})
+
         note = self.get_object()
         serializer = NoteMoveSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -175,7 +201,7 @@ class NoteViewSet(WorkspaceViewSet):
         box_id = serializer.validated_data.get("box_id")
         if box_id:
             try:
-                box = Box.objects.get(id=box_id, workspace=request.workspace)
+                box = Box.objects.get(id=box_id, workspace=workspace)
                 note.box = box
             except Box.DoesNotExist:
                 return Response(
