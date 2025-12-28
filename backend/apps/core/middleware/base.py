@@ -221,8 +221,28 @@ class ErrorLoggingMiddleware:
                         )
                 elif response.status_code >= 400:
                     logger.warning(f"[HTTP ERROR {response.status_code}] {request.method} {request.path}", extra=error_info)
-                    # Enviar erros 4xx importantes para Sentry
-                    if response.status_code in [401, 403, 404, 422]:
+                    # Enviar erros 4xx importantes para Sentry (exceto 401 de login e 404 de varredura)
+                    should_report = False
+                    if response.status_code == 401:
+                        # Não reportar 401 de login (credenciais inválidas são esperadas)
+                        if "/api/v1/auth/login/" not in request.path:
+                            should_report = True
+                    elif response.status_code == 404:
+                        # Não reportar 404 de varredura/bots
+                        bot_patterns = [
+                            "/wp-", "/wp/", "/wordpress/", "/blog/", "/wp-includes/",
+                            "/_next/", "/api/actions", "/api/action", "/apps",
+                            "/.git/", "/xmlrpc.php", "/wlwmanifest.xml",
+                            "/sito/", "/cms/", "/media/", "/web/", "/site/",
+                            "/shop/", "/2019/", "/2018/", "/test/", "/news/",
+                            "/website/", "/wp1/", "/wp2/"
+                        ]
+                        if not any(pattern in request.path for pattern in bot_patterns):
+                            should_report = True
+                    elif response.status_code in [403, 422]:
+                        should_report = True
+                    
+                    if should_report:
                         with sentry_sdk.push_scope() as scope:
                             scope.set_context("http_error", error_info)
                             sentry_sdk.capture_message(
@@ -248,4 +268,5 @@ class ErrorLoggingMiddleware:
 
             # Re-raise a exceção para que o Django trate normalmente
             raise
+
 

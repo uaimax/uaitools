@@ -20,8 +20,70 @@ if USE_SENTRY and SENTRY_DSN:
         release = os.environ.get("RELEASE", None)
         server_name = os.environ.get("SERVER_NAME", None)
 
-        # Função para adicionar tags customizadas
-        def add_sentry_tags(event, hint):
+        # Função para filtrar e adicionar tags customizadas
+        def filter_and_tag_sentry_events(event, hint):
+            """
+            Filtra eventos que não devem ser enviados para Sentry/GlitchTip
+            e adiciona tags customizadas.
+            """
+            # Filtrar erros de migração relacionados a índices já existentes
+            if "exception" in event:
+                exceptions = event["exception"].get("values", [])
+                for exc in exceptions:
+                    exc_type = exc.get("type", "")
+                    exc_value = exc.get("value", "")
+                    # Ignorar erro de índice já existente (já foi resolvido)
+                    if "ProgrammingError" in exc_type and "already exists" in exc_value:
+                        if "note_transcript_gin_idx" in exc_value:
+                            return None  # Não enviar para Sentry
+            
+            # Filtrar erros HTTP esperados
+            if "message" in event:
+                message = event["message"]
+                # Ignorar 401 de login (credenciais inválidas são esperadas)
+                if "HTTP Error 401" in message and "/api/v1/auth/login/" in message:
+                    return None  # Não enviar para Sentry
+                
+                # Ignorar 404 de varredura/bots
+                path = event.get("request", {}).get("url", "")
+                if "HTTP Error 404" in message:
+                    # Padrões de varredura conhecidos
+                    bot_patterns = [
+                        "/wp-", "/wp/", "/wordpress/", "/blog/", "/wp-includes/",
+                        "/_next/", "/api/actions", "/api/action", "/apps",
+                        "/.git/", "/xmlrpc.php", "/wlwmanifest.xml",
+                        "/sito/", "/cms/", "/media/", "/web/", "/site/",
+                        "/shop/", "/2019/", "/2018/", "/test/", "/news/",
+                        "/website/", "/wp1/", "/wp2/"
+                    ]
+                    if any(pattern in path for pattern in bot_patterns):
+                        return None  # Não enviar para Sentry
+            
+            # Filtrar por contexto HTTP
+            if "contexts" in event:
+                http_error = event["contexts"].get("http_error", {})
+                if http_error:
+                    status_code = http_error.get("status_code")
+                    path = http_error.get("path", "")
+                    
+                    # Ignorar 401 de login
+                    if status_code == 401 and "/api/v1/auth/login/" in path:
+                        return None
+                    
+                    # Ignorar 404 de varredura
+                    if status_code == 404:
+                        bot_patterns = [
+                            "/wp-", "/wp/", "/wordpress/", "/blog/", "/wp-includes/",
+                            "/_next/", "/api/actions", "/api/action", "/apps",
+                            "/.git/", "/xmlrpc.php", "/wlwmanifest.xml",
+                            "/sito/", "/cms/", "/media/", "/web/", "/site/",
+                            "/shop/", "/2019/", "/2018/", "/test/", "/news/",
+                            "/website/", "/wp1/", "/wp2/"
+                        ]
+                        if any(pattern in path for pattern in bot_patterns):
+                            return None
+            
+            # Adicionar tags customizadas
             if "tags" not in event:
                 event["tags"] = {}
             event["tags"]["environment"] = environment
@@ -31,6 +93,7 @@ if USE_SENTRY and SENTRY_DSN:
             if "extra" not in event:
                 event["extra"] = {}
             event["extra"]["django_env"] = os.environ.get("ENVIRONMENT", "unknown")
+            
             return event
 
         # Inicializar Sentry antes do Django setup para capturar erros de boot
@@ -44,7 +107,7 @@ if USE_SENTRY and SENTRY_DSN:
             environment=environment,
             release=release,
             server_name=server_name,
-            before_send=add_sentry_tags,
+            before_send=filter_and_tag_sentry_events,
         )
         # Log para confirmar inicialização (apenas em produção, não aparece em dev)
         print(f"[Sentry] ✅ Sentry/GlitchTip inicializado - Environment: {environment}")

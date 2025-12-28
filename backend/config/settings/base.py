@@ -686,25 +686,75 @@ SENTRY_DEDUP_WINDOW_SECONDS = int(
 LOG_RETENTION_DAYS = int(os.environ.get("LOG_RETENTION_DAYS", "7"))
 
 
-def _add_sentry_tags(event: dict, environment: str) -> dict:
-    """Adiciona tags customizadas aos eventos do Sentry/GlitchTip.
-
-    Facilita a filtragem e identificação de erros por ambiente, tipo, etc.
+def _filter_and_tag_sentry_events(event: dict, hint: dict, environment: str) -> dict:
     """
+    Filtra eventos que não devem ser enviados para Sentry/GlitchTip
+    e adiciona tags customizadas.
+    """
+    # Filtrar erros de migração relacionados a índices já existentes
+    if "exception" in event:
+        exceptions = event["exception"].get("values", [])
+        for exc in exceptions:
+            exc_type = exc.get("type", "")
+            exc_value = exc.get("value", "")
+            # Ignorar erro de índice já existente (já foi resolvido)
+            if "ProgrammingError" in exc_type and "already exists" in exc_value:
+                if "note_transcript_gin_idx" in exc_value:
+                    return None  # Não enviar para Sentry
+    
+    # Filtrar erros HTTP esperados
+    if "message" in event:
+        message = event["message"]
+        # Ignorar 401 de login (credenciais inválidas são esperadas)
+        if "HTTP Error 401" in message and "/api/v1/auth/login/" in message:
+            return None  # Não enviar para Sentry
+        
+        # Ignorar 404 de varredura/bots
+        path = event.get("request", {}).get("url", "")
+        if "HTTP Error 404" in message:
+            # Padrões de varredura conhecidos
+            bot_patterns = [
+                "/wp-", "/wp/", "/wordpress/", "/blog/", "/wp-includes/",
+                "/_next/", "/api/actions", "/api/action", "/apps",
+                "/.git/", "/xmlrpc.php", "/wlwmanifest.xml",
+                "/sito/", "/cms/", "/media/", "/web/", "/site/",
+                "/shop/", "/2019/", "/2018/", "/test/", "/news/",
+                "/website/", "/wp1/", "/wp2/"
+            ]
+            if any(pattern in path for pattern in bot_patterns):
+                return None  # Não enviar para Sentry
+    
+    # Filtrar por contexto HTTP
+    if "contexts" in event:
+        http_error = event["contexts"].get("http_error", {})
+        if http_error:
+            status_code = http_error.get("status_code")
+            path = http_error.get("path", "")
+            
+            # Ignorar 401 de login
+            if status_code == 401 and "/api/v1/auth/login/" in path:
+                return None
+            
+            # Ignorar 404 de varredura
+            if status_code == 404:
+                bot_patterns = [
+                    "/wp-", "/wp/", "/wordpress/", "/blog/", "/wp-includes/",
+                    "/_next/", "/api/actions", "/api/action", "/apps",
+                    "/.git/", "/xmlrpc.php", "/wlwmanifest.xml",
+                    "/sito/", "/cms/", "/media/", "/web/", "/site/",
+                    "/shop/", "/2019/", "/2018/", "/test/", "/news/",
+                    "/website/", "/wp1/", "/wp2/"
+                ]
+                if any(pattern in path for pattern in bot_patterns):
+                    return None
+    
+    # Adicionar tags customizadas
     if "tags" not in event:
         event["tags"] = {}
-
-    # Tag de ambiente (já existe, mas garantimos que está presente)
     event["tags"]["environment"] = environment
-
-    # Tag para identificar se é produção
     event["tags"]["is_production"] = environment == "production"
-
-    # Tag para identificar tipo de deploy (se disponível)
     deployment_type = os.environ.get("DEPLOYMENT_TYPE", "unknown")
     event["tags"]["deployment_type"] = deployment_type
-
-    # Adicionar informações do Django se disponível
     if "extra" not in event:
         event["extra"] = {}
 
@@ -743,8 +793,8 @@ if USE_SENTRY and SENTRY_DSN:
                 environment=environment,
                 release=release,  # Versão do deploy para rastreamento
                 server_name=server_name,  # Identificação do servidor/instância
-                # Tags padrão para facilitar filtragem no GlitchTip
-                before_send=lambda event, hint: _add_sentry_tags(event, environment),
+                # Filtrar eventos esperados e adicionar tags customizadas
+                before_send=lambda event, hint: _filter_and_tag_sentry_events(event, hint, environment),
                 # Filtro de dados sensíveis já é feito pelo SensitiveDataFilter
             )
         else:
