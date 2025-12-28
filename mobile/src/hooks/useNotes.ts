@@ -5,6 +5,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { getNotes, NotesFilters } from '@/services/api/notes';
 import { Note } from '@/types';
+import { getErrorMessage } from '@/utils/errorHandler';
 
 interface UseNotesReturn {
   notes: Note[];
@@ -55,7 +56,8 @@ export function useNotes(filters?: NotesFilters): UseNotesReturn {
       });
       // #endregion
     } catch (err: any) {
-      setError(err.message || 'Erro ao carregar notas');
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
       console.error('Erro ao carregar notas:', err);
     } finally {
       setLoading(false);

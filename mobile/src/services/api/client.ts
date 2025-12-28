@@ -119,10 +119,42 @@ export function createApiClient(): AxiosInstance {
         });
         // #endregion
 
-        // Se for um erro de rede em requisição GET, não fazer retry automático
-        // O polling já vai tentar novamente
-        // Apenas logar o erro
-        return Promise.reject(error);
+        // Normalizar erro de rede para facilitar tratamento
+        const networkError = new Error('Erro de conexão. Verifique sua internet.');
+        (networkError as any).isNetworkError = true;
+        (networkError as any).originalError = error;
+        return Promise.reject(networkError);
+      }
+
+      // 502/503: Backend indisponível (Bad Gateway / Service Unavailable)
+      if (error.response?.status === 502 || error.response?.status === 503) {
+        // #region agent log
+        console.warn('[API Client] Backend indisponível (502/503)', {
+          url: error.config?.url,
+          status: error.response?.status,
+        });
+        // #endregion
+
+        // Normalizar erro de backend indisponível
+        const backendError = new Error('Servidor temporariamente indisponível. Tente novamente em instantes.');
+        (backendError as any).isBackendError = true;
+        (backendError as any).status = error.response?.status;
+        (backendError as any).originalError = error;
+        return Promise.reject(backendError);
+      }
+
+      // 500: Erro interno do servidor
+      if (error.response?.status === 500) {
+        // #region agent log
+        console.warn('[API Client] Erro interno do servidor (500)', {
+          url: error.config?.url,
+        });
+        // #endregion
+
+        const serverError = new Error('Erro interno do servidor. Tente novamente mais tarde.');
+        (serverError as any).isServerError = true;
+        (serverError as any).originalError = error;
+        return Promise.reject(serverError);
       }
 
       // 401: Token expirado ou inválido
@@ -137,7 +169,19 @@ export function createApiClient(): AxiosInstance {
         console.warn('[API Client] Rate limit atingido, aguardando antes de retry');
         // #endregion
         // Não fazer retry automático, deixar o polling tentar novamente
-        return Promise.reject(error);
+        const rateLimitError = new Error('Muitas requisições. Aguarde um momento e tente novamente.');
+        (rateLimitError as any).isRateLimitError = true;
+        (rateLimitError as any).originalError = error;
+        return Promise.reject(rateLimitError);
+      }
+
+      // Se a resposta contém HTML (erro do NGINX/CapRover), normalizar
+      if (error.response?.data && typeof error.response.data === 'string' && error.response.data.includes('<!doctype html>')) {
+        const htmlError = new Error('Servidor temporariamente indisponível. Tente novamente em instantes.');
+        (htmlError as any).isBackendError = true;
+        (htmlError as any).status = error.response?.status || 502;
+        (htmlError as any).originalError = error;
+        return Promise.reject(htmlError);
       }
 
       return Promise.reject(error);

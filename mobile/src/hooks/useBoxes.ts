@@ -5,6 +5,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { getBoxes, createBox, updateBox, deleteBox } from '@/services/api/boxes';
 import { Box, CreateBoxRequest, UpdateBoxRequest } from '@/types';
+import { getErrorMessage } from '@/utils/errorHandler';
 
 interface UseBoxesReturn {
   boxes: Box[];
@@ -28,7 +29,8 @@ export function useBoxes(): UseBoxesReturn {
       const data = await getBoxes();
       setBoxes(data);
     } catch (err: any) {
-      setError(err.message || 'Erro ao carregar caixinhas');
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
       console.error('Erro ao carregar caixinhas:', err);
     } finally {
       setLoading(false);
@@ -88,4 +90,5 @@ export function useBoxes(): UseBoxesReturn {
     remove,
   };
 }
+
 
