@@ -8,7 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
 import * as Sentry from '@sentry/react-native';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { ToastContainer } from '@/components/common/ToastContainer';
@@ -134,19 +134,3 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-
-  return (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <AuthProvider>
-          <ToastProvider>
-            <StatusBar style="light" backgroundColor={colors.bg.base} />
-            <RootNavigator />
-            <ToastContainer />
-          </ToastProvider>
-        </AuthProvider>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
-  );
-}
-
