@@ -99,11 +99,12 @@ export default function App() {
         const { path, queryParams } = Linking.parse(event.url);
 
         // Verificar se é compartilhamento de arquivo
-        if (queryParams?.audioUri || queryParams?.uri) {
-          const audioUri = (queryParams.audioUri || queryParams.uri) as string;
-          const audioName = (queryParams.name || queryParams.filename || 'Áudio recebido') as string;
+        // Pode vir como queryParams.uri, queryParams.audioUri, ou diretamente na URL
+        const audioUri = queryParams?.audioUri || queryParams?.uri || (event.url.startsWith('file://') ? event.url : null);
+        const audioName = (queryParams?.name || queryParams?.filename || queryParams?.title || 'Áudio recebido') as string;
 
-          console.log('[SHARE] Áudio recebido:', { audioUri, audioName });
+        if (audioUri) {
+          console.log('[SHARE] Áudio recebido:', { audioUri, audioName, fullUrl: event.url });
 
           // Navegar para tela de processamento
           // Usar setTimeout para garantir que navegação está pronta
@@ -115,6 +116,8 @@ export default function App() {
               });
             }
           }, 1000);
+        } else {
+          console.log('[SHARE] URL recebida mas sem áudio identificado:', { url: event.url, queryParams });
         }
       } catch (error: any) {
         console.error('[SHARE] Erro ao processar URL:', error);
