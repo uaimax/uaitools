@@ -18,6 +18,10 @@ from apps.investments.services.bcb_provider import BCBProvider
 
 def _debug_log(location: str, message: str, data: dict, hypothesis_id: str = "A"):
     """Log de debug para análise de hipóteses."""
+    import os
+    debug_log_path = "/home/uaimax/projects/uaitools/.cursor/debug.log"
+    if not os.path.exists(os.path.dirname(debug_log_path)):
+        return  # Ignorar se diretório não existir (ex: em produção)
     try:
         log_entry = {
             "id": f"log_{int(timezone.now().timestamp() * 1000)}",
@@ -29,9 +33,9 @@ def _debug_log(location: str, message: str, data: dict, hypothesis_id: str = "A"
             "runId": "run1",
             "hypothesisId": hypothesis_id,
         }
-        with open("/home/uaimax/projects/uaitools/.cursor/debug.log", "a") as f:
+        with open(debug_log_path, "a") as f:
             f.write(json.dumps(log_entry) + "\n")
-    except Exception:
+    except (OSError, IOError):
         pass  # Ignorar erros de logging
 
 

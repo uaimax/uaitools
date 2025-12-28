@@ -20,6 +20,8 @@ DEBUG_LOG_PATH = "/home/uaimax/projects/uaitools/.cursor/debug.log"
 
 def _debug_log(location: str, message: str, data: dict, hypothesis_id: str = "A"):
     """Log debug information."""
+    if not os.path.exists(os.path.dirname(DEBUG_LOG_PATH)):
+        return  # Ignorar se diretório não existir (ex: em produção)
     try:
         log_entry = {
             "id": f"log_{os.getpid()}_{id(data)}",
@@ -33,7 +35,7 @@ def _debug_log(location: str, message: str, data: dict, hypothesis_id: str = "A"
         }
         with open(DEBUG_LOG_PATH, "a") as f:
             f.write(json.dumps(log_entry) + "\n")
-    except Exception:
+    except (OSError, IOError):
         pass  # Ignorar erros de logging
 
 

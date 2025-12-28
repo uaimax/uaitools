@@ -57,44 +57,46 @@ class TranscriptionService:
             # #region agent log
             import json
             debug_log_path = "/home/uaimax/projects/uaitools/.cursor/debug.log"
-            try:
-                log_entry = {
-                    "id": f"log_transcribe_{os.getpid()}",
-                    "timestamp": int(os.times().elapsed * 1000) if hasattr(os.times(), 'elapsed') else 0,
-                    "location": "transcription.py:57",
-                    "message": "Abrindo arquivo de áudio para transcrição",
-                    "data": {
-                        "audio_file_path": audio_file_path,
-                        "file_exists": os.path.exists(audio_file_path),
-                        "file_size": os.path.getsize(audio_file_path) if os.path.exists(audio_file_path) else 0,
-                    },
-                    "sessionId": "debug-session",
-                    "runId": "run1",
-                    "hypothesisId": "F",
-                }
-                with open(debug_log_path, "a") as f:
-                    f.write(json.dumps(log_entry) + "\n")
-            except Exception:
-                pass
-            # #endregion
-
-            with open(audio_file_path, "rb") as audio_file:
-                # #region agent log
+            if os.path.exists(os.path.dirname(debug_log_path)):
                 try:
                     log_entry = {
-                        "id": f"log_transcribe_api_{os.getpid()}",
+                        "id": f"log_transcribe_{os.getpid()}",
                         "timestamp": int(os.times().elapsed * 1000) if hasattr(os.times(), 'elapsed') else 0,
-                        "location": "transcription.py:75",
-                        "message": "Chamando API Whisper",
-                        "data": {"model": "whisper-1", "language": language},
+                        "location": "transcription.py:57",
+                        "message": "Abrindo arquivo de áudio para transcrição",
+                        "data": {
+                            "audio_file_path": audio_file_path,
+                            "file_exists": os.path.exists(audio_file_path),
+                            "file_size": os.path.getsize(audio_file_path) if os.path.exists(audio_file_path) else 0,
+                        },
                         "sessionId": "debug-session",
                         "runId": "run1",
                         "hypothesisId": "F",
                     }
                     with open(debug_log_path, "a") as f:
                         f.write(json.dumps(log_entry) + "\n")
-                except Exception:
+                except (OSError, IOError):
                     pass
+            # #endregion
+
+            with open(audio_file_path, "rb") as audio_file:
+                # #region agent log
+                if os.path.exists(os.path.dirname(debug_log_path)):
+                    try:
+                        log_entry = {
+                            "id": f"log_transcribe_api_{os.getpid()}",
+                            "timestamp": int(os.times().elapsed * 1000) if hasattr(os.times(), 'elapsed') else 0,
+                            "location": "transcription.py:75",
+                            "message": "Chamando API Whisper",
+                            "data": {"model": "whisper-1", "language": language},
+                            "sessionId": "debug-session",
+                            "runId": "run1",
+                            "hypothesisId": "F",
+                        }
+                        with open(debug_log_path, "a") as f:
+                            f.write(json.dumps(log_entry) + "\n")
+                    except (OSError, IOError):
+                        pass
                 # #endregion
                 transcript = self.client.audio.transcriptions.create(
                     model="whisper-1",
@@ -103,26 +105,27 @@ class TranscriptionService:
                 )
 
             # #region agent log
-            try:
-                log_entry = {
-                    "id": f"log_transcribe_result_{os.getpid()}",
-                    "timestamp": int(os.times().elapsed * 1000) if hasattr(os.times(), 'elapsed') else 0,
-                    "location": "transcription.py:88",
-                    "message": "Resposta da API Whisper recebida",
-                    "data": {
-                        "transcript_text": transcript.text if hasattr(transcript, 'text') else "N/A",
-                        "transcript_length": len(transcript.text) if hasattr(transcript, 'text') else 0,
-                        "transcript_type": type(transcript).__name__,
-                        "has_text_attr": hasattr(transcript, 'text'),
-                    },
-                    "sessionId": "debug-session",
-                    "runId": "run1",
-                    "hypothesisId": "F",
-                }
-                with open(debug_log_path, "a") as f:
-                    f.write(json.dumps(log_entry) + "\n")
-            except Exception:
-                pass
+            if os.path.exists(os.path.dirname(debug_log_path)):
+                try:
+                    log_entry = {
+                        "id": f"log_transcribe_result_{os.getpid()}",
+                        "timestamp": int(os.times().elapsed * 1000) if hasattr(os.times(), 'elapsed') else 0,
+                        "location": "transcription.py:88",
+                        "message": "Resposta da API Whisper recebida",
+                        "data": {
+                            "transcript_text": transcript.text if hasattr(transcript, 'text') else "N/A",
+                            "transcript_length": len(transcript.text) if hasattr(transcript, 'text') else 0,
+                            "transcript_type": type(transcript).__name__,
+                            "has_text_attr": hasattr(transcript, 'text'),
+                        },
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "F",
+                    }
+                    with open(debug_log_path, "a") as f:
+                        f.write(json.dumps(log_entry) + "\n")
+                except (OSError, IOError):
+                    pass
             # #endregion
 
             # Extrair duração (se disponível) ou estimar
@@ -135,24 +138,25 @@ class TranscriptionService:
             }
         except Exception as e:
             # #region agent log
-            try:
-                log_entry = {
-                    "id": f"log_transcribe_error_{os.getpid()}",
-                    "timestamp": int(os.times().elapsed * 1000) if hasattr(os.times(), 'elapsed') else 0,
-                    "location": "transcription.py:105",
-                    "message": "Erro ao transcrever",
-                    "data": {
-                        "error_type": type(e).__name__,
-                        "error_message": str(e),
-                    },
-                    "sessionId": "debug-session",
-                    "runId": "run1",
-                    "hypothesisId": "F",
-                }
-                with open(debug_log_path, "a") as f:
-                    f.write(json.dumps(log_entry) + "\n")
-            except Exception:
-                pass
+            if os.path.exists(os.path.dirname(debug_log_path)):
+                try:
+                    log_entry = {
+                        "id": f"log_transcribe_error_{os.getpid()}",
+                        "timestamp": int(os.times().elapsed * 1000) if hasattr(os.times(), 'elapsed') else 0,
+                        "location": "transcription.py:105",
+                        "message": "Erro ao transcrever",
+                        "data": {
+                            "error_type": type(e).__name__,
+                            "error_message": str(e),
+                        },
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "F",
+                    }
+                    with open(debug_log_path, "a") as f:
+                        f.write(json.dumps(log_entry) + "\n")
+                except (OSError, IOError):
+                    pass
             # #endregion
             raise Exception(f"Erro ao transcrever áudio: {str(e)}") from e
 

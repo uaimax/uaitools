@@ -53,9 +53,10 @@ X_FRAME_OPTIONS = "DENY"
 CSRF_TRUSTED_ORIGINS_ENV_RAW = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS_ENV = CSRF_TRUSTED_ORIGINS_ENV_RAW.strip()
 
-# #region agent log
+# #region agent log (apenas se arquivo existir)
 import json
 import time
+import os
 log_data = {
     "env_raw": CSRF_TRUSTED_ORIGINS_ENV_RAW,
     "env_raw_repr": repr(CSRF_TRUSTED_ORIGINS_ENV_RAW),
@@ -65,16 +66,21 @@ log_data = {
     "env_stripped_len": len(CSRF_TRUSTED_ORIGINS_ENV),
     "env_is_empty": not CSRF_TRUSTED_ORIGINS_ENV,
 }
-with open("/home/uaimax/projects/uaitools/.cursor/debug.log", "a") as f:
-    f.write(json.dumps({
-        "location": "prod.py:CSRF_TRUSTED_ORIGINS_ENV",
-        "message": "Variável CSRF_TRUSTED_ORIGINS do ambiente (raw e stripped)",
-        "data": log_data,
-        "timestamp": time.time() * 1000,
-        "sessionId": "debug-session",
-        "runId": "run1",
-        "hypothesisId": "A"
-    }) + "\n")
+debug_log_path = "/home/uaimax/projects/uaitools/.cursor/debug.log"
+if os.path.exists(os.path.dirname(debug_log_path)):
+    try:
+        with open(debug_log_path, "a") as f:
+            f.write(json.dumps({
+                "location": "prod.py:CSRF_TRUSTED_ORIGINS_ENV",
+                "message": "Variável CSRF_TRUSTED_ORIGINS do ambiente (raw e stripped)",
+                "data": log_data,
+                "timestamp": time.time() * 1000,
+                "sessionId": "debug-session",
+                "runId": "run1",
+                "hypothesisId": "A"
+            }) + "\n")
+    except (OSError, IOError):
+        pass  # Ignorar erros de escrita em produção
 # #endregion
 
 # Log da variável bruta (para debug)
@@ -88,23 +94,27 @@ if CSRF_TRUSTED_ORIGINS_ENV:
     CSRF_TRUSTED_ORIGINS = [
         origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(",") if origin.strip()
     ]
-    # #region agent log
+    # #region agent log (apenas se arquivo existir)
     log_data = {
         "origins_list": CSRF_TRUSTED_ORIGINS,
         "origins_count": len(CSRF_TRUSTED_ORIGINS),
         "expected_origin": "https://ut-be.app.webmaxdigital.com",
         "expected_in_list": "https://ut-be.app.webmaxdigital.com" in CSRF_TRUSTED_ORIGINS,
     }
-    with open("/home/uaimax/projects/uaitools/.cursor/debug.log", "a") as f:
-        f.write(json.dumps({
-            "location": "prod.py:CSRF_TRUSTED_ORIGINS_parsed",
-            "message": "CSRF_TRUSTED_ORIGINS após parsing",
-            "data": log_data,
-            "timestamp": time.time() * 1000,
-            "sessionId": "debug-session",
-            "runId": "run1",
-            "hypothesisId": "B"
-        }) + "\n")
+    if os.path.exists(os.path.dirname(debug_log_path)):
+        try:
+            with open(debug_log_path, "a") as f:
+                f.write(json.dumps({
+                    "location": "prod.py:CSRF_TRUSTED_ORIGINS_parsed",
+                    "message": "CSRF_TRUSTED_ORIGINS após parsing",
+                    "data": log_data,
+                    "timestamp": time.time() * 1000,
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "B"
+                }) + "\n")
+        except (OSError, IOError):
+            pass  # Ignorar erros de escrita em produção
     # #endregion
     logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS configurado da variável: {CSRF_TRUSTED_ORIGINS}")
 else:
@@ -129,7 +139,7 @@ if not CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS = []
     logger.warning("[CSRF] ⚠️ CSRF_TRUSTED_ORIGINS está vazio! Isso pode causar erros de CSRF.")
 
-# #region agent log
+# #region agent log (apenas se arquivo existir)
 log_data = {
     "final_origins": CSRF_TRUSTED_ORIGINS,
     "final_count": len(CSRF_TRUSTED_ORIGINS),
@@ -137,16 +147,20 @@ log_data = {
     "expected_origin": "https://ut-be.app.webmaxdigital.com",
     "expected_in_final": "https://ut-be.app.webmaxdigital.com" in CSRF_TRUSTED_ORIGINS,
 }
-with open("/home/uaimax/projects/uaitools/.cursor/debug.log", "a") as f:
-    f.write(json.dumps({
-        "location": "prod.py:CSRF_TRUSTED_ORIGINS_final",
-        "message": "CSRF_TRUSTED_ORIGINS final configurado",
-        "data": log_data,
-        "timestamp": time.time() * 1000,
-        "sessionId": "debug-session",
-        "runId": "run1",
-        "hypothesisId": "C"
-    }) + "\n")
+if os.path.exists(os.path.dirname(debug_log_path)):
+    try:
+        with open(debug_log_path, "a") as f:
+            f.write(json.dumps({
+                "location": "prod.py:CSRF_TRUSTED_ORIGINS_final",
+                "message": "CSRF_TRUSTED_ORIGINS final configurado",
+                "data": log_data,
+                "timestamp": time.time() * 1000,
+                "sessionId": "debug-session",
+                "runId": "run1",
+                "hypothesisId": "C"
+            }) + "\n")
+    except (OSError, IOError):
+        pass  # Ignorar erros de escrita em produção
 # #endregion
 
 # Log final (sempre, para debug)
