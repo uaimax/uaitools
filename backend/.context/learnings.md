@@ -492,3 +492,124 @@ def my_signal_handler(sender, instance, created, **kwargs):
 
 ---
 
+## ✅ Padrão: Proteção de Listas em Settings (Prevenir Sobrescrita)
+
+**Data**: 2025-12-28
+**Categoria**: backend, settings, configuration
+**Tags**: [django, settings, csrf, configuration-management]
+**Severidade**: critical
+
+### O Que Funcionou
+Implementar validação automática e documentação clara para prevenir sobrescrita acidental de listas importantes em arquivos de settings específicos (`dev.py`, `prod.py`).
+
+### Problema Resolvido
+O `dev.py` estava sobrescrevendo `CSRF_TRUSTED_ORIGINS` com `CSRF_TRUSTED_ORIGINS = [...]`, removendo todas as origens definidas em `base.py`, incluindo a origem de produção. Isso quebrava o login do admin em produção.
+
+### Solução Implementada
+
+#### 1. Documentação Clara no Topo de Cada Arquivo
+```python
+# base.py
+"""Base settings for Django project.
+
+⚠️ LISTAS PROTEGIDAS - NUNCA SOBRESCREVER em dev.py ou prod.py:
+================================================================
+- CSRF_TRUSTED_ORIGINS: contém origens de produção e desenvolvimento
+- MIDDLEWARE: ordem crítica para funcionamento correto
+- INSTALLED_APPS: apps essenciais do sistema
+- CORS_ALLOWED_ORIGINS: origens permitidas para CORS
+- CORS_ALLOW_HEADERS: headers permitidos para CORS
+
+Para adicionar itens: Use LISTA.append("novo-item")
+NUNCA faça: LISTA = [...] (isso remove todas as configurações!)
+"""
+
+# dev.py / prod.py
+"""Development/Production settings.
+
+⚠️ REGRA CRÍTICA: NUNCA sobrescrever listas definidas em base.py!
+- CSRF_TRUSTED_ORIGINS: apenas adicionar (usar .append())
+- MIDDLEWARE: apenas adicionar/modificar ordem (não redefinir)
+- INSTALLED_APPS: apenas adicionar (usar .append())
+
+Sobrescrever listas remove configurações importantes e quebra produção!
+"""
+```
+
+#### 2. Comentários Explícitos nas Listas
+```python
+# base.py
+# =============================================================================
+# CSRF_TRUSTED_ORIGINS - SEMPRE CONFIGURAR COM ORIGENS NECESSÁRIAS
+# =============================================================================
+# ⚠️ REGRA CRÍTICA: Esta lista NUNCA deve ser sobrescrita em dev.py ou prod.py!
+# Se precisar adicionar origens, use: CSRF_TRUSTED_ORIGINS.append("nova-origem")
+# NUNCA faça: CSRF_TRUSTED_ORIGINS = [...] (isso remove todas as origens de base.py)
+CSRF_TRUSTED_ORIGINS = [
+    "https://ut-be.app.webmaxdigital.com",  # Produção - HTTPS
+    # ... outras origens
+]
+```
+
+#### 3. Validação Automática em dev.py e prod.py
+```python
+# dev.py / prod.py
+# =============================================================================
+# VALIDAÇÃO: Garantir que listas importantes não foram sobrescritas
+# =============================================================================
+_CSRF_HAS_PRODUCTION_ORIGIN = "https://ut-be.app.webmaxdigital.com" in CSRF_TRUSTED_ORIGINS
+if not _CSRF_HAS_PRODUCTION_ORIGIN:
+    logger.error("[DEV/PROD] ⚠️ ERRO CRÍTICO: CSRF_TRUSTED_ORIGINS não contém origem de produção!")
+    logger.error("[DEV/PROD] ⚠️ Isso indica que a lista foi sobrescrita incorretamente")
+    logger.error("[DEV/PROD] ⚠️ Verifique se está usando .append() ao invés de = [...]")
+```
+
+#### 4. Padrão Correto para Adicionar Itens
+```python
+# ✅ CORRETO - dev.py
+# =============================================================================
+# CSRF_TRUSTED_ORIGINS - APENAS ADICIONAR (NUNCA SOBRESCREVER!)
+# =============================================================================
+if "http://localhost:5173" not in CSRF_TRUSTED_ORIGINS:  # noqa: F405
+    CSRF_TRUSTED_ORIGINS.append("http://localhost:5173")  # noqa: F405
+
+# ❌ ERRADO - NUNCA fazer isso!
+# CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]  # Remove todas as origens de base.py!
+```
+
+### Por Que Funcionou Bem
+- ✅ **Validação automática** detecta problemas imediatamente
+- ✅ **Documentação clara** previne erros antes de acontecerem
+- ✅ **Logs de erro** facilitam debug quando algo está errado
+- ✅ **Comentários explícitos** lembram desenvolvedores da regra
+- ✅ **Padrão consistente** em todos os arquivos de settings
+
+### Padrão a Replicar
+1. **Documentar listas protegidas** no topo de `base.py`
+2. **Adicionar avisos** em `dev.py` e `prod.py` sobre não sobrescrever
+3. **Implementar validação** que verifica se itens críticos estão presentes
+4. **Usar `.append()` ou `.extend()`** ao invés de `= [...]`
+5. **Verificar se item existe** antes de adicionar (evita duplicatas)
+
+### Listas Protegidas Identificadas
+- `CSRF_TRUSTED_ORIGINS` - origens confiáveis para CSRF
+- `MIDDLEWARE` - ordem crítica de middlewares
+- `INSTALLED_APPS` - apps essenciais do sistema
+- `CORS_ALLOWED_ORIGINS` - origens permitidas para CORS
+- `CORS_ALLOW_HEADERS` - headers permitidos para CORS
+
+### Lições Aprendidas
+- **Sempre adicionar, nunca sobrescrever** listas de `base.py`
+- **Validação automática** é melhor que confiar apenas em documentação
+- **Logs de erro explícitos** ajudam a identificar problemas rapidamente
+- **Comentários no código** são a primeira linha de defesa contra erros
+- **Padrão consistente** facilita manutenção e evita confusão
+
+### Referências
+- `backend/config/settings/base.py` (define listas protegidas)
+- `backend/config/settings/dev.py` (exemplo de adição segura)
+- `backend/config/settings/prod.py` (exemplo de adição segura)
+- `backend/.context/mistakes.md` (erro documentado)
+
+---
+

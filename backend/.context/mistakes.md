@@ -408,6 +408,69 @@ Ver: `backend/Dockerfile` (atualizado em 2025-12-28)
 
 ---
 
+## ❌ Sobrescrever CSRF_TRUSTED_ORIGINS em dev.py (perde origens de base.py)
+
+**Data**: 2025-12-28
+**Categoria**: backend, security
+**Tags**: [csrf, settings, dev, production]
+**Severidade**: critical
+
+### Contexto
+Login do admin Django falhando com erro CSRF mesmo com origem configurada em `base.py`.
+
+### Problema
+O `dev.py` estava **sobrescrevendo completamente** `CSRF_TRUSTED_ORIGINS`, perdendo as origens definidas em `base.py`:
+
+```python
+# ❌ ERRADO - dev.py
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+# Isso SOBRESCREVE a lista de base.py, perdendo https://ut-be.app.webmaxdigital.com!
+```
+
+**Sintoma:**
+```
+Forbidden (Origin checking failed - https://ut-be.app.webmaxdigital.com does not match any trusted origins.)
+```
+
+### Solução
+**NUNCA sobrescrever `CSRF_TRUSTED_ORIGINS` em arquivos de settings específicos**. Sempre **adicionar** à lista existente:
+
+```python
+# ✅ CORRETO - dev.py
+# base.py já tem a origem de produção e outras necessárias
+if "http://localhost:5173" not in CSRF_TRUSTED_ORIGINS:  # noqa: F405
+    CSRF_TRUSTED_ORIGINS.append("http://localhost:5173")  # noqa: F405
+if "http://127.0.0.1:5173" not in CSRF_TRUSTED_ORIGINS:  # noqa: F405
+    CSRF_TRUSTED_ORIGINS.append("http://127.0.0.1:5173")  # noqa: F405
+```
+
+### Por Que É Crítico
+- `base.py` define origens compartilhadas (produção + desenvolvimento)
+- `dev.py` e `prod.py` devem apenas **adicionar** configurações específicas
+- Sobrescrever perde configurações importantes de `base.py`
+- Em produção, isso quebra login do admin completamente
+
+### Lições Aprendidas
+- **SEMPRE** verificar se está sobrescrevendo ou adicionando configurações
+- **NUNCA** fazer `CSRF_TRUSTED_ORIGINS = [...]` em `dev.py` ou `prod.py`
+- **SEMPRE** usar `.append()` ou verificar `if not in` antes de adicionar
+- Logs explícitos (`[CSRF] ✅ CSRF_TRUSTED_ORIGINS configurado`) ajudam a debugar
+
+### Como Detectar
+- Logs não mostram origem de produção: `[CSRF] - https://ut-be.app.webmaxdigital.com`
+- Erro CSRF mesmo com origem configurada em `base.py`
+- Verificar se `dev.py` ou `prod.py` fazem `CSRF_TRUSTED_ORIGINS = [...]`
+
+### Referências
+- `backend/config/settings/base.py` (define origens base)
+- `backend/config/settings/dev.py` (deve apenas adicionar)
+- `backend/config/settings/prod.py` (deve apenas adicionar)
+
+---
+
 ## ❌ Não Criar Arquivos > 300 Linhas
 
 **Data**: 2025-01-27
