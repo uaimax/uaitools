@@ -51,13 +51,15 @@ CSRF_COOKIE_SECURE = False
 # Permitir cookies em requisições cross-origin
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
-# CSRF Trusted Origins - permite requisições do frontend e mobile
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",  # Frontend web
-    "http://127.0.0.1:5173",
-    # Expo adiciona automaticamente origens do tunnel
-    # Para desenvolvimento mobile, CORS_ALLOW_ALL_ORIGINS pode ser True temporariamente
-]
+# CSRF Trusted Origins - ADICIONAR às origens já definidas em base.py
+# NÃO sobrescrever, apenas adicionar origens de desenvolvimento
+# base.py já tem a origem de produção e outras necessárias
+if "http://localhost:5173" not in CSRF_TRUSTED_ORIGINS:  # noqa: F405
+    CSRF_TRUSTED_ORIGINS.append("http://localhost:5173")  # noqa: F405
+if "http://127.0.0.1:5173" not in CSRF_TRUSTED_ORIGINS:  # noqa: F405
+    CSRF_TRUSTED_ORIGINS.append("http://127.0.0.1:5173")  # noqa: F405
+# Expo adiciona automaticamente origens do tunnel
+# Para desenvolvimento mobile, CORS_ALLOW_ALL_ORIGINS pode ser True temporariamente
 
 # Rate limiting DESABILITADO em desenvolvimento para facilitar testes
 # O app mobile pode fazer múltiplas tentativas durante desenvolvimento

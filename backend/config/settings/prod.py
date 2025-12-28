@@ -90,4 +90,9 @@ X_FRAME_OPTIONS = "SAMEORIGIN"  # Permite iframe (necessário para alguns casos)
 # Log de inicialização
 logger.info(f"[PROD] Django iniciado em modo {'DEBUG' if DEBUG else 'PRODUCTION'}")
 logger.info(f"[PROD] ALLOWED_HOSTS: {ALLOWED_HOSTS}")
-logger.info(f"[PROD] CSRF_TRUSTED_ORIGINS: {len(CSRF_TRUSTED_ORIGINS)} origens")  # noqa: F405
+logger.warning(f"[PROD] CSRF_TRUSTED_ORIGINS: {len(CSRF_TRUSTED_ORIGINS)} origens")  # noqa: F405
+# Log detalhado das origens para debug
+for origin in CSRF_TRUSTED_ORIGINS[:10]:  # noqa: F405
+    logger.warning(f"[PROD]   ✅ {origin}")
+if len(CSRF_TRUSTED_ORIGINS) > 10:  # noqa: F405
+    logger.warning(f"[PROD]   ... e mais {len(CSRF_TRUSTED_ORIGINS) - 10} origens")  # noqa: F405

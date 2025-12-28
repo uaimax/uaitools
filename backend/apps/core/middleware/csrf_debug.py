@@ -71,13 +71,28 @@ class CsrfDebugMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         """Captura informações após processamento CSRF."""
         if response.status_code == 403 and "CSRF" in str(response.content):
+            from django.conf import settings
+            origin = request.headers.get("Origin", "N/A")
+            referer = request.headers.get("Referer", "N/A")
+
+            # Log direto no stdout (visível nos logs do CapRover)
+            logger.error("=" * 80)
+            logger.error("[CSRF DEBUG] ⚠️ CSRF 403 DETECTADO")
+            logger.error(f"[CSRF DEBUG] Origin recebido: {origin}")
+            logger.error(f"[CSRF DEBUG] Referer recebido: {referer}")
+            logger.error(f"[CSRF DEBUG] CSRF_TRUSTED_ORIGINS ({len(settings.CSRF_TRUSTED_ORIGINS)} origens):")
+            for trusted_origin in settings.CSRF_TRUSTED_ORIGINS:
+                logger.error(f"[CSRF DEBUG]   - {trusted_origin}")
+            logger.error(f"[CSRF DEBUG] Origin está na lista? {origin in settings.CSRF_TRUSTED_ORIGINS}")
+            logger.error(f"[CSRF DEBUG] Origin (lower) está na lista (lower)? {origin.lower() in [o.lower() for o in settings.CSRF_TRUSTED_ORIGINS] if origin != 'N/A' else False}")
+            logger.error("=" * 80)
+
             # #region agent log
             if os.path.exists(os.path.dirname(DEBUG_LOG_PATH)):
-                from django.conf import settings
-                origin = request.headers.get("Origin", "N/A")
                 log_data = {
                     "status_code": response.status_code,
                     "origin_received": origin,
+                    "referer_received": referer,
                     "csrf_trusted_origins": list(settings.CSRF_TRUSTED_ORIGINS),
                     "origin_in_list": origin in settings.CSRF_TRUSTED_ORIGINS,
                     "origin_lower": origin.lower() if origin != "N/A" else "N/A",

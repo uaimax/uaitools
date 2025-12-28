@@ -34,9 +34,10 @@ else:
 # Isso garante que o CSRF funcione corretamente
 _CSRF_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
 
-# Base: sempre incluir a origem de produção
+# Base: sempre incluir a origem de produção (SEM trailing slash)
+# IMPORTANTE: Django compara origens exatamente como estão aqui
 CSRF_TRUSTED_ORIGINS = [
-    "https://ut-be.app.webmaxdigital.com",  # Produção - HTTPS
+    "https://ut-be.app.webmaxdigital.com",  # Produção - HTTPS (SEM trailing slash)
     "http://ut-be.app.webmaxdigital.com",   # Produção - HTTP (fallback)
     "https://app.webmaxdigital.com",
     "http://app.webmaxdigital.com",
@@ -53,12 +54,24 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
 ]
 
-# Se houver variável de ambiente, adicionar também
+# Se houver variável de ambiente, adicionar também (removendo trailing slash)
 if _CSRF_ENV:
     for origin in _CSRF_ENV.split(","):
         origin = origin.strip().rstrip("/")
         if origin and origin not in CSRF_TRUSTED_ORIGINS:
             CSRF_TRUSTED_ORIGINS.append(origin)
+
+# Log para debug (apenas se logger estiver disponível)
+try:
+    import logging
+    logger = logging.getLogger("django")
+    logger.warning(f"[CSRF] ✅ CSRF_TRUSTED_ORIGINS configurado com {len(CSRF_TRUSTED_ORIGINS)} origens")
+    for origin in CSRF_TRUSTED_ORIGINS[:5]:  # Mostrar primeiras 5
+        logger.warning(f"[CSRF]   - {origin}")
+    if len(CSRF_TRUSTED_ORIGINS) > 5:
+        logger.warning(f"[CSRF]   ... e mais {len(CSRF_TRUSTED_ORIGINS) - 5} origens")
+except Exception:
+    pass  # Ignorar se logger não estiver disponível ainda
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Trata SECRET_KEY removendo aspas se presentes (compatibilidade com CapRover/containers)
