@@ -96,6 +96,89 @@ def convert_box_id_to_uuid(apps, schema_editor):
         cursor.execute("ALTER TABLE supbrainnote_box ADD PRIMARY KEY (id)")
 
 
+def convert_note_box_id_to_uuid(apps, schema_editor):
+    """Converte o campo box_id de Note de bigint para UUID."""
+    db_alias = schema_editor.connection.alias
+
+    with schema_editor.connection.cursor() as cursor:
+        # Verificar se a tabela existe
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables
+                WHERE table_name = 'supbrainnote_note'
+            )
+        """)
+        table_exists = cursor.fetchone()[0]
+
+        if not table_exists:
+            return
+
+        # Verificar se box_id existe e qual é o tipo
+        cursor.execute("""
+            SELECT data_type
+            FROM information_schema.columns
+            WHERE table_name = 'supbrainnote_note'
+            AND column_name = 'box_id'
+        """)
+        result = cursor.fetchone()
+
+        if not result:
+            # Coluna não existe, não fazer nada
+            return
+
+        if result[0] == 'uuid':
+            # Já está convertido, não fazer nada
+            return
+
+        # Verificar se box.id já é UUID (precisa estar convertido primeiro)
+        cursor.execute("""
+            SELECT data_type
+            FROM information_schema.columns
+            WHERE table_name = 'supbrainnote_box'
+            AND column_name = 'id'
+        """)
+        box_id_type = cursor.fetchone()
+
+        if not box_id_type or box_id_type[0] != 'uuid':
+            # Box.id ainda não foi convertido, não fazer nada
+            return
+
+        # Remover foreign key constraint se existir
+        cursor.execute("""
+            SELECT constraint_name
+            FROM information_schema.table_constraints
+            WHERE table_name = 'supbrainnote_note'
+            AND constraint_type = 'FOREIGN KEY'
+            AND constraint_name LIKE '%box_id%'
+        """)
+        fk_constraints = cursor.fetchall()
+
+        for constraint in fk_constraints:
+            constraint_name = constraint[0]
+            cursor.execute(f'ALTER TABLE supbrainnote_note DROP CONSTRAINT IF EXISTS {constraint_name}')
+
+        # Como não há dados (clear_existing_data foi executado antes), podemos simplesmente dropar e recriar
+        # Mas para ser seguro, vamos criar nova coluna, copiar (se houver dados), dropar antiga e renomear
+        cursor.execute("""
+            ALTER TABLE supbrainnote_note
+            ADD COLUMN box_id_new UUID
+        """)
+
+        # Se houver dados, precisaríamos fazer um JOIN para copiar os valores
+        # Mas como clear_existing_data foi executado, não há dados, então podemos simplesmente dropar
+        cursor.execute("ALTER TABLE supbrainnote_note DROP COLUMN box_id")
+        cursor.execute("ALTER TABLE supbrainnote_note RENAME COLUMN box_id_new TO box_id")
+
+        # Recriar foreign key
+        cursor.execute("""
+            ALTER TABLE supbrainnote_note
+            ADD CONSTRAINT supbrainnote_note_box_id_fk
+            FOREIGN KEY (box_id)
+            REFERENCES supbrainnote_box(id)
+            ON DELETE SET NULL
+        """)
+
+
 def convert_note_id_to_uuid(apps, schema_editor):
     """Converte o campo id de Note de bigint para UUID."""
     db_alias = schema_editor.connection.alias
@@ -142,60 +225,13 @@ def convert_note_id_to_uuid(apps, schema_editor):
         # 4. Adicionar constraint de primary key
         cursor.execute("ALTER TABLE supbrainnote_note ADD PRIMARY KEY (id)")
 
-        # 5. Recriar foreign key para box_id (se a tabela box existir e já tiver sido convertida)
-        cursor.execute("""
-            SELECT EXISTS (
-                SELECT 1 FROM information_schema.tables
-                WHERE table_name = 'supbrainnote_box'
-            )
-        """)
-        box_exists = cursor.fetchone()[0]
-
-        if box_exists:
-            # Verificar se box.id já é UUID
-            cursor.execute("""
-                SELECT data_type
-                FROM information_schema.columns
-                WHERE table_name = 'supbrainnote_box'
-                AND column_name = 'id'
-            """)
-            box_id_type = cursor.fetchone()
-
-            if box_id_type and box_id_type[0] == 'uuid':
-                # Verificar se a coluna box_id existe
-                cursor.execute("""
-                    SELECT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'supbrainnote_note'
-                        AND column_name = 'box_id'
-                    )
-                """)
-                box_id_exists = cursor.fetchone()[0]
-
-                if box_id_exists:
-                    # Verificar se já existe constraint (para evitar erro em re-execução)
-                    cursor.execute("""
-                        SELECT EXISTS (
-                            SELECT 1 FROM information_schema.table_constraints
-                            WHERE table_name = 'supbrainnote_note'
-                            AND constraint_type = 'FOREIGN KEY'
-                            AND constraint_name LIKE '%box_id%'
-                        )
-                    """)
-                    fk_exists = cursor.fetchone()[0]
-
-                    if not fk_exists:
-                        # Recriar foreign key
-                        cursor.execute("""
-                            ALTER TABLE supbrainnote_note
-                            ADD CONSTRAINT supbrainnote_note_box_id_fk
-                            FOREIGN KEY (box_id)
-                            REFERENCES supbrainnote_box(id)
-                            ON DELETE SET NULL
-                        """)
-
 
 def reverse_convert_box_id(apps, schema_editor):
+    """Reverter conversão (não suportado - conversão irreversível)."""
+    pass
+
+
+def reverse_convert_note_box_id(apps, schema_editor):
     """Reverter conversão (não suportado - conversão irreversível)."""
     pass
 
@@ -216,6 +252,8 @@ class Migration(migrations.Migration):
         migrations.RunPython(clear_existing_data, reverse_clear_data),
         # Converter Box.id de bigint para UUID usando SQL customizado
         migrations.RunPython(convert_box_id_to_uuid, reverse_convert_box_id),
+        # Converter Note.box_id de bigint para UUID (precisa ser antes de converter Note.id)
+        migrations.RunPython(convert_note_box_id_to_uuid, reverse_convert_note_box_id),
         # Converter Note.id de bigint para UUID usando SQL customizado
         migrations.RunPython(convert_note_id_to_uuid, reverse_convert_note_id),
         # Atualizar definição do modelo para refletir UUID
