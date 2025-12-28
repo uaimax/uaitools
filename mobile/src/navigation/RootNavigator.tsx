@@ -2,7 +2,7 @@
  * Navegador raiz - Decide entre AuthStack e MainStack
  */
 
-import React from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '@/context/AuthContext';
@@ -12,8 +12,21 @@ import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-export const RootNavigator: React.FC = () => {
+export interface RootNavigatorRef {
+  navigate: (name: string, params?: any) => void;
+}
+
+export const RootNavigator = forwardRef<RootNavigatorRef>((props, ref) => {
   const { isAuthenticated, loading } = useAuth();
+  const navigationRef = React.useRef<any>(null);
+
+  useImperativeHandle(ref, () => ({
+    navigate: (name: string, params?: any) => {
+      if (navigationRef.current) {
+        navigationRef.current.navigate(name, params);
+      }
+    },
+  }));
 
   if (loading) {
     // TODO: Adicionar SplashScreen
@@ -21,7 +34,7 @@ export const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <Stack.Screen name="Main" component={MainStack} />
@@ -31,5 +44,5 @@ export const RootNavigator: React.FC = () => {
       </Stack.Navigator>
     </NavigationContainer>
   );
-};
+});
 

@@ -167,7 +167,8 @@ class NoteUploadSerializer(serializers.Serializer):
     def validate_audio_file(self, value) -> object:
         """Valida arquivo de áudio."""
         # Tipos permitidos (whitelist)
-        allowed_types = [".m4a", ".mp3", ".wav", ".ogg", ".webm"]
+        # Inclui formatos suportados pelo Whisper API e WhatsApp
+        allowed_types = [".m4a", ".mp3", ".wav", ".ogg", ".opus", ".webm", ".aac", ".amr", ".flac", ".mpeg", ".mpga"]
         ext = value.name.lower().split(".")[-1] if "." in value.name else ""
         if f".{ext}" not in allowed_types:
             raise serializers.ValidationError(

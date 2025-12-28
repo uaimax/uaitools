@@ -40,7 +40,7 @@ export const QueryScreen: React.FC = () => {
   const { isOnline } = useOfflineSync();
   const { state: recordingState, duration, start, stop, cancel } = useRecording();
 
-  const [mode, setMode] = useState<QueryMode>('text');
+  const [mode, setMode] = useState<QueryMode>('audio');
   const [question, setQuestion] = useState('');
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
   const [showBoxSelector, setShowBoxSelector] = useState(false);
@@ -163,25 +163,8 @@ export const QueryScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Tabs: Texto / Áudio */}
+        {/* Tabs: Áudio / Texto */}
         <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, mode === 'text' && styles.tabActive]}
-            onPress={() => setMode('text')}
-          >
-            <MessageSquare
-              size={18}
-              color={mode === 'text' ? colors.primary.default : colors.text.tertiary}
-            />
-            <Text
-              style={[
-                styles.tabText,
-                mode === 'text' && styles.tabTextActive,
-              ]}
-            >
-              Texto
-            </Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, mode === 'audio' && styles.tabActive]}
             onPress={() => setMode('audio')}
@@ -197,6 +180,23 @@ export const QueryScreen: React.FC = () => {
               ]}
             >
               Áudio
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, mode === 'text' && styles.tabActive]}
+            onPress={() => setMode('text')}
+          >
+            <MessageSquare
+              size={18}
+              color={mode === 'text' ? colors.primary.default : colors.text.tertiary}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                mode === 'text' && styles.tabTextActive,
+              ]}
+            >
+              Texto
             </Text>
           </TouchableOpacity>
         </View>

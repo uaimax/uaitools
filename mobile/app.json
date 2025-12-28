@@ -13,7 +13,26 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.uaitools.supbrainnote"
+      "bundleIdentifier": "com.uaitools.supbrainnote",
+      "infoPlist": {
+        "UISupportsDocumentBrowser": true,
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "Audio Files",
+            "CFBundleTypeRole": "Viewer",
+            "LSItemContentTypes": [
+              "public.audio",
+              "public.mp3",
+              "public.m4a",
+              "com.apple.m4a-audio",
+              "public.aac-audio",
+              "org.xiph.opus",
+              "public.ogg",
+              "public.opus"
+            ]
+          }
+        ]
+      }
     },
     "scheme": "supbrainnote",
     "android": {
@@ -25,7 +44,21 @@
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "intentFilters": [
+        {
+          "action": "android.intent.action.SEND",
+          "type": "audio/*",
+          "category": ["android.intent.category.DEFAULT"]
+        },
+        {
+          "action": "android.intent.action.SEND_MULTIPLE",
+          "type": "audio/*",
+          "category": ["android.intent.category.DEFAULT"]
+        }
       ],
       "versionCode": 1
     },

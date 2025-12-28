@@ -12,6 +12,7 @@ import { NoteEditScreen } from '@/screens/notes/NoteEditScreen';
 import { NotesListScreen } from '@/screens/notes/NotesListScreen';
 import { SettingsScreen } from '@/screens/settings/SettingsScreen';
 import { QueryScreen } from '@/screens/query/QueryScreen';
+import { AudioReceivedScreen } from '@/screens/audio/AudioReceivedScreen';
 import type { MainStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -32,6 +33,7 @@ export const MainStack: React.FC = () => {
       <Stack.Screen name="NotesList" component={NotesListScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Query" component={QueryScreen} />
+      <Stack.Screen name="AudioReceived" component={AudioReceivedScreen} />
     </Stack.Navigator>
   );
 };

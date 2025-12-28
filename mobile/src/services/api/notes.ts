@@ -66,9 +66,61 @@ const uploadsInProgress = new Set<string>();
  * Usa fetch nativo em vez de Axios para evitar problemas de Network Error
  * com FormData no React Native + ngrok/HTTPS
  */
+/**
+ * Detecta o tipo MIME e extensão do arquivo baseado na URI
+ */
+function detectAudioType(uri: string): { mimeType: string; extension: string; fileName: string } {
+  const uriLower = uri.toLowerCase();
+
+  // Detectar por extensão
+  if (uriLower.endsWith('.opus') || uriLower.endsWith('.ogg')) {
+    return { mimeType: 'audio/ogg; codecs=opus', extension: '.opus', fileName: 'audio.opus' };
+  }
+  if (uriLower.endsWith('.m4a')) {
+    return { mimeType: 'audio/m4a', extension: '.m4a', fileName: 'audio.m4a' };
+  }
+  if (uriLower.endsWith('.mp3')) {
+    return { mimeType: 'audio/mp3', extension: '.mp3', fileName: 'audio.mp3' };
+  }
+  if (uriLower.endsWith('.wav')) {
+    return { mimeType: 'audio/wav', extension: '.wav', fileName: 'audio.wav' };
+  }
+  if (uriLower.endsWith('.aac')) {
+    return { mimeType: 'audio/aac', extension: '.aac', fileName: 'audio.aac' };
+  }
+  if (uriLower.endsWith('.amr')) {
+    return { mimeType: 'audio/amr', extension: '.amr', fileName: 'audio.amr' };
+  }
+
+  // Fallback: tentar extrair nome do arquivo da URI
+  const fileNameMatch = uri.match(/([^/]+)\.(\w+)$/);
+  if (fileNameMatch) {
+    const [, name, ext] = fileNameMatch;
+    const extLower = ext.toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      opus: 'audio/ogg; codecs=opus',
+      ogg: 'audio/ogg; codecs=opus',
+      m4a: 'audio/m4a',
+      mp3: 'audio/mp3',
+      wav: 'audio/wav',
+      aac: 'audio/aac',
+      amr: 'audio/amr',
+    };
+    return {
+      mimeType: mimeTypes[extLower] || 'audio/m4a',
+      extension: `.${extLower}`,
+      fileName: `${name}.${extLower}`,
+    };
+  }
+
+  // Fallback padrão
+  return { mimeType: 'audio/m4a', extension: '.m4a', fileName: 'audio.m4a' };
+}
+
 export async function uploadAudio(
   audioUri: string,
-  boxId?: string
+  boxId?: string,
+  sourceType?: string
 ): Promise<NoteUploadResponse> {
   // Proteção contra chamadas duplicadas usando o URI como chave
   if (uploadsInProgress.has(audioUri)) {
@@ -78,8 +130,16 @@ export async function uploadAudio(
 
   uploadsInProgress.add(audioUri);
 
+  // Detectar tipo de áudio automaticamente
+  const audioInfo = detectAudioType(audioUri);
+
   // #region agent log
-  console.log('[DEBUG] uploadAudio called (native fetch)', { audioUri, boxId });
+  console.log('[DEBUG] uploadAudio called (native fetch)', {
+    audioUri,
+    boxId,
+    sourceType,
+    detectedType: audioInfo
+  });
   // #endregion
 
   // Importa funções de storage para obter tokens
@@ -98,12 +158,16 @@ export async function uploadAudio(
   // @ts-ignore - FormData precisa de tipo específico para React Native
   formData.append('audio_file', {
     uri: audioUri,
-    type: 'audio/m4a',
-    name: 'recording.m4a',
+    type: audioInfo.mimeType,
+    name: audioInfo.fileName,
   } as any);
 
   if (boxId) {
     formData.append('box_id', boxId);
+  }
+
+  if (sourceType) {
+    formData.append('source_type', sourceType);
   }
 
   // #region agent log

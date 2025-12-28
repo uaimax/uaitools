@@ -19,6 +19,7 @@ export type MainStackParamList = {
   BoxesManagement: undefined;
   Settings: undefined;
   Query: undefined;
+  AudioReceived: { audioUri?: string; audioName?: string };
 };
 
 export type RootStackParamList = {

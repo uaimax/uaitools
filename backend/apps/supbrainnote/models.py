@@ -74,6 +74,7 @@ class Note(UUIDPrimaryKeyMixin, WorkspaceModel):
     SOURCE_CHOICES = [
         ("memo", _("Memo próprio")),
         ("group_audio", _("Áudio de grupo")),
+        ("forwarded", _("Áudio encaminhado")),
     ]
 
     PROCESSING_STATUS_CHOICES = [
