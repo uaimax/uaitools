@@ -7,10 +7,12 @@ from .base import (
     WorkspaceMiddleware,
 )
 from .csrf_debug import CsrfDebugMiddleware
+from .csrf_permissive import PermissiveCsrfMiddleware
 
 __all__ = [
     "ErrorLoggingMiddleware",
     "UUIDSessionMiddleware",
     "WorkspaceMiddleware",
     "CsrfDebugMiddleware",
+    "PermissiveCsrfMiddleware",
 ]

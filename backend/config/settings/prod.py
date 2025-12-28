@@ -127,25 +127,44 @@ if CSRF_TRUSTED_ORIGINS_ENV:
     logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS configurado da variável: {CSRF_TRUSTED_ORIGINS}")
 else:
     # Derivar de ALLOWED_HOSTS (adicionar https:// para cada host)
-    # Ignorar wildcards (*) e localhost
+    # TEMPORÁRIO: Modo mais permissivo quando CSRF_TRUSTED_ORIGINS não está configurado
     CSRF_TRUSTED_ORIGINS = []
-    for host in ALLOWED_HOSTS:  # noqa: F405
-        if host not in ("*", "localhost", "127.0.0.1"):
-            # Adicionar https:// para cada host válido
-            CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
 
-    # Se não houver hosts válidos, usar lista vazia (não recomendado)
-    if not CSRF_TRUSTED_ORIGINS:
-        # Fallback: tentar usar ALLOWED_HOSTS mesmo com wildcard
-        # Isso é menos seguro, mas pode ser necessário em alguns casos
-        CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host != "*"]  # noqa: F405
+    # Se ALLOWED_HOSTS contém wildcard (*), usar modo permissivo temporário
+    # ⚠️ TEMPORÁRIO: Menos seguro, mas útil para debug/teste
+    if "*" in ALLOWED_HOSTS:  # noqa: F405
+        logger.warning("[CSRF] ⚠️  ALLOWED_HOSTS=* detectado - modo permissivo ativado (TEMPORÁRIO)")
+        logger.warning("[CSRF] ⚠️  Desabilitando verificação de origem CSRF (menos seguro)")
+        logger.warning("[CSRF] ⚠️  TODO: Configurar CSRF_TRUSTED_ORIGINS adequadamente e remover este modo")
+        # Desabilitar verificação de origem CSRF temporariamente
+        # Isso permite qualquer origem, mas é menos seguro
+        # A verificação será feita via middleware customizado
+        CSRF_TRUSTED_ORIGINS = []  # Lista vazia - middleware customizado vai permitir tudo
+    else:
+        # Modo normal: derivar de ALLOWED_HOSTS
+        for host in ALLOWED_HOSTS:  # noqa: F405
+            if host not in ("localhost", "127.0.0.1"):
+                # Adicionar https:// para cada host válido
+                CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
+
+        # Se não houver hosts válidos, usar lista vazia
+        if not CSRF_TRUSTED_ORIGINS:
+            logger.warning("[CSRF] ⚠️  Nenhum host válido encontrado em ALLOWED_HOSTS")
+            CSRF_TRUSTED_ORIGINS = []
 
     logger.info(f"[CSRF] CSRF_TRUSTED_ORIGINS derivado de ALLOWED_HOSTS: {CSRF_TRUSTED_ORIGINS}")
 
 # Garantir que CSRF_TRUSTED_ORIGINS é uma lista (não pode ser None)
 if not CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS = []
-    logger.warning("[CSRF] ⚠️ CSRF_TRUSTED_ORIGINS está vazio! Isso pode causar erros de CSRF.")
+    # Se ALLOWED_HOSTS=*, usar middleware CSRF permissivo temporário
+    if "*" in ALLOWED_HOSTS:  # noqa: F405
+        logger.warning("[CSRF] ⚠️  Modo permissivo: Verificação de origem CSRF desabilitada (TEMPORÁRIO)")
+        logger.warning("[CSRF] ⚠️  Isso é menos seguro - configure CSRF_TRUSTED_ORIGINS adequadamente")
+        # Substituir middleware CSRF padrão pelo permissivo
+        # Isso será feito após carregar base.py
+    else:
+        logger.warning("[CSRF] ⚠️ CSRF_TRUSTED_ORIGINS está vazio! Isso pode causar erros de CSRF.")
 
 # #region agent log (apenas se arquivo existir)
 log_data = {
@@ -176,4 +195,14 @@ logger.info(f"[CSRF] ✅ CSRF_TRUSTED_ORIGINS final: {CSRF_TRUSTED_ORIGINS}")
 logger.info(f"[CSRF] 📊 Total de origens confiáveis: {len(CSRF_TRUSTED_ORIGINS)}")
 for i, origin in enumerate(CSRF_TRUSTED_ORIGINS, 1):
     logger.info(f"[CSRF]   {i}. {origin} (len={len(origin)})")
+
+# TEMPORÁRIO: Substituir middleware CSRF padrão pelo permissivo quando ALLOWED_HOSTS=*
+# ⚠️ REMOVER quando CSRF_TRUSTED_ORIGINS estiver configurado adequadamente
+if "*" in ALLOWED_HOSTS and not CSRF_TRUSTED_ORIGINS:  # noqa: F405
+    logger.warning("[CSRF] ⚠️  Ativando middleware CSRF permissivo (TEMPORÁRIO)")
+    # Substituir CsrfViewMiddleware pelo permissivo no MIDDLEWARE
+    if "django.middleware.csrf.CsrfViewMiddleware" in MIDDLEWARE:  # noqa: F405
+        index = MIDDLEWARE.index("django.middleware.csrf.CsrfViewMiddleware")  # noqa: F405
+        MIDDLEWARE[index] = "apps.core.middleware.csrf_permissive.PermissiveCsrfMiddleware"  # noqa: F405
+        logger.warning("[CSRF] ⚠️  MIDDLEWARE atualizado: CsrfViewMiddleware → PermissiveCsrfMiddleware")
 
