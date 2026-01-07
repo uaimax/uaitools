@@ -1,37 +1,25 @@
 FROM node:20-alpine AS builder
 
-# Definir diretório de trabalho
 WORKDIR /app
 
-# Argumentos de build para variáveis de ambiente do Vite
-# Essas variáveis são embutidas no build em tempo de compilação
+# Build args
 ARG VITE_API_URL
 ARG VITE_APP_URL
 ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_ENVIRONMENT=production
 
-# Definir variáveis de ambiente para o build (exceto NODE_ENV)
+# Env vars para build
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_APP_URL=${VITE_APP_URL}
 ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
 ENV VITE_SENTRY_ENVIRONMENT=${VITE_SENTRY_ENVIRONMENT}
 
-# Copiar arquivos de dependências
+# Install dependencies
 COPY package*.json ./
+RUN npm ci
 
-# Instalar dependências (incluindo devDependencies necessárias para o build)
-# Garantir que NODE_ENV não seja production durante a instalação
-RUN NODE_ENV=development npm ci
-
-# Copiar código fonte
+# Build
 COPY . .
-
-# Build da aplicação em modo produção
-# Vite automaticamente:
-# - Otimiza para produção quando NODE_ENV=production
-# - Carrega variáveis de .env.production se existir (ou ARGs passados como ENV)
-# - Embuti variáveis VITE_* no código JavaScript
-ENV NODE_ENV=production
 RUN npm run build
 
 # Estágio de produção - Nginx
