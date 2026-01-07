@@ -24,6 +24,7 @@ urlpatterns = [
     path("leads/", include("apps.leads.urls")),
     path("investments/", include("apps.investments.urls")),
     path("supbrainnote/", include("apps.supbrainnote.urls")),
+    path("notifications/", include("apps.core.notification_urls")),
     # Auditoria LGPD
     path("audit/", include("apps.core.audit_urls")),
     # Logging (erros da aplicação)

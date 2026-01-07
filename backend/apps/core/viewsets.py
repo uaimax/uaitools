@@ -14,6 +14,15 @@ if TYPE_CHECKING:
     from apps.accounts.models import Workspace
     from rest_framework.response import Response
 
+# Imports para NotificationViewSet (fora de TYPE_CHECKING para uso real)
+try:
+    from apps.core.models import Notification
+    from apps.core.serializers import NotificationSerializer
+except ImportError:
+    # Evita importação circular durante inicialização
+    Notification = None
+    NotificationSerializer = None
+
 
 class WorkspaceViewSet(viewsets.ModelViewSet):
     """ViewSet base com filtro automático por workspace.
@@ -301,4 +310,62 @@ class ApplicationLogViewSet(WorkspaceViewSet):
                     "since": since,
                 },
             }, status=status.HTTP_200_OK)
+
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet para notificações do usuário."""
+
+    # Atributos de classe necessários para o DRF gerar rotas corretamente
+    queryset = Notification.objects.all() if Notification else models.QuerySet().none()
+    serializer_class = NotificationSerializer if NotificationSerializer else None
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self) -> models.QuerySet:
+        """Retorna apenas notificações do usuário autenticado."""
+        from apps.core.models import Notification
+        queryset = Notification.objects.filter(user=self.request.user)
+
+        # Filtro opcional por unread
+        unread = self.request.query_params.get("unread")
+        if unread is not None:
+            unread_bool = unread.lower() in ("true", "1", "yes")
+            queryset = queryset.filter(read=not unread_bool)
+
+        return queryset
+
+    @action(detail=True, methods=["patch"], url_path="read")
+    def mark_as_read(self, request, pk=None) -> "Response":
+        """Marca notificação como lida."""
+        notification = self.get_object()
+        notification.mark_as_read()
+        serializer = self.get_serializer(notification)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["post"], url_path="mark-all-read")
+    def mark_all_read(self, request) -> "Response":
+        """Marca todas as notificações do usuário como lidas."""
+        from django.utils import timezone
+        count = self.get_queryset().filter(read=False).update(
+            read=True,
+            read_at=timezone.now()
+        )
+        return Response({"marked_count": count})
+
+    @action(detail=True, methods=["post"], url_path="dismiss-box")
+    def dismiss_box_notifications(self, request, pk=None) -> "Response":
+        """Desativa notificações de uma caixinha específica."""
+        # Por enquanto, apenas marca como lida
+        # Futuro: criar tabela de preferências de notificação
+        notification = self.get_object()
+        if notification.related_box:
+            # Marcar todas as notificações desta caixinha como lidas
+            count = self.get_queryset().filter(
+                related_box=notification.related_box,
+                read=False
+            ).update(
+                read=True,
+                read_at=timezone.now()
+            )
+            return Response({"marked_count": count})
+        return Response({"error": "Notificação não está relacionada a uma caixinha"}, status=status.HTTP_400_BAD_REQUEST)
 

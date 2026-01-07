@@ -204,3 +204,68 @@ class ApplicationLog(UUIDPrimaryKeyMixin, WorkspaceModel):
         """Representação string do log."""
         return f"{self.level} - {self.source} - {self.message[:50]}"
 
+
+class Notification(UUIDPrimaryKeyMixin, models.Model):
+    """Notificações do sistema."""
+
+    TYPE_CHOICES = [
+        ("box_shared", "Caixinha compartilhada"),
+        ("note_created", "Nova nota criada"),
+        ("note_edited", "Nota editada"),
+        ("permission_changed", "Permissões alteradas"),
+        ("removed_from_box", "Removido de caixinha"),
+    ]
+
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        verbose_name="Usuário",
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        verbose_name="Tipo",
+    )
+    title = models.CharField(max_length=255, verbose_name="Título")
+    message = models.TextField(verbose_name="Mensagem")
+    related_box = models.ForeignKey(
+        "supbrainnote.Box",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        verbose_name="Caixinha relacionada",
+    )
+    related_note = models.ForeignKey(
+        "supbrainnote.Note",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        verbose_name="Nota relacionada",
+    )
+    read = models.BooleanField(default=False, verbose_name="Lida", db_index=True)
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name="Lida em")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em", db_index=True)
+
+    class Meta:
+        verbose_name = "Notificação"
+        verbose_name_plural = "Notificações"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "read", "created_at"]),
+            models.Index(fields=["user", "type", "created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        """Representação string da notificação."""
+        return f"{self.get_type_display()} - {self.user.email}"
+
+    def mark_as_read(self) -> None:
+        """Marca notificação como lida."""
+        from django.utils import timezone
+        self.read = True
+        self.read_at = timezone.now()
+        self.save(update_fields=["read", "read_at"])
+
