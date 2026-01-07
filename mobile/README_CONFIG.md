@@ -93,3 +93,4 @@ Para builds de produção (EAS Build, etc), certifique-se de que o `.env` ou `ap
 
 **Última atualização:** 2025-12-27
 
+

@@ -13,7 +13,8 @@ import {
   Move,
   Trash2,
   MoreVertical,
-  ArrowLeft
+  ArrowLeft,
+  Edit
 } from "lucide-react";
 import {
   Dialog,
@@ -29,7 +30,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 import { AudioPlayer } from "./AudioPlayer";
-import { useState } from "react";
+import { NoteEditor } from "./NoteEditor";
+import { useState, useEffect } from "react";
 import { MoveNoteModal } from "./MoveNoteModal";
 import { DeleteNoteModal } from "./DeleteNoteModal";
 
@@ -47,6 +49,7 @@ export function NoteDetail({ noteId, open, onOpenChange, onBack }: NoteDetailPro
   const deleteMutation = useDeleteNote();
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const boxesArray = Array.isArray(boxes) ? boxes : [];
   const noteBox = note?.box ? boxesArray.find((b) => b.id === note.box) : null;
@@ -94,6 +97,36 @@ export function NoteDetail({ noteId, open, onOpenChange, onBack }: NoteDetailPro
     return null;
   }
 
+  // Modo edição automático: se a nota está carregada e não está em modo edição, entrar automaticamente
+  useEffect(() => {
+    if (note && !isEditing && !isLoading) {
+      // Entrar em modo edição automaticamente ao abrir
+      setIsEditing(true);
+    }
+  }, [note?.id, isLoading]);
+
+  // Se está editando, mostrar editor
+  if (isEditing && note) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-5xl max-h-[95vh] p-0 overflow-hidden">
+          <NoteEditor
+            note={note}
+            onBack={() => {
+              setIsEditing(false);
+              onBack?.();
+            }}
+            onClose={() => {
+              setIsEditing(false);
+              onOpenChange(false);
+            }}
+            autoFocus={true}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,6 +153,10 @@ export function NoteDetail({ noteId, open, onOpenChange, onBack }: NoteDetailPro
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar nota
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowMoveModal(true)}>
                     <Move className="w-4 h-4 mr-2" />
                     Mover para outra caixinha
@@ -161,7 +198,7 @@ export function NoteDetail({ noteId, open, onOpenChange, onBack }: NoteDetailPro
               )}
 
               {/* Metadados */}
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1.5">
                   {note.source_type === "memo" ? (
                     <Mic className="w-4 h-4" />
@@ -182,6 +219,25 @@ export function NoteDetail({ noteId, open, onOpenChange, onBack }: NoteDetailPro
                     minute: "2-digit",
                   })}
                 </span>
+                {note.created_by_email && (
+                  <>
+                    <span>•</span>
+                    <span>Criado por {note.created_by_email}</span>
+                  </>
+                )}
+                {note.last_edited_by_email && note.created_by_email !== note.last_edited_by_email && (
+                  <>
+                    <span>•</span>
+                    <span>
+                      Editado por {note.last_edited_by_email}
+                      {note.last_edited_at && (
+                        <span className="ml-1">
+                          em {new Date(note.last_edited_at).toLocaleDateString("pt-BR")}
+                        </span>
+                      )}
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* Player de Áudio */}

@@ -12,3 +12,4 @@ export const haptic = {
   error: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
 };
 
+

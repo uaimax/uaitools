@@ -55,3 +55,4 @@ export const colors = {
 export type ColorKey = keyof typeof colors;
 export type BoxColorKey = keyof typeof colors.box;
 
+

@@ -69,7 +69,7 @@ export const InboxScreen: React.FC = () => {
               key={note.id}
               note={note}
               onPress={() =>
-                navigation.navigate('NoteDetail' as never, { noteId: note.id } as never)
+                navigation.navigate('NoteEdit' as never, { noteId: note.id } as never)
               }
               onDelete={handleRefresh}
               onMove={handleRefresh}

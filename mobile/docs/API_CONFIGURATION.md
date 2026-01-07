@@ -164,3 +164,4 @@ O arquivo `.env` já está no `.gitignore`, mas sempre verifique antes de commit
 
 Pronto! O app agora usa a nova URL.
 
+

@@ -72,3 +72,4 @@ echo "EXPO_PUBLIC_API_URL=http://SEU_IP:8001" > mobile/.env
    - Firewall está bloqueando?
    - IP está correto no `.env`?
 
+

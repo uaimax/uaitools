@@ -15,6 +15,7 @@ import Register from "./features/auth/pages/Register";
 import OAuthCallback from "./features/auth/pages/OAuthCallback";
 import ForgotPassword from "./features/auth/pages/ForgotPassword";
 import ResetPassword from "./features/auth/pages/ResetPassword";
+import AcceptBoxInvitePage from "./features/supbrainnote/pages/AcceptBoxInvitePage";
 // Admin pages
 import DashboardPage from "./features/admin/pages/DashboardPage";
 import LeadsPage from "./features/admin/pages/LeadsPage";
@@ -49,6 +50,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/accept-box-invite" element={<AcceptBoxInvitePage />} />
             <Route path="/oauth/callback" element={<OAuthCallback />} />
             <Route
               path="/"

@@ -70,6 +70,7 @@
       "favicon": "./assets/icon.png"
     },
     "plugins": [
+      "expo-dev-client",
       [
         "expo-av",
         {
@@ -85,6 +86,6 @@
       },
       "EXPO_PUBLIC_API_URL": "https://ut-be.app.webmaxdigital.com"
     },
-    "owner": "uaimax"
+    "owner": "webmax-digital"
   }
 }

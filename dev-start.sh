@@ -19,6 +19,7 @@ TMUX_SESSION="saas-dev"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$SCRIPT_DIR/backend"
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
+MOBILE_DIR="$SCRIPT_DIR/mobile"
 
 # Função para carregar .env de forma segura (evita problemas com caracteres especiais)
 # Usa python-dotenv para parse correto, evitando problemas com $, !, @, etc.
@@ -185,6 +186,27 @@ EOF
     echo -e "${GREEN}   ✅ Frontend configurado${NC}"
 }
 
+# Função para setup do mobile
+setup_mobile() {
+    if [ ! -d "$MOBILE_DIR" ]; then
+        return 0  # Se não existe diretório mobile, pula
+    fi
+
+    echo -e "${BLUE}📦 Configurando Mobile...${NC}"
+
+    cd "$MOBILE_DIR"
+
+    # Verificar se node_modules existe
+    if [ ! -d "node_modules" ]; then
+        echo -e "${YELLOW}   📥 Instalando dependências Node.js...${NC}"
+        npm install
+    else
+        echo -e "${GREEN}   ✅ Dependências Node.js já instaladas${NC}"
+    fi
+
+    echo -e "${GREEN}   ✅ Mobile configurado${NC}"
+}
+
 # Verificar e liberar portas
 check_port $BACKEND_PORT "Backend"
 check_port $FRONTEND_PORT "Frontend"
@@ -214,6 +236,7 @@ if [ "$HAS_TMUX" = true ]; then
     # Setup
     setup_backend
     setup_frontend
+    setup_mobile
 
     # Obter prefixo do admin
     ADMIN_PREFIX=$(grep -E "^ADMIN_URL_PREFIX=" "$SCRIPT_DIR/.env" 2>/dev/null | cut -d'=' -f2 || echo "manage")
@@ -346,6 +369,32 @@ if [ "$HAS_TMUX" = true ]; then
             echo -e "${YELLOW}⚠️  Erro ao iniciar Celery Beat. Continuando sem Beat...${NC}"
         }
 
+        # Adicionar janela para Expo Mobile (se diretório mobile existir)
+        if [ -d "$MOBILE_DIR" ]; then
+            # Verificar se expo-dev-client está instalado (development build)
+            if [ -f "$MOBILE_DIR/node_modules/expo-dev-client/package.json" ]; then
+                tmux new-window -t "$TMUX_SESSION" -n "mobile" -c "$MOBILE_DIR" \
+                    "echo -e '${GREEN}✅ Expo Dev Client iniciado com tunnel!${NC}' && \
+                     echo -e '${BLUE}📱 Use o Development Build instalado no dispositivo${NC}' && \
+                     echo -e '${YELLOW}📌 Tunnel ativo para acesso remoto${NC}' && \
+                     echo -e '${YELLOW}💡 Build necessário: npm run build:dev:android ou build:dev:ios${NC}' && \
+                     echo '' && \
+                     npm run start:dev:tunnel" 2>/dev/null || {
+                    echo -e "${YELLOW}⚠️  Erro ao iniciar Expo Dev Client. Continuando sem mobile...${NC}"
+                }
+            else
+                # Fallback para Expo Go se dev-client não estiver instalado
+                tmux new-window -t "$TMUX_SESSION" -n "mobile" -c "$MOBILE_DIR" \
+                    "echo -e '${GREEN}✅ Expo iniciado com tunnel!${NC}' && \
+                     echo -e '${BLUE}📱 Escaneie o QR code no Expo Go${NC}' && \
+                     echo -e '${YELLOW}📌 Tunnel ativo para acesso remoto${NC}' && \
+                     echo '' && \
+                     npm run start:tunnel" 2>/dev/null || {
+                    echo -e "${YELLOW}⚠️  Erro ao iniciar Expo. Continuando sem mobile...${NC}"
+                }
+            fi
+        fi
+
         # Selecionar painel esquerdo (backend) por padrão
         tmux select-pane -t "$TMUX_SESSION:0.0" 2>/dev/null || true
 
@@ -383,6 +432,13 @@ if [ "$HAS_TMUX" = true ]; then
             }
         fi
 
+        # Capturar logs do Expo Mobile (janela mobile) se existir
+        if [ -d "$MOBILE_DIR" ] && tmux list-windows -t "$TMUX_SESSION" | grep -q "mobile"; then
+            tmux pipe-pane -t "$TMUX_SESSION:mobile" -o "cat >> $LOGS_DIR/expo-mobile-$LOG_DATE.log" 2>/dev/null || {
+                echo -e "${YELLOW}⚠️  Não foi possível configurar captura de logs do Expo Mobile${NC}"
+            }
+        fi
+
         echo -e "${GREEN}📝 Captura de logs ativada: $LOGS_DIR/${NC}"
 
         # Resumo
@@ -394,11 +450,20 @@ if [ "$HAS_TMUX" = true ]; then
         echo -e "   ${GREEN}Frontend:${NC}     http://localhost:$FRONTEND_PORT"
         echo -e "   ${GREEN}Celery Worker:${NC} Processando tasks assíncronas"
         echo -e "   ${GREEN}Celery Beat:${NC}   Agendando tasks periódicas (limpeza de áudios às 3h)"
+        if [ -d "$MOBILE_DIR" ]; then
+            if [ -f "$MOBILE_DIR/node_modules/expo-dev-client/package.json" ]; then
+                echo -e "   ${GREEN}Expo Dev Client:${NC} Rodando com tunnel (janela 'mobile')"
+                echo -e "   ${YELLOW}⚠️  Desenvolvimento:${NC} Use Development Build no dispositivo"
+            else
+                echo -e "   ${GREEN}Expo Mobile:${NC}   Rodando com tunnel (janela 'mobile')"
+            fi
+        fi
         echo -e "   ${GREEN}Admin:${NC}         http://localhost:$BACKEND_PORT/$ADMIN_PREFIX/ (admin / admin123)"
         echo ""
         echo -e "${BLUE}💡 Comandos tmux:${NC}"
         echo -e "   ${YELLOW}Ctrl+B + D${NC}     - Detach (sair sem parar serviços)"
         echo -e "   ${YELLOW}Ctrl+B + ←/→/↑/↓${NC} - Alternar entre painéis (Backend/Frontend/Celery Worker/Celery Beat)"
+        echo -e "   ${YELLOW}Ctrl+B + 0/1${NC}   - Alternar entre janelas (0=dev, 1=mobile)"
         echo -e "   ${YELLOW}Ctrl+B + Q${NC}     - Mostrar números dos painéis"
         echo -e "   ${YELLOW}Ctrl+B + C${NC}     - Criar nova janela"
         echo -e "   ${YELLOW}Ctrl+B + X${NC}     - Fechar painel atual"

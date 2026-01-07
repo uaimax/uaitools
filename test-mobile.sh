@@ -341,7 +341,7 @@ setup_mobile() {
             echo -e "${BLUE}   💡 Para testar localmente, edite manualmente o .env ou use --force-env${NC}"
         fi
     fi
-    
+
     # Exportar HAS_PRODUCTION_ENV para uso em outras funções
     export HAS_PRODUCTION_ENV
 

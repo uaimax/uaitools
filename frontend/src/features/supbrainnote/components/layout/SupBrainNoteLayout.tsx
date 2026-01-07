@@ -6,6 +6,7 @@ import { Search, Settings, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNotes } from "../../hooks/use-notes";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 
 interface SupBrainNoteLayoutProps {
   children: ReactNode;
@@ -86,6 +87,9 @@ export function SupBrainNoteLayout({
             <Button variant="ghost" size="sm" onClick={onSearchClick}>
               <Search className="w-4 h-4" />
             </Button>
+
+            {/* Notificações */}
+            <NotificationBell />
 
             {/* Configurações */}
             <Button

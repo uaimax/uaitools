@@ -22,6 +22,11 @@ export interface Note {
   is_in_inbox: boolean;
   days_until_expiration?: number;
   is_audio_expired?: boolean;
+  created_by?: string;
+  created_by_email?: string;
+  last_edited_by?: string;
+  last_edited_by_email?: string;
+  last_edited_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -150,6 +155,22 @@ export function useMoveNote() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["supbrainnote", "notes"] });
       queryClient.invalidateQueries({ queryKey: ["supbrainnote", "boxes"] });
+    },
+  });
+}
+
+/** Atualiza uma anotação. */
+export function useUpdateNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, transcript }: { id: string; transcript: string }) => {
+      const response = await apiClient.patch(`/supbrainnote/notes/${id}/`, { transcript });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["supbrainnote", "notes"] });
+      queryClient.setQueryData(["supbrainnote", "notes", data.id], data);
     },
   });
 }

@@ -39,22 +39,22 @@ export function getErrorMessage(error: any): string {
   // Tenta extrair mensagem do response
   if (error?.response?.data) {
     const data = error.response.data;
-    
+
     // Se é objeto com mensagem
     if (typeof data === 'object' && data.message) {
       return data.message;
     }
-    
+
     // Se é objeto com error
     if (typeof data === 'object' && data.error) {
       return typeof data.error === 'string' ? data.error : 'Erro ao processar requisição';
     }
-    
+
     // Se é array de erros (Django REST Framework)
     if (Array.isArray(data)) {
       return data.join(', ');
     }
-    
+
     // Se é string (pode ser HTML de erro do NGINX)
     if (typeof data === 'string' && !data.includes('<!doctype html>')) {
       return data;

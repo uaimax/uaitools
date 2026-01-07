@@ -6,6 +6,7 @@ import { RecordingButton } from "../components/RecordingButton";
 import { BoxListCompact } from "../components/BoxListCompact";
 import { NotesView } from "../components/NotesView";
 import { QueryModal } from "../components/QueryModal";
+import { BoxShareModal } from "../components/BoxShareModal";
 import { useCreateBox, useBoxes } from "../hooks/use-boxes";
 import { useUploadAudio } from "../hooks/use-notes";
 import { toast } from "@/hooks/use-toast";
@@ -27,6 +28,7 @@ export default function SupBrainNotePage() {
   const [showNotesView, setShowNotesView] = useState(false);
   const [showQueryModal, setShowQueryModal] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [newBoxName, setNewBoxName] = useState("");
 
   const createBoxMutation = useCreateBox();

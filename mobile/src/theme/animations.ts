@@ -21,3 +21,4 @@ export const duration = {
 export type EasingKey = keyof typeof easing;
 export type DurationKey = keyof typeof duration;
 
+

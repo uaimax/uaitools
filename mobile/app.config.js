@@ -193,7 +193,7 @@ module.exports = {
       },
       EXPO_PUBLIC_API_URL: 'https://ut-be.app.webmaxdigital.com',
     },
-    owner: 'uaimax',
+    owner: 'webmax-digital',
   },
 };
 

@@ -267,7 +267,7 @@ export const QueryScreen: React.FC = () => {
                     key={index}
                     style={styles.sourceItem}
                     onPress={() =>
-                      navigation.navigate('NoteDetail', { noteId: source.note_id })
+                      navigation.navigate('NoteEdit', { noteId: source.note_id })
                     }
                   >
                     <View style={styles.sourceContent}>

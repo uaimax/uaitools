@@ -27,3 +27,4 @@ export function QueryModal({ open, onOpenChange }: QueryModalProps) {
 }
 
 
+

@@ -70,6 +70,9 @@ export const API_ENDPOINTS = {
 
   // Query
   query: '/api/v1/supbrainnote/query/',
+
+  // Notifications
+  notifications: '/api/v1/notifications/',
 } as const;
 
 // Timeouts

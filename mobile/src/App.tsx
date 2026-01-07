@@ -55,20 +55,20 @@ export default function App() {
   useEffect(() => {
     if (hasShareIntent && shareIntent) {
       console.log('[SHARE INTENT] Dados compartilhados recebidos:', shareIntent);
-      
+
       // shareIntent pode ter:
       // - files: array de objetos com path, mimeType, fileName, etc.
       // - text: texto compartilhado
       // - type: tipo do compartilhamento
-      
+
       if (shareIntent.files && shareIntent.files.length > 0) {
         // Pegar o primeiro arquivo (áudio)
         const firstFile = shareIntent.files[0];
         const audioUri = firstFile.path;
         const audioName = firstFile.fileName || firstFile.path.split('/').pop() || 'Áudio recebido';
-        
+
         console.log('[SHARE INTENT] Áudio recebido:', { audioUri, audioName, shareIntent });
-        
+
         // Navegar para tela de processamento
         // Usar um intervalo para garantir que navegação está pronta
         const navigateInterval = setInterval(() => {
@@ -85,7 +85,7 @@ export default function App() {
             resetShareIntent();
           }
         }, 500);
-        
+
         // Timeout de segurança (máximo 5 segundos)
         setTimeout(() => {
           clearInterval(navigateInterval);

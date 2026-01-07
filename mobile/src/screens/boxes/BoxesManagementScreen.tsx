@@ -12,7 +12,8 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, MoreVertical, Trash2, Pencil } from 'lucide-react-native';
+import { ArrowLeft, MoreVertical, Trash2, Pencil, Share2 } from 'lucide-react-native';
+import { BoxShareModal } from '@/components/boxes/BoxShareModal';
 import { useNavigation } from '@react-navigation/native';
 import { useBoxes } from '@/hooks/useBoxes';
 import { useToast } from '@/context/ToastContext';
@@ -26,7 +27,9 @@ export const BoxesManagementScreen: React.FC = () => {
   const { boxes, loading, create, update, remove } = useBoxes();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [selectedBox, setSelectedBox] = useState<string | null>(null);
+  const [selectedBoxName, setSelectedBoxName] = useState('');
   const [newBoxName, setNewBoxName] = useState('');
   const [renameBoxName, setRenameBoxName] = useState('');
 
@@ -155,6 +158,14 @@ export const BoxesManagementScreen: React.FC = () => {
                   'Escolha uma ação',
                   [
                     {
+                      text: 'Compartilhar',
+                      onPress: () => {
+                        setSelectedBox(box.id);
+                        setSelectedBoxName(box.name);
+                        setShowShareModal(true);
+                      },
+                    },
+                    {
                       text: 'Renomear',
                       onPress: () => openRenameModal(box),
                     },
@@ -250,7 +261,21 @@ export const BoxesManagementScreen: React.FC = () => {
             style={styles.modalButton}
           />
         </View>
-      </Modal>
+          </Modal>
+
+      {/* Modal Compartilhar Caixinha */}
+      {selectedBox && (
+        <BoxShareModal
+          visible={showShareModal}
+          onClose={() => {
+            setShowShareModal(false);
+            setSelectedBox(null);
+            setSelectedBoxName('');
+          }}
+          boxId={selectedBox}
+          boxName={selectedBoxName}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -320,4 +345,5 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
 

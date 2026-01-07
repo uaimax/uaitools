@@ -5,9 +5,13 @@
   "scripts": {
     "start": "expo start",
     "start:tunnel": "expo start --tunnel",
+    "start:dev": "expo start --dev-client",
+    "start:dev:tunnel": "expo start --dev-client --tunnel",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "build:dev:android": "eas build -p android --profile development",
+    "build:dev:ios": "eas build -p ios --profile development",
     "build:apk": "eas build -p android --profile preview",
     "type-check": "tsc --noEmit"
   },
@@ -21,6 +25,7 @@
     "axios": "^1.13.1",
     "expo": "~54.0.27",
     "expo-av": "~16.0.8",
+    "expo-dev-client": "^6.0.20",
     "expo-file-system": "~19.0.21",
     "expo-haptics": "~15.0.8",
     "expo-linking": "^8.0.11",

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NoteList } from "./NoteList";
 import { NoteDetail } from "./NoteDetail";
+import { BoxShareModal } from "./BoxShareModal";
 import { useNotes } from "../hooks/use-notes";
 import {
   Dialog,
@@ -11,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Share2 } from "lucide-react";
 
 interface NotesViewProps {
   boxId: string | null;
@@ -23,6 +24,7 @@ interface NotesViewProps {
 
 export function NotesView({ boxId, boxName, open, onOpenChange, onSummarize }: NotesViewProps) {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
   const { data: notes } = useNotes({
     box: boxId || undefined,
     inbox: boxId === null,
@@ -52,17 +54,30 @@ export function NotesView({ boxId, boxName, open, onOpenChange, onSummarize }: N
                   </p>
                 )}
               </div>
-              {onSummarize && boxId && notesCount > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onSummarize}
-                  className="gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Resumir com IA
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {boxId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowShareModal(true)}
+                    className="gap-2"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Compartilhar
+                  </Button>
+                )}
+                {onSummarize && boxId && notesCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onSummarize}
+                    className="gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Resumir com IA
+                  </Button>
+                )}
+              </div>
             </div>
           </DialogHeader>
           {open && (
@@ -84,6 +99,13 @@ export function NotesView({ boxId, boxName, open, onOpenChange, onSummarize }: N
           }
         }}
         onBack={handleBackFromNote}
+      />
+
+      {/* Modal: Compartilhar Caixinha */}
+      <BoxShareModal
+        boxId={boxId}
+        open={showShareModal}
+        onOpenChange={setShowShareModal}
       />
     </>
   );

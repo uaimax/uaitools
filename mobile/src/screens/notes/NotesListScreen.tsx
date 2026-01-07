@@ -17,6 +17,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NoteCard } from '@/components/notes';
 import { RecordButton, RecordingOverlay } from '@/components/recording';
+import { FAB } from '@/components/common';
 import { useNotes } from '@/hooks/useNotes';
 import { useRecording } from '@/hooks/useRecording';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -175,7 +176,7 @@ export const NotesListScreen: React.FC = () => {
                 key={note.id}
                 note={note}
                 onPress={() =>
-                  navigation.navigate('NoteDetail', { noteId: note.id })
+                  navigation.navigate('NoteEdit', { noteId: note.id })
                 }
                 onDelete={refresh}
                 onMove={refresh}

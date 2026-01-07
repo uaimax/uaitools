@@ -76,3 +76,4 @@ Para mudar variáveis:
 1. Refaça o build com as novas variáveis
 2. Ou use um arquivo de configuração runtime (requer implementação customizada)
 
+

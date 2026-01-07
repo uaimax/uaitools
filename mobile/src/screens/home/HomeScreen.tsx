@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Settings, Inbox, ChevronRight, Brain } from 'lucide-react-native';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useNavigation } from '@react-navigation/native';
 import { RecordButton, RecordingOverlay } from '@/components/recording';
 import { NoteCard } from '@/components/notes';
@@ -136,6 +137,7 @@ export const HomeScreen: React.FC = () => {
           >
             <Brain size={24} color={colors.primary.default} />
           </TouchableOpacity>
+          <NotificationBell />
           <TouchableOpacity
             onPress={() => navigation.navigate('Settings' as never)}
             style={styles.headerActionButton}
@@ -201,7 +203,7 @@ export const HomeScreen: React.FC = () => {
                 key={note.id}
                 note={note}
                 onPress={() =>
-                  navigation.navigate('NoteDetail' as never, { noteId: note.id } as never)
+                  navigation.navigate('NoteEdit' as never, { noteId: note.id } as never)
                 }
                 onDelete={handleRefresh}
                 onMove={handleRefresh}

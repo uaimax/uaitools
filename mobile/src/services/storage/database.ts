@@ -169,3 +169,4 @@ export async function removeSyncItem(id: string): Promise<void> {
   await database.runAsync('DELETE FROM sync_queue WHERE id = ?', [id]);
 }
 
+
