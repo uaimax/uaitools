@@ -52,7 +52,9 @@ def create_note_notifications(sender, instance: Note, created: bool, **kwargs):
             )
     else:
         # Verificar se transcript foi atualizado
-        if "transcript" in kwargs.get("update_fields", []):
+        # update_fields pode ser None quando save() é chamado sem argumentos
+        update_fields = kwargs.get("update_fields") or []
+        if "transcript" in update_fields:
             # Notificar sobre edição
             for share in shares:
                 Notification.objects.create(

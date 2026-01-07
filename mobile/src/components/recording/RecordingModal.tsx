@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X, Mic, Stop } from 'lucide-react-native';
+import { X, Mic, StopCircle } from 'lucide-react-native';
 import { colors, typography, spacing } from '@/theme';
 import { Waveform } from './Waveform';
 
@@ -92,7 +92,7 @@ export const RecordingModal: React.FC<RecordingModalProps> = ({
                   onPress={onStop}
                   activeOpacity={0.9}
                 >
-                  <Stop size={40} color={colors.text.primary} />
+                  <StopCircle size={40} color={colors.text.primary} />
                 </TouchableOpacity>
 
                 {/* Actions */}

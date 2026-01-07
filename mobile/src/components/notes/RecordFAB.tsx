@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
-import { Mic, Stop } from 'lucide-react-native';
+import { Mic, StopCircle } from 'lucide-react-native';
 import { colors, elevation } from '@/theme';
 
 interface RecordFABProps {
@@ -55,7 +55,7 @@ export const RecordFAB: React.FC<RecordFABProps> = ({
       return <ActivityIndicator size="small" color={colors.text.primary} />;
     }
     if (state === 'recording') {
-      return <Stop size={32} color={colors.text.primary} />;
+      return <StopCircle size={32} color={colors.text.primary} />;
     }
     return <Mic size={32} color={colors.text.primary} />;
   };
