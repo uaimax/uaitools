@@ -10,6 +10,63 @@ from apps.supbrainnote.models import BoxShareInvite
 from apps.accounts.models import User
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def verify_box_invite_token(request) -> Response:
+    """Verifica token de convite de caixinha sem autenticação.
+
+    Endpoint: GET /api/v1/supbrainnote/invites/verify/?token=uuid-do-token
+
+    Retorna informações do convite se válido, sem exigir autenticação.
+    Usado para verificar o token antes de redirecionar para login/registro.
+    """
+    token = request.query_params.get("token")
+    if not token:
+        return Response(
+            {"error": "Token é obrigatório"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        invite = BoxShareInvite.objects.get(token=token)
+    except BoxShareInvite.DoesNotExist:
+        return Response(
+            {"error": "Convite não encontrado ou inválido"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    # Verificar se convite expirou
+    if invite.is_expired:
+        return Response(
+            {"error": "Convite expirado"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Verificar se já existe usuário com esse email
+    user_exists = User.objects.filter(email__iexact=invite.email).exists()
+
+    inviter_name = (
+        invite.invited_by.get_full_name()
+        if invite.invited_by
+        else invite.invited_by.email
+        if invite.invited_by
+        else "Alguém"
+    )
+
+    return Response(
+        {
+            "valid": True,
+            "email": invite.email,
+            "box_id": str(invite.box.id),
+            "box_name": invite.box.name,
+            "permission": invite.permission,
+            "inviter_name": inviter_name,
+            "inviter_email": invite.invited_by.email if invite.invited_by else "",
+            "user_exists": user_exists,  # Indica se já existe conta com esse email
+            "expires_at": invite.expires_at.isoformat(),
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def accept_box_invite(request) -> Response:

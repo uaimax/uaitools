@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate, Link, useSearchParams } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { useRegisterMutation } from "../hooks/use-auth-queries"
 import { useToast } from "@/stores/toast-store"
@@ -20,7 +20,7 @@ import { Controller } from "react-hook-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSocialProviders } from "../hooks/useSocialProviders"
 import { SocialButton } from "@/components/ui/social-button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import * as React from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getTerms, getPrivacyPolicy } from "@/features/legal/services/legal"
@@ -30,6 +30,7 @@ import { getZodMessages } from "@/i18n/zod"
 export function RegisterForm() {
   const { t } = useTranslation(["auth", "common"])
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const registerMutation = useRegisterMutation()
   const { toast } = useToast()
   const { data: providers = [], isLoading: providersLoading } = useSocialProviders()
@@ -62,10 +63,13 @@ export function RegisterForm() {
 
   type RegisterFormValues = z.infer<typeof registerSchema>
 
+  // Pré-preencher email da URL se disponível
+  const emailFromUrl = searchParams.get("email") || ""
+
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      email: "",
+      email: emailFromUrl,
       password: "",
       password_confirm: "",
       first_name: "",
@@ -75,6 +79,14 @@ export function RegisterForm() {
       accepted_privacy: false,
     },
   })
+
+  // Atualizar email quando mudar na URL
+  useEffect(() => {
+    const emailParam = searchParams.get("email")
+    if (emailParam) {
+      form.setValue("email", emailParam)
+    }
+  }, [searchParams, form])
 
   const loadTerms = async () => {
     try {
