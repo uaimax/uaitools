@@ -337,3 +337,4 @@ apps/supbrainnote/tests/
 | `QueryService` | Serviço de consulta inteligente |
 
 
+

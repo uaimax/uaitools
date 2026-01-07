@@ -3,7 +3,7 @@
 from rest_framework import serializers
 
 from apps.core.serializers import WorkspaceSerializer
-from apps.supbrainnote.models import Box, Note
+from apps.supbrainnote.models import Box, Note, BoxShare, BoxShareInvite
 
 
 class BoxSerializer(WorkspaceSerializer):
@@ -55,6 +55,8 @@ class NoteSerializer(WorkspaceSerializer):
     is_in_inbox = serializers.BooleanField(read_only=True)
     days_until_expiration = serializers.SerializerMethodField()
     is_audio_expired = serializers.SerializerMethodField()
+    created_by_email = serializers.EmailField(source="created_by.email", read_only=True)
+    last_edited_by_email = serializers.EmailField(source="last_edited_by.email", read_only=True)
 
     class Meta:
         model = Note
@@ -77,6 +79,11 @@ class NoteSerializer(WorkspaceSerializer):
             "is_in_inbox",
             "days_until_expiration",
             "is_audio_expired",
+            "created_by",
+            "created_by_email",
+            "last_edited_by",
+            "last_edited_by_email",
+            "last_edited_at",
             "created_at",
             "updated_at",
         ]
@@ -89,6 +96,11 @@ class NoteSerializer(WorkspaceSerializer):
             "ai_confidence",
             "duration_seconds",
             "file_size_bytes",
+            "created_by",
+            "created_by_email",
+            "last_edited_by",
+            "last_edited_by_email",
+            "last_edited_at",
         ]
 
     def get_audio_url(self, obj: Note) -> str | None:
@@ -246,4 +258,63 @@ class QuerySerializer(serializers.Serializer):
             )
 
         return value
+
+
+class BoxShareSerializer(serializers.ModelSerializer):
+    """Serializer para compartilhamento de caixinha."""
+
+    shared_with_email = serializers.EmailField(source="shared_with.email", read_only=True)
+    invited_by_email = serializers.EmailField(source="invited_by.email", read_only=True)
+    box_name = serializers.CharField(source="box.name", read_only=True)
+
+    class Meta:
+        model = BoxShare
+        fields = [
+            "id",
+            "box",
+            "box_name",
+            "shared_with",
+            "shared_with_email",
+            "permission",
+            "invited_by",
+            "invited_by_email",
+            "status",
+            "created_at",
+            "accepted_at",
+        ]
+        read_only_fields = ["id", "invited_by", "created_at", "accepted_at"]
+
+
+class BoxShareInviteSerializer(serializers.Serializer):
+    """Serializer para convite de caixinha por email."""
+
+    email = serializers.EmailField(required=True)
+    permission = serializers.ChoiceField(
+        choices=BoxShare.PERMISSION_CHOICES,
+        default="read",
+        required=False,
+    )
+
+    def validate_email(self, value: str) -> str:
+        """Valida email."""
+        # Normalizar email
+        return value.lower().strip()
+
+
+class BoxShareCreateSerializer(serializers.Serializer):
+    """Serializer para criar compartilhamento."""
+
+    user_id = serializers.UUIDField(required=False)
+    email = serializers.EmailField(required=False)
+    permission = serializers.ChoiceField(
+        choices=BoxShare.PERMISSION_CHOICES,
+        default="read",
+        required=False,
+    )
+
+    def validate(self, attrs: dict) -> dict:
+        """Valida que user_id ou email foi fornecido."""
+        if not attrs.get("user_id") and not attrs.get("email"):
+            raise serializers.ValidationError("user_id ou email deve ser fornecido.")
+        return attrs
 

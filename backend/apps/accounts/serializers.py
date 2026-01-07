@@ -6,19 +6,11 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
+from apps.core.serializers import WorkspaceSerializer
 from apps.core.translations import COMMON_ERRORS
 
 from .models import Workspace, User
 from .services import validate_password_reset_token
-
-
-class WorkspaceSerializer(serializers.ModelSerializer):
-    """Serializer para modelo Workspace."""
-
-    class Meta:
-        model = Workspace
-        fields = ["id", "name", "slug", "is_active", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -183,6 +175,31 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=password,
             **validated_data
         )
+
+        # Verificar convites pendentes de caixinhas
+        from apps.supbrainnote.models import BoxShareInvite
+        from apps.supbrainnote.models import BoxShare
+        from django.utils import timezone
+
+        pending_invites = BoxShareInvite.objects.filter(
+            email=email.lower().strip(),
+            expires_at__gt=timezone.now()
+        )
+
+        for invite in pending_invites:
+            # Criar compartilhamento automaticamente
+            BoxShare.objects.get_or_create(
+                box=invite.box,
+                shared_with=user,
+                defaults={
+                    "permission": invite.permission,
+                    "invited_by": invite.invited_by,
+                    "status": "accepted",
+                    "accepted_at": timezone.now(),
+                },
+            )
+            # Deletar convite (já foi usado)
+            invite.delete()
 
         # Registrar aceitação de termos e política de privacidade
         request = self.context.get("request")

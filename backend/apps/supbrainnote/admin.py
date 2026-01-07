@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from apps.supbrainnote.models import Box, Note
+from apps.supbrainnote.models import Box, Note, BoxShare, BoxShareInvite
 
 
 @admin.register(Box)
@@ -87,5 +87,28 @@ class NoteAdmin(admin.ModelAdmin):
         if hasattr(request.user, "workspace") and request.user.workspace:
             return qs.filter(workspace=request.user.workspace)
         return qs.none()
+
+
+@admin.register(BoxShare)
+class BoxShareAdmin(admin.ModelAdmin):
+    """Admin para modelo BoxShare."""
+
+    list_display = ["box", "shared_with", "permission", "status", "created_at", "accepted_at"]
+    list_filter = ["permission", "status", "created_at"]
+    search_fields = ["box__name", "shared_with__email"]
+    readonly_fields = ["created_at", "accepted_at"]
+    date_hierarchy = "created_at"
+
+
+@admin.register(BoxShareInvite)
+class BoxShareInviteAdmin(admin.ModelAdmin):
+    """Admin para modelo BoxShareInvite."""
+
+    list_display = ["box", "email", "permission", "expires_at", "created_at"]
+    list_filter = ["permission", "expires_at", "created_at"]
+    search_fields = ["box__name", "email"]
+    readonly_fields = ["token", "created_at"]
+    date_hierarchy = "created_at"
+
 
 

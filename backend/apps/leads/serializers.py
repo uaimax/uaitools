@@ -2,11 +2,10 @@
 
 from rest_framework import serializers
 
-from apps.core.serializers import WorkspaceSerializer
 from apps.leads.models import Lead
 
 
-class LeadSerializer(WorkspaceSerializer):
+class LeadSerializer(serializers.ModelSerializer):
     """Serializer para modelo Lead."""
 
     status_display = serializers.CharField(source="get_status_display", read_only=True)

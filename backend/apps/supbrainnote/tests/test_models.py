@@ -102,3 +102,4 @@ class NoteModelTest(TestCase):
         self.assertIn(self.box.name, str(note))
 
 
+

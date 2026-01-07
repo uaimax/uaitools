@@ -53,3 +53,4 @@ Apenas Gunicorn roda neste container. Use quando tiver um serviço Celery separa
 
 Para ativar: `CELERY_MODE=separate`
 
+

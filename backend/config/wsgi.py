@@ -36,14 +36,14 @@ if USE_SENTRY and SENTRY_DSN:
                     if "ProgrammingError" in exc_type and "already exists" in exc_value:
                         if "note_transcript_gin_idx" in exc_value:
                             return None  # Não enviar para Sentry
-            
+
             # Filtrar erros HTTP esperados
             if "message" in event:
                 message = event["message"]
                 # Ignorar 401 de login (credenciais inválidas são esperadas)
                 if "HTTP Error 401" in message and "/api/v1/auth/login/" in message:
                     return None  # Não enviar para Sentry
-                
+
                 # Ignorar 404 de varredura/bots
                 path = event.get("request", {}).get("url", "")
                 if "HTTP Error 404" in message:
@@ -58,18 +58,18 @@ if USE_SENTRY and SENTRY_DSN:
                     ]
                     if any(pattern in path for pattern in bot_patterns):
                         return None  # Não enviar para Sentry
-            
+
             # Filtrar por contexto HTTP
             if "contexts" in event:
                 http_error = event["contexts"].get("http_error", {})
                 if http_error:
                     status_code = http_error.get("status_code")
                     path = http_error.get("path", "")
-                    
+
                     # Ignorar 401 de login
                     if status_code == 401 and "/api/v1/auth/login/" in path:
                         return None
-                    
+
                     # Ignorar 404 de varredura
                     if status_code == 404:
                         bot_patterns = [
@@ -82,7 +82,7 @@ if USE_SENTRY and SENTRY_DSN:
                         ]
                         if any(pattern in path for pattern in bot_patterns):
                             return None
-            
+
             # Adicionar tags customizadas
             if "tags" not in event:
                 event["tags"] = {}
@@ -93,7 +93,7 @@ if USE_SENTRY and SENTRY_DSN:
             if "extra" not in event:
                 event["extra"] = {}
             event["extra"]["django_env"] = os.environ.get("ENVIRONMENT", "unknown")
-            
+
             return event
 
         # Inicializar Sentry antes do Django setup para capturar erros de boot

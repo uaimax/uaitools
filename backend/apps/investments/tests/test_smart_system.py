@@ -190,3 +190,4 @@ class SmartSystemTestCase(TestCase):
         self.assertEqual(mapping.sector, "energia")
 
 
+

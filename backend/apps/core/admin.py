@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.models import AuditLog
+from apps.core.models import AuditLog, Notification
 
 
 @admin.register(AuditLog)
@@ -99,4 +99,15 @@ class AuditLogAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None) -> bool:
         """Logs de auditoria só podem ser deletados por superusers (com cuidado!)."""
         return request.user.is_superuser
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    """Admin para notificações."""
+
+    list_display = ["user", "type", "title", "read", "created_at"]
+    list_filter = ["type", "read", "created_at"]
+    search_fields = ["user__email", "title", "message"]
+    readonly_fields = ["created_at", "read_at"]
+    date_hierarchy = "created_at"
 

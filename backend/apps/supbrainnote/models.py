@@ -1,6 +1,7 @@
 """Models for supbrainnote app."""
 
 import os
+import uuid
 from datetime import timedelta
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -147,6 +148,29 @@ class Note(UUIDPrimaryKeyMixin, WorkspaceModel):
         verbose_name=_("Metadados extras"),
     )
 
+    # Rastreabilidade
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_notes",
+        verbose_name=_("Criado por"),
+    )
+    last_edited_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="edited_notes",
+        verbose_name=_("Última edição por"),
+    )
+    last_edited_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Última edição em"),
+    )
+
     class Meta:
         verbose_name = _("Anotação")
         verbose_name_plural = _("Anotações")
@@ -155,6 +179,8 @@ class Note(UUIDPrimaryKeyMixin, WorkspaceModel):
             models.Index(fields=["workspace", "box", "created_at"]),
             models.Index(fields=["workspace", "processing_status"]),
             models.Index(fields=["workspace", "box", "processing_status"]),
+            models.Index(fields=["created_by"]),
+            models.Index(fields=["last_edited_by"]),
         ]
 
     def __str__(self) -> str:
@@ -186,6 +212,15 @@ class Note(UUIDPrimaryKeyMixin, WorkspaceModel):
 
     def save(self, *args, **kwargs) -> None:
         """Salva anotação e atualiza metadados do arquivo."""
+        # Atualizar rastreabilidade se transcript foi modificado
+        update_fields = kwargs.get("update_fields", None)
+        if update_fields is None or "transcript" in update_fields:
+            # Se transcript está sendo atualizado, registrar última edição
+            if self.pk:  # Nota já existe
+                from django.utils import timezone
+                self.last_edited_at = timezone.now()
+                # last_edited_by será definido no viewset
+
         if self.audio_file and not self.file_size_bytes:
             # Atualizar tamanho do arquivo
             try:
@@ -193,4 +228,129 @@ class Note(UUIDPrimaryKeyMixin, WorkspaceModel):
             except (OSError, ValueError):
                 pass
         super().save(*args, **kwargs)
+
+
+class BoxShare(UUIDPrimaryKeyMixin, models.Model):
+    """Compartilhamento de caixinha entre usuários."""
+
+    PERMISSION_CHOICES = [
+        ("read", _("Leitura")),
+        ("write", _("Leitura e Escrita")),
+    ]
+
+    STATUS_CHOICES = [
+        ("pending", _("Pendente")),
+        ("accepted", _("Aceito")),
+    ]
+
+    box = models.ForeignKey(
+        Box,
+        on_delete=models.CASCADE,
+        related_name="shares",
+        verbose_name=_("Caixinha"),
+    )
+    shared_with = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="shared_boxes",
+        verbose_name=_("Compartilhado com"),
+    )
+    permission = models.CharField(
+        max_length=10,
+        choices=PERMISSION_CHOICES,
+        default="read",
+        verbose_name=_("Permissão"),
+    )
+    invited_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="box_invites_sent",
+        verbose_name=_("Convidado por"),
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default="pending",
+        verbose_name=_("Status"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Criado em"))
+    accepted_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Aceito em"))
+
+    class Meta:
+        verbose_name = _("Compartilhamento de Caixinha")
+        verbose_name_plural = _("Compartilhamentos de Caixinhas")
+        unique_together = [["box", "shared_with"]]
+        indexes = [
+            models.Index(fields=["box", "shared_with", "status"]),
+            models.Index(fields=["shared_with", "status"]),
+        ]
+
+    def __str__(self) -> str:
+        """Representação string do compartilhamento."""
+        return f"{self.box.name} → {self.shared_with.email} ({self.get_permission_display()})"
+
+    def accept(self) -> None:
+        """Aceita o compartilhamento."""
+        self.status = "accepted"
+        self.accepted_at = timezone.now()
+        self.save(update_fields=["status", "accepted_at"])
+
+
+class BoxShareInvite(UUIDPrimaryKeyMixin, models.Model):
+    """Convite pendente para compartilhar caixinha (email não cadastrado)."""
+
+    PERMISSION_CHOICES = [
+        ("read", _("Leitura")),
+        ("write", _("Leitura e Escrita")),
+    ]
+
+    box = models.ForeignKey(
+        Box,
+        on_delete=models.CASCADE,
+        related_name="pending_invites",
+        verbose_name=_("Caixinha"),
+    )
+    email = models.EmailField(verbose_name=_("Email"))
+    permission = models.CharField(
+        max_length=10,
+        choices=PERMISSION_CHOICES,
+        default="read",
+        verbose_name=_("Permissão"),
+    )
+    invited_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="box_email_invites_sent",
+        verbose_name=_("Convidado por"),
+    )
+    token = models.UUIDField(
+        unique=True,
+        default=uuid.uuid4,
+        db_index=True,
+        verbose_name=_("Token"),
+    )
+    expires_at = models.DateTimeField(verbose_name=_("Expira em"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Criado em"))
+
+    class Meta:
+        verbose_name = _("Convite de Caixinha")
+        verbose_name_plural = _("Convites de Caixinhas")
+        unique_together = [["box", "email"]]
+        indexes = [
+            models.Index(fields=["email", "token"]),
+            models.Index(fields=["expires_at"]),
+        ]
+
+    def __str__(self) -> str:
+        """Representação string do convite."""
+        return f"{self.box.name} → {self.email} ({self.get_permission_display()})"
+
+    @property
+    def is_expired(self) -> bool:
+        """Verifica se o convite expirou."""
+        return timezone.now() >= self.expires_at
 

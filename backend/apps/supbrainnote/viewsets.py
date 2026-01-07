@@ -12,10 +12,13 @@ from rest_framework.response import Response
 
 from apps.core.permissions import WorkspaceObjectPermission
 from apps.core.viewsets import WorkspaceViewSet
-from apps.supbrainnote.models import Box, Note
+from apps.supbrainnote.models import Box, Note, BoxShare, BoxShareInvite
 from apps.supbrainnote.serializers import (
     BoxListSerializer,
     BoxSerializer,
+    BoxShareSerializer,
+    BoxShareInviteSerializer,
+    BoxShareCreateSerializer,
     NoteListSerializer,
     NoteMoveSerializer,
     NoteSerializer,
@@ -112,6 +115,148 @@ class BoxViewSet(WorkspaceViewSet):
             return BoxListSerializer
         return BoxSerializer
 
+    @action(detail=True, methods=["post"], url_path="share")
+    def share_box(self, request: "Request", pk: str | None = None) -> Response:
+        """Compartilha caixinha com usuário ou envia convite por email."""
+        from apps.accounts.models import User
+        from django.utils import timezone
+        from datetime import timedelta
+
+        box = self.get_object()
+        serializer = BoxShareCreateSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        user_id = serializer.validated_data.get("user_id")
+        email = serializer.validated_data.get("email")
+        permission = serializer.validated_data.get("permission", "read")
+
+        # Se user_id foi fornecido, criar compartilhamento direto
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+                # Verificar se já existe compartilhamento
+                share, created = BoxShare.objects.get_or_create(
+                    box=box,
+                    shared_with=user,
+                    defaults={
+                        "permission": permission,
+                        "invited_by": request.user,
+                        "status": "accepted",
+                        "accepted_at": timezone.now(),
+                    },
+                )
+                if not created:
+                    # Atualizar permissão se já existe
+                    share.permission = permission
+                    share.save(update_fields=["permission"])
+
+                response_serializer = BoxShareSerializer(share, context={"request": request})
+                return Response(response_serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response(
+                    {"error": "Usuário não encontrado"}, status=status.HTTP_404_NOT_FOUND
+                )
+
+        # Se email foi fornecido, criar convite pendente
+        if email:
+            # Verificar se usuário com esse email já existe
+            try:
+                user = User.objects.get(email=email.lower().strip())
+                # Criar compartilhamento direto
+                share, created = BoxShare.objects.get_or_create(
+                    box=box,
+                    shared_with=user,
+                    defaults={
+                        "permission": permission,
+                        "invited_by": request.user,
+                        "status": "accepted",
+                        "accepted_at": timezone.now(),
+                    },
+                )
+                if not created:
+                    share.permission = permission
+                    share.save(update_fields=["permission"])
+
+                response_serializer = BoxShareSerializer(share, context={"request": request})
+                return Response(response_serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+            except User.DoesNotExist:
+                # Criar convite pendente
+                invite, created = BoxShareInvite.objects.get_or_create(
+                    box=box,
+                    email=email.lower().strip(),
+                    defaults={
+                        "permission": permission,
+                        "invited_by": request.user,
+                        "expires_at": timezone.now() + timedelta(days=7),
+                    },
+                )
+                if not created:
+                    # Atualizar convite existente
+                    invite.permission = permission
+                    invite.expires_at = timezone.now() + timedelta(days=7)
+                    invite.save(update_fields=["permission", "expires_at"])
+
+                # Enviar email de convite
+                try:
+                    from apps.supbrainnote.services.email import send_box_invite_email
+                    send_box_invite_email(invite, request)
+                except Exception as e:
+                    # Log do erro mas não falhar a requisição
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Erro ao enviar email de convite: {e}", exc_info=True)
+                    # Continuar mesmo com erro de email
+
+                return Response(
+                    {"message": "Convite enviado por email", "invite_id": str(invite.id)},
+                    status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+                )
+
+        return Response(
+            {"error": "user_id ou email deve ser fornecido"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    @action(detail=True, methods=["get"], url_path="shares")
+    def list_shares(self, request: "Request", pk: str | None = None) -> Response:
+        """Lista compartilhamentos da caixinha."""
+        box = self.get_object()
+        shares = BoxShare.objects.filter(box=box)
+        serializer = BoxShareSerializer(shares, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["delete"], url_path="shares/(?P<share_id>[^/.]+)")
+    def remove_share(self, request: "Request", pk: str | None = None, share_id: str | None = None) -> Response:
+        """Remove compartilhamento."""
+        box = self.get_object()
+        try:
+            share = BoxShare.objects.get(id=share_id, box=box)
+            share.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except BoxShare.DoesNotExist:
+            return Response(
+                {"error": "Compartilhamento não encontrado"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=True, methods=["patch"], url_path="shares/(?P<share_id>[^/.]+)")
+    def update_share(self, request: "Request", pk: str | None = None, share_id: str | None = None) -> Response:
+        """Atualiza permissão de compartilhamento."""
+        box = self.get_object()
+        try:
+            share = BoxShare.objects.get(id=share_id, box=box)
+            permission = request.data.get("permission")
+            if permission not in ["read", "write"]:
+                return Response(
+                    {"error": "Permissão inválida"}, status=status.HTTP_400_BAD_REQUEST
+                )
+            share.permission = permission
+            share.save(update_fields=["permission"])
+            serializer = BoxShareSerializer(share, context={"request": request})
+            return Response(serializer.data)
+        except BoxShare.DoesNotExist:
+            return Response(
+                {"error": "Compartilhamento não encontrado"}, status=status.HTTP_404_NOT_FOUND
+            )
+
 
 class NoteViewSet(WorkspaceViewSet):
     """ViewSet para anotações."""
@@ -151,6 +296,16 @@ class NoteViewSet(WorkspaceViewSet):
             queryset = queryset.filter(processing_status=status_param)
 
         return queryset
+
+    def perform_update(self, serializer) -> None:
+        """Atualiza nota e registra última edição."""
+        from django.utils import timezone
+
+        # Atualizar rastreabilidade
+        serializer.save(
+            last_edited_by=self.request.user,
+            last_edited_at=timezone.now(),
+        )
 
     @action(
         detail=False,
@@ -204,6 +359,7 @@ class NoteViewSet(WorkspaceViewSet):
                 audio_file=serializer.validated_data["audio_file"],
                 source_type=serializer.validated_data.get("source_type", "memo"),
                 processing_status="pending",
+                created_by=request.user,
             )
             logger.info(f"[UPLOAD] Note criada com sucesso: id={note.id}")
         except Exception as e:

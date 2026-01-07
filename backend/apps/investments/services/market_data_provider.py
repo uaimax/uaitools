@@ -146,3 +146,4 @@ class MarketDataProvider:
         return self.brapi.get_multiple_quotes(tickers, use_cache)
 
 
+

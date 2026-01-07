@@ -102,3 +102,4 @@ else:
     print("\n✅ Tudo configurado corretamente!")
     sys.exit(0)
 
+

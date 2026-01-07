@@ -21,3 +21,4 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
         # Não faz nada - pula verificação de CSRF
         return
 
+

@@ -318,6 +318,9 @@ EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "30"))
 PASSWORD_RESET_TOKEN_EXPIRATION_HOURS = int(os.environ.get("PASSWORD_RESET_TOKEN_EXPIRATION_HOURS", "24"))
 PASSWORD_RESET_URL_PATH = os.environ.get("PASSWORD_RESET_URL_PATH", "/reset-password").strip()
 
+# Box Invite Configuration
+BOX_INVITE_ACCEPT_URL_PATH = os.environ.get("BOX_INVITE_ACCEPT_URL_PATH", "/accept-box-invite").strip()
+
 # drf-spectacular (OpenAPI) - Definido DEPOIS das variáveis de branding
 SPECTACULAR_SETTINGS = {
     "TITLE": API_TITLE,
@@ -701,14 +704,14 @@ def _filter_and_tag_sentry_events(event: dict, hint: dict, environment: str) -> 
             if "ProgrammingError" in exc_type and "already exists" in exc_value:
                 if "note_transcript_gin_idx" in exc_value:
                     return None  # Não enviar para Sentry
-    
+
     # Filtrar erros HTTP esperados
     if "message" in event:
         message = event["message"]
         # Ignorar 401 de login (credenciais inválidas são esperadas)
         if "HTTP Error 401" in message and "/api/v1/auth/login/" in message:
             return None  # Não enviar para Sentry
-        
+
         # Ignorar 404 de varredura/bots
         path = event.get("request", {}).get("url", "")
         if "HTTP Error 404" in message:
@@ -723,18 +726,18 @@ def _filter_and_tag_sentry_events(event: dict, hint: dict, environment: str) -> 
             ]
             if any(pattern in path for pattern in bot_patterns):
                 return None  # Não enviar para Sentry
-    
+
     # Filtrar por contexto HTTP
     if "contexts" in event:
         http_error = event["contexts"].get("http_error", {})
         if http_error:
             status_code = http_error.get("status_code")
             path = http_error.get("path", "")
-            
+
             # Ignorar 401 de login
             if status_code == 401 and "/api/v1/auth/login/" in path:
                 return None
-            
+
             # Ignorar 404 de varredura
             if status_code == 404:
                 bot_patterns = [
@@ -747,7 +750,7 @@ def _filter_and_tag_sentry_events(event: dict, hint: dict, environment: str) -> 
                 ]
                 if any(pattern in path for pattern in bot_patterns):
                     return None
-    
+
     # Adicionar tags customizadas
     if "tags" not in event:
         event["tags"] = {}

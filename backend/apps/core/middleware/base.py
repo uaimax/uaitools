@@ -241,7 +241,7 @@ class ErrorLoggingMiddleware:
                             should_report = True
                     elif response.status_code in [403, 422]:
                         should_report = True
-                    
+
                     if should_report:
                         with sentry_sdk.push_scope() as scope:
                             scope.set_context("http_error", error_info)
