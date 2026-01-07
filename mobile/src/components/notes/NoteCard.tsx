@@ -16,6 +16,7 @@ import { deleteNote, moveNote } from '@/services/api/notes';
 import { getBoxes } from '@/services/api/boxes';
 import { useToast } from '@/context/ToastContext';
 import { Modal, Input, Button } from '@/components/common';
+import { NoteActionsBottomSheet } from '@/components/common/NoteActionsBottomSheet';
 import { useBoxes } from '@/hooks/useBoxes';
 import type { MainStackParamList } from '@/navigation/types';
 import type { Box } from '@/types';
@@ -28,7 +29,6 @@ interface NoteCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onMove?: () => void;
-  showActions?: boolean; // Por padrão sempre mostra ações
 }
 
 export const NoteCard: React.FC<NoteCardProps> = ({
@@ -37,11 +37,11 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   onEdit,
   onDelete,
   onMove,
-  showActions = true,
 }) => {
   const navigation = useNavigation<NavigationProp>();
   const { showToast } = useToast();
   const { create: createBox } = useBoxes();
+  const [showActionsSheet, setShowActionsSheet] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [moving, setMoving] = useState(false);
@@ -72,6 +72,16 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     } else {
       navigation.navigate('NoteEdit', { noteId: note.id });
     }
+  };
+
+  const handleShare = () => {
+    // TODO: Implementar compartilhamento
+    showToast('Compartilhamento em breve', 'info');
+  };
+
+  const handleArchive = () => {
+    // TODO: Implementar arquivamento
+    showToast('Arquivamento em breve', 'info');
   };
 
   const handleDelete = () => {
@@ -167,7 +177,11 @@ export const NoteCard: React.FC<NoteCardProps> = ({
       <TouchableOpacity
         style={[styles.card, elevation[1]]}
         onPress={onPress}
+        onLongPress={() => setShowActionsSheet(true)}
         activeOpacity={0.8}
+        accessibilityLabel={`Nota: ${preview}`}
+        accessibilityRole="button"
+        accessibilityHint="Toque para abrir, mantenha pressionado para ver opções"
       >
         {/* Header com Badge e Timestamp */}
         <View style={styles.header}>
@@ -198,81 +212,18 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           </View>
         )}
 
-        {/* Barra de Ações - Sempre Visível */}
-        {showActions && (
-          <View style={styles.actionsBar}>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.actionButtonEdit,
-                isProcessing && styles.actionButtonDisabled,
-              ]}
-              onPress={handleEdit}
-              disabled={isProcessing}
-            >
-              <Pencil
-                size={16}
-                color={isProcessing ? colors.text.tertiary : colors.primary.default}
-              />
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  isProcessing && styles.actionButtonTextDisabled,
-                ]}
-              >
-                Editar
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.actionButtonMove,
-                isProcessing && styles.actionButtonDisabled,
-              ]}
-              onPress={handleMovePress}
-              disabled={isProcessing}
-            >
-              <FolderInput
-                size={16}
-                color={isProcessing ? colors.text.tertiary : colors.primary.default}
-              />
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  isProcessing && styles.actionButtonTextDisabled,
-                ]}
-              >
-                Mover
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.actionButtonDelete,
-                isProcessing && styles.actionButtonDisabled,
-              ]}
-              onPress={handleDelete}
-              disabled={isProcessing}
-            >
-              <Trash2
-                size={16}
-                color={isProcessing ? colors.text.tertiary : colors.semantic.error}
-              />
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  styles.actionButtonTextDanger,
-                  isProcessing && styles.actionButtonTextDisabled,
-                ]}
-              >
-                Excluir
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </TouchableOpacity>
+
+      {/* Bottom Sheet de Ações */}
+      <NoteActionsBottomSheet
+        visible={showActionsSheet}
+        onClose={() => setShowActionsSheet(false)}
+        onEdit={handleEdit}
+        onMove={handleMovePress}
+        onShare={handleShare}
+        onArchive={handleArchive}
+        onDelete={handleDelete}
+      />
 
       {/* Modal para Mover Nota */}
       <Modal visible={showMoveModal} onClose={() => setShowMoveModal(false)}>
@@ -402,6 +353,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: spacing[4],
     marginBottom: spacing[3],
+    maxHeight: 200,
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
@@ -418,6 +371,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginBottom: spacing[2],
     minHeight: 40,
+    maxLines: 4,
   },
   player: {
     flexDirection: 'row',
@@ -427,55 +381,6 @@ const styles = StyleSheet.create({
   },
   duration: {
     ...typography.caption,
-    color: colors.text.tertiary,
-  },
-  // Barra de Ações - Padrão Consistente
-  actionsBar: {
-    flexDirection: 'row',
-    gap: spacing[2],
-    paddingTop: spacing[3],
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
-    marginTop: spacing[2],
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[1],
-    paddingVertical: spacing[2],
-    paddingHorizontal: spacing[2],
-    borderRadius: 8,
-  },
-  actionButtonView: {
-    backgroundColor: `${colors.primary.default}15`,
-  },
-  actionButtonView: {
-    backgroundColor: `${colors.primary.default}15`,
-  },
-  actionButtonEdit: {
-    backgroundColor: `${colors.primary.default}15`,
-  },
-  actionButtonMove: {
-    backgroundColor: `${colors.primary.default}15`,
-  },
-  actionButtonDelete: {
-    backgroundColor: `${colors.semantic.error}15`,
-  },
-  actionButtonText: {
-    ...typography.caption,
-    color: colors.primary.default,
-    fontWeight: '500',
-  },
-  actionButtonTextDanger: {
-    color: colors.semantic.error,
-  },
-  actionButtonDisabled: {
-    opacity: 0.5,
-    backgroundColor: colors.bg.base,
-  },
-  actionButtonTextDisabled: {
     color: colors.text.tertiary,
   },
   // Move Modal

@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Upload, X, Check } from 'lucide-react-native';
+import { X, Mic, Check, Bot, Tag, ChevronRight, ArrowLeft } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as FileSystem from 'expo-file-system';
@@ -24,6 +24,7 @@ import { saveNoteLocal } from '@/services/storage/database';
 import { colors, typography, spacing, elevation } from '@/theme';
 import { Modal, Button } from '@/components/common';
 import { BoxBadge } from '@/components/notes';
+import { NotePlayer } from '@/components/notes/NotePlayer';
 import type { MainStackParamList } from '@/navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -45,16 +46,23 @@ export const AudioReceivedScreen: React.FC = () => {
   const [audioName, setAudioName] = useState<string>(params.audioName || 'Áudio recebido');
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
   const [showBoxSelector, setShowBoxSelector] = useState(false);
+  const [showBoxList, setShowBoxList] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
+  const [audioDuration, setAudioDuration] = useState<number>(0);
 
   useEffect(() => {
-    // Se não recebeu URI, tentar obter de outras fontes
-    if (!audioUri) {
-      // Pode vir de deep linking ou share extension
-      // Por enquanto, mostra erro
+    // Carregar duração do áudio se disponível
+    if (audioUri) {
+      loadAudioDuration();
     }
   }, [audioUri]);
+
+  const loadAudioDuration = async () => {
+    // TODO: Carregar duração real do áudio usando expo-av
+    // Por enquanto, usar placeholder
+    setAudioDuration(47); // Placeholder
+  };
 
   const handleUpload = async () => {
     if (!audioUri) {
@@ -87,10 +95,11 @@ export const AudioReceivedScreen: React.FC = () => {
           // Upload com source_type="forwarded"
           const result = await uploadAudio(audioUri, selectedBoxId || undefined, 'forwarded');
           console.log('Upload result:', result);
-          showToast('Áudio recebido e processado!', 'success');
+          const boxName = result.box_name || 'caixinha';
+          showToast(`Nota salva em ${boxName}!`, 'success');
           setUploaded(true);
 
-          // Navegar de volta após 1 segundo
+          // Fechar tela após 1 segundo
           setTimeout(() => {
             navigation.goBack();
           }, 1000);
@@ -181,122 +190,131 @@ export const AudioReceivedScreen: React.FC = () => {
             <X size={24} color={colors.text.primary} />
           )}
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Áudio Recebido</Text>
+        <Text style={styles.headerTitle}>Salvar nota</Text>
         <View style={{ width: 24 }} />
       </View>
 
       <View style={styles.content}>
+        {/* Ícone e título */}
         <View style={styles.audioInfo}>
-          <View style={styles.audioIcon}>
-            <Upload size={32} color={colors.primary.default} />
-          </View>
-          <Text style={styles.audioName}>{audioName}</Text>
-          <Text style={styles.audioHint}>
-            {uploaded
-              ? 'Áudio processado com sucesso!'
-              : 'Este áudio será transcrito e classificado automaticamente'}
-          </Text>
+          <Mic size={48} color={colors.primary.default} />
+          <Text style={styles.audioName}>Áudio recebido</Text>
         </View>
 
-        {/* Seletor de Caixinha */}
+        {/* Preview do áudio com player */}
+        {!uploaded && audioUri && (
+          <View style={styles.audioPlayerContainer}>
+            <NotePlayer
+              audioUrl={audioUri}
+              duration={audioDuration || 47}
+            />
+          </View>
+        )}
+
+        {/* Opções de destino */}
         {!uploaded && (
           <>
+            <Text style={styles.sectionLabel}>Salvar em:</Text>
+
+            {/* Opção: Deixar IA classificar (default) */}
             <TouchableOpacity
-              style={styles.boxSelector}
-              onPress={() => setShowBoxSelector(true)}
+              style={[
+                styles.optionCard,
+                !selectedBoxId && styles.optionCardSelected,
+              ]}
+              onPress={() => setSelectedBoxId(null)}
               disabled={uploading}
             >
-              <Text style={styles.boxSelectorLabel}>Caixinha (opcional):</Text>
-              <View style={styles.boxSelectorValue}>
-                {selectedBox ? (
-                  <BoxBadge name={selectedBox.name} color={selectedBox.color} />
-                ) : (
-                  <Text style={styles.boxSelectorText}>Deixar vazio</Text>
-                )}
-              </View>
+              <Bot size={24} color={colors.primary.default} />
+              <Text style={styles.optionText}>Deixar IA classificar</Text>
+              {!selectedBoxId && (
+                <Check size={20} color={colors.semantic.success} />
+              )}
             </TouchableOpacity>
 
-            <Text style={styles.hint}>
-              Se deixar vazio, o áudio será classificado automaticamente em uma
-              caixinha baseado no conteúdo.
-            </Text>
+            {/* Opção: Escolher caixinha */}
+            <TouchableOpacity
+              style={[
+                styles.optionCard,
+                selectedBoxId && styles.optionCardSelected,
+              ]}
+              onPress={() => setShowBoxList(!showBoxList)}
+              disabled={uploading}
+            >
+              <Tag size={24} color={colors.primary.default} />
+              <Text style={styles.optionText}>
+                {selectedBox ? selectedBox.name : 'Escolher caixinha...'}
+              </Text>
+              <ChevronRight
+                size={20}
+                color={colors.text.secondary}
+                style={[
+                  styles.chevron,
+                  showBoxList && styles.chevronExpanded,
+                ]}
+              />
+            </TouchableOpacity>
+
+            {/* Lista de caixinhas (expansível) */}
+            {showBoxList && (
+              <View style={styles.boxList}>
+                {boxes.map((box) => (
+                  <TouchableOpacity
+                    key={box.id}
+                    style={[
+                      styles.boxListItem,
+                      selectedBoxId === box.id && styles.boxListItemSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectedBoxId(box.id);
+                      setShowBoxList(false);
+                    }}
+                  >
+                    <BoxBadge name={box.name} color={box.color} />
+                    <Text style={styles.boxListItemText}>{box.name}</Text>
+                    {selectedBoxId === box.id && (
+                      <Check size={20} color={colors.semantic.success} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={styles.createBoxItem}
+                  onPress={() => {
+                    // TODO: Abrir dialog para criar nova caixinha
+                    navigation.navigate('BoxesManagement');
+                  }}
+                >
+                  <Text style={styles.createBoxText}>+ Criar nova</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </>
         )}
 
-        {/* Botão Upload */}
+        {/* Botão Salvar nota */}
         {!uploaded && (
-          <Button
-            title={uploading ? 'Enviando...' : 'Processar Áudio'}
-            onPress={handleUpload}
-            disabled={uploading}
-            loading={uploading}
-            style={styles.uploadButton}
-          />
+          <View style={styles.buttonContainer}>
+            <Button
+              title={uploading ? 'Salvando...' : 'Salvar nota'}
+              onPress={handleUpload}
+              disabled={uploading}
+              loading={uploading}
+              style={styles.saveButton}
+            />
+          </View>
         )}
 
-        {uploaded && (
-          <View style={styles.successContainer}>
-            <Check size={48} color={colors.semantic.success} />
-            <Text style={styles.successText}>Áudio processado!</Text>
-            <Text style={styles.successSubtext}>
-              A transcrição e classificação estão em andamento.
-            </Text>
+        {/* Estado: Salvando */}
+        {uploading && (
+          <View style={styles.savingContainer}>
+            <ActivityIndicator
+              size="large"
+              color={colors.primary.default}
+            />
+            <Text style={styles.savingText}>Salvando nota...</Text>
           </View>
         )}
       </View>
-
-      {/* Modal Seletor de Caixinha */}
-      <Modal
-        visible={showBoxSelector}
-        onClose={() => setShowBoxSelector(false)}
-      >
-        <View style={styles.boxModalContent}>
-          <Text style={styles.boxModalTitle}>Escolher caixinha</Text>
-          <Text style={styles.boxModalSubtitle}>
-            Opcional: escolha uma caixinha ou deixe vazio para classificação automática
-          </Text>
-
-          <TouchableOpacity
-            style={[
-              styles.boxOption,
-              !selectedBoxId && styles.boxOptionSelected,
-            ]}
-            onPress={() => {
-              setSelectedBoxId(null);
-              setShowBoxSelector(false);
-            }}
-          >
-            <Text style={styles.boxOptionName}>Classificação automática</Text>
-            {!selectedBoxId && (
-              <View style={styles.checkIcon}>
-                <Text style={styles.checkText}>✓</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          {boxes.map((box) => (
-            <TouchableOpacity
-              key={box.id}
-              style={[
-                styles.boxOption,
-                selectedBoxId === box.id && styles.boxOptionSelected,
-              ]}
-              onPress={() => {
-                setSelectedBoxId(box.id);
-                setShowBoxSelector(false);
-              }}
-            >
-              <BoxBadge name={box.name} color={box.color} />
-              <Text style={styles.boxOptionName}>{box.name}</Text>
-              {selectedBoxId === box.id && (
-                <View style={styles.checkIcon}>
-                  <Text style={styles.checkText}>✓</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -326,26 +344,94 @@ const styles = StyleSheet.create({
   },
   audioInfo: {
     alignItems: 'center',
-    marginBottom: spacing[6],
-  },
-  audioIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: `${colors.primary.default}20`,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: spacing[4],
   },
   audioName: {
-    ...typography.title3,
+    ...typography.headline6,
     color: colors.text.primary,
-    marginBottom: spacing[2],
+    marginTop: spacing[2],
   },
-  audioHint: {
+  audioPlayerContainer: {
+    width: '100%',
+    marginBottom: spacing[6],
+  },
+  sectionLabel: {
     ...typography.bodySmall,
     color: colors.text.secondary,
-    textAlign: 'center',
+    marginBottom: spacing[3],
+  },
+  optionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[4],
+    backgroundColor: colors.bg.elevated,
+    borderRadius: 12,
+    marginBottom: spacing[3],
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  optionCardSelected: {
+    borderColor: colors.primary.default,
+    backgroundColor: `${colors.primary.default}10`,
+  },
+  optionText: {
+    ...typography.body,
+    color: colors.text.primary,
+    flex: 1,
+    fontWeight: '500',
+  },
+  chevron: {
+    transform: [{ rotate: '0deg' }],
+  },
+  chevronExpanded: {
+    transform: [{ rotate: '90deg' }],
+  },
+  boxList: {
+    marginLeft: spacing[4],
+    marginBottom: spacing[3],
+    maxHeight: 200,
+  },
+  boxListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[2],
+  },
+  boxListItemSelected: {
+    backgroundColor: `${colors.primary.default}10`,
+  },
+  boxListItemText: {
+    ...typography.body,
+    color: colors.text.primary,
+    flex: 1,
+  },
+  createBoxItem: {
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[2],
+  },
+  createBoxText: {
+    ...typography.body,
+    color: colors.primary.default,
+    fontWeight: '500',
+  },
+  buttonContainer: {
+    marginTop: 'auto',
+    marginBottom: spacing[6],
+  },
+  saveButton: {
+    width: '100%',
+  },
+  savingContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing[8],
+  },
+  savingText: {
+    ...typography.body,
+    color: colors.text.secondary,
+    marginTop: spacing[4],
   },
   boxSelector: {
     flexDirection: 'row',

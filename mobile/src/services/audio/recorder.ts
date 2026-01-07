@@ -31,6 +31,22 @@ export async function requestPermissions(): Promise<boolean> {
  */
 export async function startRecording(): Promise<void> {
   try {
+    // Verificar se já há uma gravação em andamento
+    if (recording) {
+      // Tentar parar e limpar gravação anterior
+      try {
+        await recording.stopAndUnloadAsync();
+        const uri = recording.getURI();
+        if (uri) {
+          await FileSystem.deleteAsync(uri, { idempotent: true });
+        }
+      } catch (e) {
+        // Ignorar erros ao limpar gravação anterior
+        console.warn('Erro ao limpar gravação anterior:', e);
+      }
+      recording = null;
+    }
+
     // Configura modo de áudio
     await Audio.setAudioModeAsync({
       allowsRecordingIOS: true,
@@ -45,6 +61,8 @@ export async function startRecording(): Promise<void> {
     recording = newRecording;
   } catch (error) {
     console.error('Erro ao iniciar gravação:', error);
+    // Limpar referência em caso de erro
+    recording = null;
     throw error;
   }
 }
@@ -81,18 +99,26 @@ export async function cancelRecording(): Promise<void> {
     return;
   }
 
+  const currentRecording = recording;
+  recording = null; // Limpa referência imediatamente
+
   try {
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
+    // Tentar obter URI antes de descarregar
+    const uri = currentRecording.getURI();
+
+    // Tentar parar e descarregar a gravação
+    try {
+      await currentRecording.stopAndUnloadAsync();
+    } catch (e) {
+      // Ignorar erros se a gravação já foi descarregada
+    }
 
     // Remove arquivo se existir
     if (uri) {
       await FileSystem.deleteAsync(uri, { idempotent: true });
     }
-
-    recording = null;
   } catch (error) {
-    console.error('Erro ao cancelar gravação:', error);
+    // Silenciar erros de cancelamento - não é crítico
   }
 }
 

@@ -13,13 +13,30 @@ export type AuthStackParamList = {
 export type MainStackParamList = {
   Home: undefined;
   Inbox: undefined;
-  NotesList: { boxId?: string } | undefined;
+  NotesList:
+    | {
+        boxId?: string;
+        filterType?: 'audio' | 'text' | 'checklist' | 'all';
+        viewMode?: 'grid' | 'list';
+      }
+    | undefined;
   NoteDetail: { noteId: string };
   NoteEdit: { noteId: string };
   BoxesManagement: undefined;
   Settings: undefined;
   Query: undefined;
+  BrainAnswer: {
+    question: string;
+    answer: string;
+    sources: Array<{
+      note_id: string;
+      excerpt: string;
+      date: string;
+      box_name: string;
+    }>;
+  };
   AudioReceived: { audioUri?: string; audioName?: string };
+  NotesSearch: undefined;
 };
 
 export type RootStackParamList = {

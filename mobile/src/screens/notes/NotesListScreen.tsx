@@ -1,8 +1,9 @@
 /**
- * Tela Lista de Notas
+ * Tela Lista de Notas - Estilo Google Keep
+ * Header fixo, sidebar, grid/list toggle, área de cards
  */
 
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,202 +11,227 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  FlatList,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Search, Mic } from 'lucide-react-native';
+import { Menu, Search, Grid3x3, List, User } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NoteCard } from '@/components/notes';
-import { RecordButton, RecordingOverlay } from '@/components/recording';
-import { FAB } from '@/components/common';
+import { NotesDrawer } from '@/components/navigation/NotesDrawer';
+import { NotesFAB } from '@/components/notes/NotesFAB';
 import { useNotes } from '@/hooks/useNotes';
-import { useRecording } from '@/hooks/useRecording';
-import { useOfflineSync } from '@/hooks/useOfflineSync';
-import { uploadAudio } from '@/services/api/notes';
-import { saveNoteLocal } from '@/services/storage/database';
-import { useToast } from '@/context/ToastContext';
-import { colors, typography, spacing } from '@/theme';
+import { useNotesView } from '@/hooks/useNotesView';
+import { colors, typography, spacing, elevation } from '@/theme';
 import type { MainStackParamList } from '@/navigation/types';
+import type { Note } from '@/types';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_MARGIN = spacing[2];
+const GRID_CARD_WIDTH = (SCREEN_WIDTH - spacing[4] * 2 - CARD_MARGIN) / 2;
 
 export const NotesListScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
-  const { showToast } = useToast();
-  const { boxId } = (route.params || {}) as { boxId?: string };
-
-  const { notes, loading, refresh } = useNotes(boxId ? { box: boxId } : undefined);
-  const { state: recordingState, duration, start, stop, cancel } = useRecording();
-  const { isOnline, queueItem } = useOfflineSync();
-  const [showOverlay, setShowOverlay] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const isUploadingRef = React.useRef(false);
-
-  React.useEffect(() => {
-    if (recordingState === 'recording') {
-      setShowOverlay(true);
-    } else if (recordingState === 'idle') {
-      setShowOverlay(false);
-    }
-  }, [recordingState]);
-
-  const handleSendRecording = React.useCallback(async () => {
-    if (isUploadingRef.current || isUploading) {
-      console.log('Upload já em andamento, ignorando chamada duplicada');
-      return;
-    }
-
-    isUploadingRef.current = true;
-    setIsUploading(true);
-    const uri = await stop();
-
-    if (!uri) {
-      setShowOverlay(false);
-      isUploadingRef.current = false;
-      setIsUploading(false);
-      return;
-    }
-
-    try {
-      setShowOverlay(false);
-
-      const noteId = `local_${Date.now()}`;
-      await saveNoteLocal({
-        id: noteId,
-        audio_uri: uri,
-        created_at: new Date().toISOString(),
-      });
-
-      if (isOnline) {
-        showToast('Enviando gravação...', 'info');
-        try {
-          // Passar boxId se estiver em uma caixinha específica
-          const result = await uploadAudio(uri, boxId || undefined);
-          console.log('Upload result:', result);
-          showToast('Nota salva com sucesso!', 'success');
-          await refresh();
-        } catch (error: any) {
-          console.error('Erro no upload:', error);
-          await queueItem('note_upload', { audio_uri: uri, box_id: boxId });
-          showToast('Nota salva localmente. Sincronizando...', 'warning');
-        }
-      } else {
-        await queueItem('note_upload', { audio_uri: uri, box_id: boxId });
-        showToast('Nota salva localmente. Sincronizará quando online.', 'warning');
-      }
-    } catch (error: any) {
-      showToast('Erro ao salvar nota. Tente novamente.', 'error');
-      console.error('Erro ao salvar nota:', error);
-    } finally {
-      isUploadingRef.current = false;
-      setIsUploading(false);
-    }
-  }, [stop, isOnline, showToast, queueItem, refresh, isUploading, boxId]);
-
-  const handleCancelRecording = async () => {
-    await cancel();
-    setShowOverlay(false);
+  const routeParams = (route.params || {}) as {
+    boxId?: string;
+    filterType?: 'audio' | 'text' | 'checklist' | 'all';
+    viewMode?: 'grid' | 'list';
   };
 
-  // Agrupa notas por data
-  const groupedNotes = notes.reduce((acc, note) => {
-    const date = new Date(note.created_at).toLocaleDateString('pt-BR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-    if (!acc[date]) {
-      acc[date] = [];
+  const {
+    viewMode,
+    toggleViewMode,
+    drawerOpen,
+    setDrawerOpen,
+    activeFilter,
+    activeBoxId,
+    setFilter,
+  } = useNotesView(routeParams.boxId);
+
+  // Determinar filtros para buscar notas
+  const notesParams = useMemo(() => {
+    const params: { box?: string; status?: string; deleted?: boolean } = {};
+    if (activeBoxId) {
+      params.box = activeBoxId;
     }
-    acc[date].push(note);
-    return acc;
-  }, {} as Record<string, typeof notes>);
+    // Filtros de status (trash/archived)
+    if (activeFilter === 'trash') {
+      // TODO: Backend precisa suportar parâmetro 'deleted=true' para buscar notas deletadas
+      params.deleted = true;
+    }
+    if (activeFilter === 'archived') {
+      // TODO: Backend precisa suportar campo 'archived' ou usar metadata
+    }
+    return Object.keys(params).length > 0 ? params : undefined;
+  }, [activeBoxId, activeFilter]);
+
+  const { notes, loading, refresh } = useNotes(notesParams);
+
+  // Filtrar notas por tipo se necessário
+  const filteredNotes = useMemo(() => {
+    if (activeFilter === 'audio') {
+      return notes.filter((n) => n.audio_uri);
+    }
+    if (activeFilter === 'text') {
+      return notes.filter((n) => !n.audio_uri && n.transcript);
+    }
+    if (activeFilter === 'checklist') {
+      // TODO: Filtrar por checklist quando implementado
+      return notes;
+    }
+    if (activeFilter === 'archived') {
+      // TODO: Filtrar arquivados quando backend suportar campo 'archived' ou metadata
+      // Por enquanto, retorna vazio até backend implementar
+      return [];
+    }
+    if (activeFilter === 'trash') {
+      // TODO: Filtrar lixeira quando backend suportar parâmetro 'deleted=true'
+      // Por enquanto, retorna vazio até backend implementar
+      return [];
+    }
+    return notes;
+  }, [notes, activeFilter]);
+
+  // Agrupar notas por data
+  const groupedNotes = useMemo(() => {
+    return filteredNotes.reduce((acc, note) => {
+      const date = new Date(note.created_at).toLocaleDateString('pt-BR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(note);
+      return acc;
+    }, {} as Record<string, Note[]>);
+  }, [filteredNotes]);
+
+  // Renderizar card em grid
+  const renderGridCard = ({ item }: { item: Note }) => (
+    <View style={styles.gridCard}>
+      <NoteCard
+        note={item}
+        onPress={() => navigation.navigate('NoteEdit', { noteId: item.id })}
+        onDelete={refresh}
+        onMove={refresh}
+      />
+    </View>
+  );
+
+  // Renderizar seção de data
+  const renderDateSection = (date: string, dateNotes: Note[]) => {
+    if (viewMode === 'grid') {
+      return (
+        <View key={date} style={styles.dateSection}>
+          <Text style={styles.dateHeader}>{date}</Text>
+          <FlatList
+            data={dateNotes}
+            renderItem={renderGridCard}
+            numColumns={2}
+            keyExtractor={(item) => item.id}
+            scrollEnabled={false}
+            columnWrapperStyle={styles.gridRow}
+          />
+        </View>
+      );
+    }
+
+    return (
+      <View key={date} style={styles.dateSection}>
+        <Text style={styles.dateHeader}>{date}</Text>
+        {dateNotes.map((note) => (
+          <NoteCard
+            key={note.id}
+            note={note}
+            onPress={() => navigation.navigate('NoteEdit', { noteId: note.id })}
+            onDelete={refresh}
+            onMove={refresh}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  const handleSearchPress = () => {
+    navigation.navigate('NotesSearch');
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <ArrowLeft size={24} color={colors.text.primary} />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header Fixo */}
+      <View style={[styles.header, elevation[2]]}>
+        <TouchableOpacity
+          onPress={() => setDrawerOpen(true)}
+          style={styles.headerButton}
+        >
+          <Menu size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>
-            {boxId ? 'Notas da caixinha' : 'Todas as notas'}
-          </Text>
-          {boxId && (
-            <Text style={styles.headerSubtitle}>
-              Gravações serão criadas nesta caixinha
-            </Text>
+
+        <TouchableOpacity
+          style={styles.searchContainer}
+          onPress={handleSearchPress}
+          activeOpacity={0.7}
+        >
+          <Search size={18} color={colors.text.tertiary} />
+          <Text style={styles.searchPlaceholder}>Buscar notas...</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={toggleViewMode}
+          style={styles.headerButton}
+        >
+          {viewMode === 'grid' ? (
+            <List size={24} color={colors.text.secondary} />
+          ) : (
+            <Grid3x3 size={24} color={colors.text.secondary} />
           )}
-        </View>
-        <View style={styles.headerRight}>
-          {boxId && (
-            <TouchableOpacity
-              onPress={recordingState === 'idle' ? start : undefined}
-              disabled={recordingState !== 'idle'}
-              style={styles.recordButtonHeader}
-            >
-              <View style={styles.recordButtonSmall}>
-                <Mic
-                  size={20}
-                  color={
-                    recordingState === 'recording'
-                      ? colors.recording.active
-                      : colors.primary.default
-                  }
-                />
-              </View>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity>
-            <Search size={24} color={colors.text.secondary} />
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.headerButton}>
+          <View style={styles.avatar}>
+            <User size={18} color={colors.text.primary} />
+          </View>
+        </TouchableOpacity>
       </View>
 
+      {/* Área Principal de Cards */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
       >
-        {Object.entries(groupedNotes).map(([date, dateNotes]) => (
-          <View key={date} style={styles.dateSection}>
-            <Text style={styles.dateHeader}>{date}</Text>
-            {dateNotes.map((note) => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                onPress={() =>
-                  navigation.navigate('NoteEdit', { noteId: note.id })
-                }
-                onDelete={refresh}
-                onMove={refresh}
-              />
-            ))}
-          </View>
-        ))}
-
-        {(notes || []).length === 0 && (
+        {Object.entries(groupedNotes).length === 0 && !loading && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>Nenhuma nota encontrada</Text>
+            <Text style={styles.emptySubtext}>
+              {activeFilter === 'all'
+                ? 'Comece gravando uma nota na tela inicial'
+                : 'Tente outro filtro'}
+            </Text>
           </View>
+        )}
+
+        {Object.entries(groupedNotes).map(([date, dateNotes]) =>
+          renderDateSection(date, dateNotes)
         )}
       </ScrollView>
 
-      {!boxId && (
-        <FAB
-          onPress={() => {
-            showToast('Gravação será implementada', 'info');
-          }}
-        />
-      )}
+      {/* FAB */}
+      <NotesFAB boxId={activeBoxId} />
 
-      <RecordingOverlay
-        visible={showOverlay}
-        duration={duration}
-        onCancel={handleCancelRecording}
-        onSend={handleSendRecording}
-        isUploading={isUploading}
+      {/* Sidebar */}
+      <NotesDrawer
+        visible={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        activeFilter={activeFilter}
+        activeBoxId={activeBoxId}
+        onFilterChange={setFilter}
       />
     </SafeAreaView>
   );
@@ -219,35 +245,37 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing[2],
     paddingHorizontal: spacing[4],
-    paddingVertical: spacing[4],
+    paddingVertical: spacing[3],
+    backgroundColor: colors.bg.elevated,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
-  headerCenter: {
+  headerButton: {
+    padding: spacing[1],
+  },
+  searchContainer: {
     flex: 1,
-    marginLeft: spacing[3],
-  },
-  headerTitle: {
-    ...typography.title2,
-    color: colors.text.primary,
-  },
-  headerSubtitle: {
-    ...typography.caption,
-    color: colors.text.tertiary,
-    marginTop: spacing[1],
-  },
-  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[2],
+    backgroundColor: colors.bg.base,
+    borderRadius: 24,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  recordButtonHeader: {
-    marginRight: spacing[2],
+  searchPlaceholder: {
+    ...typography.bodySmall,
+    color: colors.text.tertiary,
+    flex: 1,
   },
-  recordButtonSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: `${colors.primary.default}20`,
     alignItems: 'center',
     justifyContent: 'center',
@@ -267,16 +295,30 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     marginBottom: spacing[3],
     textTransform: 'uppercase',
+    fontWeight: '600',
+  },
+  gridRow: {
+    justifyContent: 'space-between',
+  },
+  gridCard: {
+    width: GRID_CARD_WIDTH,
+    marginBottom: CARD_MARGIN,
   },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: spacing[12],
+    paddingBottom: spacing[12],
   },
   emptyText: {
-    ...typography.body,
+    ...typography.title3,
     color: colors.text.secondary,
+    marginBottom: spacing[2],
+  },
+  emptySubtext: {
+    ...typography.body,
+    color: colors.text.tertiary,
+    textAlign: 'center',
   },
 });
-

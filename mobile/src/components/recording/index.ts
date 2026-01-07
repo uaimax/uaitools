@@ -4,6 +4,7 @@
 
 export * from './RecordButton';
 export * from './RecordingOverlay';
+export * from './RecordingModal';
 export * from './Waveform';
 
 

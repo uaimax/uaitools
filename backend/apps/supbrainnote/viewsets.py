@@ -115,6 +115,27 @@ class BoxViewSet(WorkspaceViewSet):
             return BoxListSerializer
         return BoxSerializer
 
+    def perform_destroy(self, instance: Box) -> None:
+        """Soft delete da caixinha e de todas as notas associadas.
+
+        Quando uma caixinha é deletada:
+        1. Faz soft delete de todas as notas da caixinha
+        2. Faz soft delete da caixinha
+
+        Isso evita notas órfãs e mantém consistência.
+        """
+        from django.utils import timezone
+
+        # Soft delete de todas as notas da caixinha
+        notes_to_delete = Note.objects.filter(box=instance)
+        notes_count = notes_to_delete.count()
+
+        if notes_count > 0:
+            notes_to_delete.update(deleted_at=timezone.now())
+
+        # Soft delete da caixinha
+        instance.soft_delete()
+
     @action(detail=True, methods=["post"], url_path="share")
     def share_box(self, request: "Request", pk: str | None = None) -> Response:
         """Compartilha caixinha com usuário ou envia convite por email."""
@@ -277,8 +298,20 @@ class NoteViewSet(WorkspaceViewSet):
         return NoteSerializer
 
     def get_queryset(self) -> models.QuerySet[Note]:
-        """Retorna queryset filtrado por workspace e com filtros opcionais."""
+        """Retorna queryset filtrado por workspace e com filtros opcionais.
+
+        Exclui automaticamente:
+        - Notas deletadas (via soft delete do manager)
+        - Notas de caixinhas deletadas (exceto inbox)
+        """
         queryset = super().get_queryset()
+
+        # Excluir notas de caixinhas deletadas (box existe mas foi soft-deleted)
+        # Notas na inbox (box=NULL) devem aparecer normalmente
+        queryset = queryset.filter(
+            models.Q(box__isnull=True) |  # Inbox
+            models.Q(box__deleted_at__isnull=True)  # Caixinha não deletada
+        )
 
         # Filtro por caixinha
         box_id = self.request.query_params.get("box")

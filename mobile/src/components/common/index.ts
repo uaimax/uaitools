@@ -9,4 +9,6 @@ export * from './Toast';
 export * from './ToastContainer';
 export * from './Modal';
 export * from './FAB';
+export * from './SearchBar';
+export * from './NoteActionsBottomSheet';
 

@@ -3,7 +3,7 @@
  * UX redesenhada com ações claras e visíveis
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,15 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft,
-  Pencil,
+  Tag,
+  Share2,
   Trash2,
-  FolderInput,
+  MoreVertical,
   Volume2,
   Clock,
   Inbox,
@@ -26,7 +28,7 @@ import {
 } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { getNote, deleteNote, moveNote } from '@/services/api/notes';
+import { getNote, deleteNote, moveNote, updateNote } from '@/services/api/notes';
 import { getBoxes } from '@/services/api/boxes';
 import { useToast } from '@/context/ToastContext';
 import { NotePlayer } from '@/components/notes';
@@ -49,6 +51,11 @@ export const NoteDetailScreen: React.FC = () => {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadNote();
@@ -60,6 +67,7 @@ export const NoteDetailScreen: React.FC = () => {
       setLoading(true);
       const data = await getNote(noteId);
       setNote(data);
+      setTranscript(data.transcript || '');
     } catch (error: any) {
       showToast('Erro ao carregar nota', 'error');
       navigation.goBack();
@@ -67,6 +75,36 @@ export const NoteDetailScreen: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Auto-save após 2 segundos de inatividade
+  useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    if (isEditing && transcript !== (note?.transcript || '')) {
+      setSaveStatus('saving');
+      autoSaveTimerRef.current = setTimeout(async () => {
+        if (note) {
+          try {
+            await updateNote(noteId, transcript);
+            setNote({ ...note, transcript });
+            setSaveStatus('saved');
+            setTimeout(() => setSaveStatus('idle'), 2000);
+          } catch (error: any) {
+            showToast('Erro ao salvar', 'error');
+            setSaveStatus('idle');
+          }
+        }
+      }, 2000);
+    }
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [transcript, isEditing, note, noteId]);
 
   const loadBoxes = async () => {
     try {
@@ -78,10 +116,14 @@ export const NoteDetailScreen: React.FC = () => {
     }
   };
 
-  const handleEdit = () => {
-    if (note) {
-      navigation.navigate('NoteEdit', { noteId: note.id });
-    }
+  const handleShare = () => {
+    // TODO: Implementar compartilhamento
+    showToast('Compartilhamento em breve', 'info');
+  };
+
+  const handleMore = () => {
+    // TODO: Abrir menu com mais opções (Arquivar, Duplicar, Copiar texto)
+    Alert.alert('Mais opções', 'Menu de ações adicionais');
   };
 
   const handleMove = async (boxId: string | null) => {
@@ -144,25 +186,41 @@ export const NoteDetailScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header Simples */}
+      {/* AppBar com ações */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={styles.appBarButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <ArrowLeft size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerDate}>
-            {new Date(note.created_at).toLocaleDateString('pt-BR', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            })}
-          </Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => setShowMoveModal(true)}
+            style={styles.appBarButton}
+          >
+            <Tag size={24} color={colors.text.secondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleShare}
+            style={styles.appBarButton}
+          >
+            <Share2 size={24} color={colors.text.secondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleDelete}
+            style={styles.appBarButton}
+          >
+            <Trash2 size={24} color={colors.semantic.error} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleMore}
+            style={styles.appBarButton}
+          >
+            <MoreVertical size={24} color={colors.text.secondary} />
+          </TouchableOpacity>
         </View>
-        <View style={styles.headerRight} />
       </View>
 
       {/* Conteúdo Principal */}
@@ -171,27 +229,17 @@ export const NoteDetailScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Badge da Caixinha Atual */}
+        {/* Tag da Caixinha */}
         <View style={styles.boxSection}>
-          <TouchableOpacity
-            onPress={() => setShowMoveModal(true)}
-            style={styles.boxBadgeContainer}
-          >
-            <BoxBadge
-              name={note.box_name || 'Inbox'}
-              color={note.box_color || colors.text.tertiary}
-              onPress={
-                note.box_id
-                  ? () => navigation.navigate('NotesList', { boxId: note.box_id })
-                  : undefined
-              }
-            />
-            <FolderInput
-              size={14}
-              color={colors.text.tertiary}
-              style={styles.boxBadgeIcon}
-            />
-          </TouchableOpacity>
+          <BoxBadge
+            name={note.box_name || 'Inbox'}
+            color={note.box_color || colors.text.tertiary}
+            onPress={
+              note.box_id
+                ? () => navigation.navigate('NotesList', { boxId: note.box_id })
+                : undefined
+            }
+          />
         </View>
 
         {/* Player de Áudio - Hero Card */}
@@ -223,46 +271,53 @@ export const NoteDetailScreen: React.FC = () => {
         {/* Divisor Visual */}
         <View style={styles.divider} />
 
-        {/* Transcrição */}
-        <View style={styles.transcriptSection}>
-          <Text style={styles.transcriptLabel}>Transcrição</Text>
-          <Text style={styles.transcript}>
-            {note.transcript || 'Sem transcrição disponível'}
-          </Text>
+        {/* Conteúdo editável */}
+        <View style={styles.contentSection}>
+          <TextInput
+            style={styles.contentInput}
+            value={transcript}
+            onChangeText={(text) => {
+              setTranscript(text);
+              setIsEditing(true);
+            }}
+            placeholder="Sem transcrição disponível"
+            placeholderTextColor={colors.text.tertiary}
+            multiline
+            textAlignVertical="top"
+            editable={!loading}
+          />
         </View>
+
+        {/* Metadata */}
+        <View style={styles.metadataSection}>
+          <Text style={styles.metadataText}>
+            Criada em {new Date(note.created_at).toLocaleDateString('pt-BR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </Text>
+          {note.updated_at && note.updated_at !== note.created_at && (
+            <Text style={styles.metadataText}>
+              Última edição: {new Date(note.updated_at).toLocaleDateString('pt-BR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </Text>
+          )}
+        </View>
+
+        {/* Status de salvamento */}
+        {saveStatus !== 'idle' && (
+          <View style={styles.saveStatusContainer}>
+            <Text style={styles.saveStatusText}>
+              {saveStatus === 'saving' ? 'Salvando...' : 'Salvo'}
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
-      {/* Action Bar Fixo no Rodapé */}
-      <SafeAreaView edges={['bottom']} style={styles.actionBarSafeArea}>
-        <View style={styles.actionBar}>
-          {/* Botão Editar */}
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionButtonPrimary]}
-            onPress={handleEdit}
-          >
-            <Pencil size={20} color="#FFFFFF" />
-            <Text style={styles.actionButtonTextPrimary}>Editar</Text>
-          </TouchableOpacity>
-
-          {/* Botão Mover */}
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionButtonSecondary]}
-            onPress={() => setShowMoveModal(true)}
-          >
-            <FolderInput size={20} color={colors.primary.default} />
-            <Text style={styles.actionButtonTextSecondary}>Mover</Text>
-          </TouchableOpacity>
-
-          {/* Botão Excluir */}
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionButtonDanger]}
-            onPress={handleDelete}
-          >
-            <Trash2 size={20} color={colors.semantic.error} />
-            <Text style={styles.actionButtonTextDanger}>Excluir</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
 
       {/* Modal para Mover Nota */}
       <Modal visible={showMoveModal} onClose={() => setShowMoveModal(false)}>
@@ -372,25 +427,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
+    height: 56,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.bg.elevated,
+  appBarButton: {
+    padding: spacing[1],
+    minWidth: 48,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerDate: {
-    ...typography.bodySmall,
-    color: colors.text.secondary,
-  },
-  headerRight: {
-    width: 40,
+  headerActions: {
+    flexDirection: 'row',
+    gap: spacing[2],
   },
 
   // Scroll
@@ -405,15 +453,6 @@ const styles = StyleSheet.create({
   // Box Section
   boxSection: {
     marginBottom: spacing[4],
-  },
-  boxBadgeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: spacing[2],
-  },
-  boxBadgeIcon: {
-    opacity: 0.6,
   },
 
   // Audio Card (Hero)
@@ -465,71 +504,36 @@ const styles = StyleSheet.create({
     marginVertical: spacing[2],
   },
 
-  // Transcript
-  transcriptSection: {
+  // Content
+  contentSection: {
     marginTop: spacing[2],
   },
-  transcriptLabel: {
-    ...typography.caption,
-    color: colors.text.tertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing[3],
-  },
-  transcript: {
+  contentInput: {
     ...typography.body,
     color: colors.text.primary,
     lineHeight: 26,
+    minHeight: 100,
+    padding: 0,
   },
-
-  // Action Bar
-  actionBarSafeArea: {
-    backgroundColor: colors.bg.elevated,
+  // Metadata
+  metadataSection: {
+    marginTop: spacing[4],
+    paddingTop: spacing[4],
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
-  actionBar: {
-    flexDirection: 'row',
-    gap: spacing[3],
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
+  metadataText: {
+    ...typography.caption,
+    color: colors.text.tertiary,
+    marginBottom: spacing[1],
   },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[2],
-    paddingVertical: spacing[3],
-    borderRadius: 12,
+  saveStatusContainer: {
+    marginTop: spacing[2],
+    alignItems: 'flex-end',
   },
-  actionButtonPrimary: {
-    backgroundColor: colors.primary.default,
-  },
-  actionButtonSecondary: {
-    backgroundColor: `${colors.primary.default}15`,
-    borderWidth: 1,
-    borderColor: `${colors.primary.default}30`,
-  },
-  actionButtonDanger: {
-    backgroundColor: `${colors.semantic.error}15`,
-    borderWidth: 1,
-    borderColor: `${colors.semantic.error}30`,
-  },
-  actionButtonTextPrimary: {
-    ...typography.bodySmall,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  actionButtonTextSecondary: {
-    ...typography.bodySmall,
-    color: colors.primary.default,
-    fontWeight: '600',
-  },
-  actionButtonTextDanger: {
-    ...typography.bodySmall,
-    color: colors.semantic.error,
-    fontWeight: '600',
+  saveStatusText: {
+    ...typography.caption,
+    color: colors.semantic.success,
   },
 
   // Move Modal
