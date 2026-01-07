@@ -5,16 +5,30 @@
 import * as SQLite from 'expo-sqlite';
 
 let db: SQLite.SQLiteDatabase | null = null;
+let initPromise: Promise<void> | null = null;
+let isInitialized = false;
 
 /**
- * Inicializa banco de dados
+ * Inicializa banco de dados (com proteção contra chamadas múltiplas)
  */
 export async function initDatabase(): Promise<void> {
-  try {
-    db = await SQLite.openDatabaseAsync('supbrainnote.db');
+  // Se já está inicializado, retorna
+  if (isInitialized && db) {
+    return;
+  }
 
-    // Cria tabelas
-    await db.execAsync(`
+  // Se já há uma inicialização em andamento, aguarda
+  if (initPromise) {
+    return initPromise;
+  }
+
+  // Inicia nova inicialização
+  initPromise = (async () => {
+    try {
+      db = await SQLite.openDatabaseAsync('supbrainnote.db');
+
+      // Cria tabelas
+      await db.execAsync(`
       CREATE TABLE IF NOT EXISTS notes (
         id TEXT PRIMARY KEY,
         audio_uri TEXT,
@@ -54,18 +68,31 @@ export async function initDatabase(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_notes_synced ON notes(synced);
       CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status);
     `);
-  } catch (error) {
-    console.error('Erro ao inicializar banco:', error);
-    throw error;
-  }
+
+      isInitialized = true;
+    } catch (error) {
+      console.error('Erro ao inicializar banco:', error);
+      // Reset para permitir nova tentativa
+      db = null;
+      initPromise = null;
+      throw error;
+    }
+  })();
+
+  return initPromise;
 }
 
 /**
- * Obtém instância do banco
+ * Obtém instância do banco (aguarda inicialização se necessário)
  */
-function getDatabase(): SQLite.SQLiteDatabase {
+async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
+  // Se não está inicializado, tenta inicializar
+  if (!isInitialized || !db) {
+    await initDatabase();
+  }
+  
   if (!db) {
-    throw new Error('Banco de dados não inicializado. Chame initDatabase() primeiro.');
+    throw new Error('Banco de dados não disponível após inicialização.');
   }
   return db;
 }
@@ -81,7 +108,7 @@ export async function saveNoteLocal(note: {
   created_at: string;
   duration_seconds?: number;
 }): Promise<void> {
-  const database = getDatabase();
+  const database = await getDatabase();
   await database.runAsync(
     `INSERT OR REPLACE INTO notes
      (id, audio_uri, transcript, box_id, created_at, duration_seconds, synced)
@@ -101,7 +128,7 @@ export async function saveNoteLocal(note: {
  * Busca notas locais não sincronizadas
  */
 export async function getUnsyncedNotes(): Promise<any[]> {
-  const database = getDatabase();
+  const database = await getDatabase();
   const result = await database.getAllAsync(
     'SELECT * FROM notes WHERE synced = 0 ORDER BY created_at DESC'
   );
@@ -112,7 +139,7 @@ export async function getUnsyncedNotes(): Promise<any[]> {
  * Marca nota como sincronizada
  */
 export async function markNoteSynced(noteId: string): Promise<void> {
-  const database = getDatabase();
+  const database = await getDatabase();
   await database.runAsync('UPDATE notes SET synced = 1 WHERE id = ?', [noteId]);
 }
 
@@ -123,7 +150,7 @@ export async function addToSyncQueue(
   type: string,
   payload: any
 ): Promise<void> {
-  const database = getDatabase();
+  const database = await getDatabase();
   const id = `${type}_${Date.now()}_${Math.random()}`;
   await database.runAsync(
     `INSERT INTO sync_queue (id, type, payload, created_at, status)
@@ -136,7 +163,7 @@ export async function addToSyncQueue(
  * Busca itens pendentes da fila
  */
 export async function getPendingSyncItems(): Promise<any[]> {
-  const database = getDatabase();
+  const database = await getDatabase();
   const result = await database.getAllAsync(
     "SELECT * FROM sync_queue WHERE status = 'pending' ORDER BY created_at ASC LIMIT 10"
   );
@@ -154,7 +181,7 @@ export async function updateSyncItemStatus(
   status: 'pending' | 'uploading' | 'failed',
   error?: string
 ): Promise<void> {
-  const database = getDatabase();
+  const database = await getDatabase();
   await database.runAsync(
     `UPDATE sync_queue SET status = ?, last_error = ? WHERE id = ?`,
     [status, error || null, id]
@@ -165,7 +192,7 @@ export async function updateSyncItemStatus(
  * Remove item da fila (após sucesso)
  */
 export async function removeSyncItem(id: string): Promise<void> {
-  const database = getDatabase();
+  const database = await getDatabase();
   await database.runAsync('DELETE FROM sync_queue WHERE id = ?', [id]);
 }
 
