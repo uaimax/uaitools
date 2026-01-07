@@ -1,13 +1,11 @@
 /** Componente de sininho de notificações com dropdown. */
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
@@ -37,7 +35,6 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 export function NotificationBell() {
-  const [open, setOpen] = useState(false);
   const { data: notifications, isLoading } = useNotifications({ unread: false });
   const { data: unreadCount } = useUnreadCount();
   const markAsReadMutation = useMarkAsRead();
@@ -46,7 +43,6 @@ export function NotificationBell() {
   const dismissBoxMutation = useDismissBoxNotifications();
 
   const notificationsArray = Array.isArray(notifications) ? notifications : [];
-  const unreadNotifications = notificationsArray.filter((n) => !n.read);
   const hasUnread = (unreadCount || 0) > 0;
 
   const handleMarkAsRead = async (notificationId: string) => {
@@ -110,7 +106,7 @@ export function NotificationBell() {
   };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="w-4 h-4" />

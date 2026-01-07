@@ -12,10 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
-  SelectContent,
   SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { useBoxShares, useShareBox, useUpdateSharePermission, useRemoveShare } from "../hooks/use-box-share";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +36,7 @@ export function BoxShareModal({ boxId, open, onOpenChange }: BoxShareModalProps)
   const [email, setEmail] = useState("");
   const [permission, setPermission] = useState<"read" | "write">("read");
   const [isAdding, setIsAdding] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
 
   const sharesArray = Array.isArray(shares) ? shares : [];
 
@@ -150,25 +148,21 @@ export function BoxShareModal({ boxId, open, onOpenChange }: BoxShareModalProps)
                 <Label htmlFor="share-permission">Permissão</Label>
                 <Select
                   value={permission}
-                  onValueChange={(value) => setPermission(value as "read" | "write")}
+                  onChange={(value) => setPermission(value as "read" | "write")}
+                  placeholder="Selecione a permissão"
                 >
-                  <SelectTrigger id="share-permission">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="read">
-                      <div className="flex items-center gap-2">
-                        <Eye className="w-4 h-4" />
-                        <span>Leitura</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="write">
-                      <div className="flex items-center gap-2">
-                        <Edit className="w-4 h-4" />
-                        <span>Leitura e Escrita</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
+                  <SelectItem value="read">
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-4 h-4" />
+                      <span>Leitura</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="write">
+                    <div className="flex items-center gap-2">
+                      <Edit className="w-4 h-4" />
+                      <span>Leitura e Escrita</span>
+                    </div>
+                  </SelectItem>
                 </Select>
               </div>
               <Button
@@ -215,30 +209,29 @@ export function BoxShareModal({ boxId, open, onOpenChange }: BoxShareModalProps)
                         <div className="flex items-center gap-2">
                           <Select
                             value={share.permission}
-                            onValueChange={(value) =>
+                            onChange={(value) =>
                               handleUpdatePermission(share.id, value as "read" | "write")
                             }
                             disabled={updatePermissionMutation.isPending}
+                            className="w-[140px]"
                           >
-                            <SelectTrigger className="w-[140px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="read">
-                                <div className="flex items-center gap-2">
-                                  <Eye className="w-4 h-4" />
-                                  <span>Leitura</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="write">
-                                <div className="flex items-center gap-2">
-                                  <Edit className="w-4 h-4" />
-                                  <span>Leitura e Escrita</span>
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
+                            <SelectItem value="read">
+                              <div className="flex items-center gap-2">
+                                <Eye className="w-4 h-4" />
+                                <span>Leitura</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="write">
+                              <div className="flex items-center gap-2">
+                                <Edit className="w-4 h-4" />
+                                <span>Leitura e Escrita</span>
+                              </div>
+                            </SelectItem>
                           </Select>
-                          <AlertDialog>
+                          <AlertDialog
+                            open={deleteDialogOpen === share.id}
+                            onOpenChange={(open) => setDeleteDialogOpen(open ? share.id : null)}
+                          >
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="ghost"
@@ -258,7 +251,10 @@ export function BoxShareModal({ boxId, open, onOpenChange }: BoxShareModalProps)
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleRemoveShare(share.id)}
+                                  onClick={() => {
+                                    handleRemoveShare(share.id);
+                                    setDeleteDialogOpen(null);
+                                  }}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
                                   Remover

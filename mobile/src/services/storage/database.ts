@@ -90,7 +90,7 @@ async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (!isInitialized || !db) {
     await initDatabase();
   }
-  
+
   if (!db) {
     throw new Error('Banco de dados não disponível após inicialização.');
   }

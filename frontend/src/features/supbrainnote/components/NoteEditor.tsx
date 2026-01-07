@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useUpdateNote } from "../hooks/use-notes";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Note } from "../hooks/use-notes";
 
@@ -21,7 +21,7 @@ export function NoteEditor({ note, onBack, onClose, autoFocus = true }: NoteEdit
   const [hasChanges, setHasChanges] = useState(false);
   const updateMutation = useUpdateNote();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Atualizar transcript quando note mudar
   useEffect(() => {

@@ -11,7 +11,7 @@ import { Pagination } from "../data-display/Pagination"
 import { EmptyState } from "../data-display/EmptyState"
 import { useResource } from "@/features/admin/hooks/useResource"
 import { useTable } from "@/features/admin/hooks/useTable"
-import type { ResourceConfig } from "@/lib/admin/resource-config"
+import type { ResourceConfig, TableColumn } from "@/lib/admin/resource-config"
 import { createTableColumns } from "@/lib/admin/resource-config"
 import { usePermissions } from "@/features/admin/hooks/usePermissions"
 
@@ -34,7 +34,7 @@ export function ResourceListPage<T extends Record<string, any>>({
 
   const tableColumns = useMemo(() => {
     const cols = createTableColumns<T>(config)
-    return cols.map((col) => ({
+    return cols.map((col: TableColumn<T>) => ({
       key: String(col.key),
       label: col.label,
       render: col.render
@@ -49,7 +49,7 @@ export function ResourceListPage<T extends Record<string, any>>({
 
     const query = searchQuery.toLowerCase()
     return items.filter((item) =>
-      config.searchFields!.some((field) => {
+      config.searchFields!.some((field: string) => {
         const value = item[field]
         return value && String(value).toLowerCase().includes(query)
       })
