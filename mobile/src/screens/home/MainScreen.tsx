@@ -193,23 +193,25 @@ export const MainScreen: React.FC = () => {
       await saveNoteLocal({
         id: noteId,
         audio_uri: uri,
+        box_id: activeBoxId, // Se estiver dentro de uma caixinha, associa automaticamente
         created_at: new Date().toISOString(),
       });
 
       if (isOnline) {
         showToast('Enviando gravação...', 'info');
         try {
-          const result = await uploadAudio(uri);
+          // Passa o activeBoxId para associar a nota à caixinha atual
+          const result = await uploadAudio(uri, activeBoxId || undefined);
           console.log('Upload result:', result);
           showToast('Nota salva com sucesso!', 'success');
           refresh();
         } catch (error: any) {
           console.error('Erro no upload:', error);
-          await queueItem('note_upload', { audio_uri: uri });
+          await queueItem('note_upload', { audio_uri: uri, box_id: activeBoxId });
           showToast('Nota salva localmente. Sincronizando...', 'warning');
         }
       } else {
-        await queueItem('note_upload', { audio_uri: uri });
+        await queueItem('note_upload', { audio_uri: uri, box_id: activeBoxId });
         showToast('Nota salva localmente. Sincronizará quando online.', 'warning');
       }
     } catch (error: any) {
@@ -253,12 +255,12 @@ export const MainScreen: React.FC = () => {
       {/* AppBar */}
       <View style={[styles.appBar, elevation[0]]}>
         <TouchableOpacity
-          onPress={() => setDrawerOpen(true)}
+          onPress={() => navigation.navigate('Settings')}
           style={styles.appBarButton}
-          accessibilityLabel="Abrir menu"
+          accessibilityLabel="Configurações"
           accessibilityRole="button"
         >
-          <Menu size={24} color={colors.text.primary} />
+          <Settings size={24} color={colors.text.secondary} />
         </TouchableOpacity>
 
         <SearchBar
@@ -266,13 +268,14 @@ export const MainScreen: React.FC = () => {
           onMicPress={handleMicPress}
         />
 
+        {/* Menu à direita como no Google Keep */}
         <TouchableOpacity
-          onPress={() => navigation.navigate('Settings')}
+          onPress={() => setDrawerOpen(true)}
           style={styles.appBarButton}
-          accessibilityLabel="Configurações"
+          accessibilityLabel="Abrir menu"
           accessibilityRole="button"
         >
-          <Settings size={24} color={colors.text.secondary} />
+          <Menu size={24} color={colors.text.primary} />
         </TouchableOpacity>
       </View>
 
@@ -330,12 +333,12 @@ export const MainScreen: React.FC = () => {
         isProcessing={isUploading}
       />
 
-      {/* AskBrainModal - Contexto: todas as notas (null) */}
+      {/* AskBrainModal - Contexto baseado na caixinha ativa */}
       <AskBrainModal
         visible={showAskBrainModal}
         onClose={() => setShowAskBrainModal(false)}
         onAnswer={handleBrainAnswer}
-        caixinha_contexto={null}
+        caixinha_contexto={activeBoxId}
       />
     </SafeAreaView>
   );

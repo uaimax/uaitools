@@ -64,7 +64,8 @@ export const NotesDrawer: React.FC<NotesDrawerProps> = ({
   const [selectedBoxForActions, setSelectedBoxForActions] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
-  const slideAnim = React.useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  // Animação: drawer entra da direita (como Google Keep)
+  const slideAnim = React.useRef(new Animated.Value(DRAWER_WIDTH)).current;
 
   React.useEffect(() => {
     if (visible) {
@@ -76,7 +77,7 @@ export const NotesDrawer: React.FC<NotesDrawerProps> = ({
       }).start();
     } else {
       Animated.timing(slideAnim, {
-        toValue: -DRAWER_WIDTH,
+        toValue: DRAWER_WIDTH,
         duration: 250,
         useNativeDriver: true,
       }).start();
@@ -115,23 +116,24 @@ export const NotesDrawer: React.FC<NotesDrawerProps> = ({
         onRequestClose={onClose}
       >
         <View style={styles.container}>
-          {/* Overlay escuro */}
+          {/* Overlay escuro - ocupa toda a tela */}
           <TouchableOpacity
             style={styles.overlay}
             activeOpacity={1}
             onPress={onClose}
           />
 
-          {/* Drawer */}
+          {/* Drawer - posicionado à direita */}
           <Animated.View
             style={[
               styles.drawer,
+              styles.drawerRight,
               {
                 transform: [{ translateX: slideAnim }],
               },
             ]}
           >
-            <SafeAreaView style={styles.drawerContent} edges={['top', 'left', 'bottom']}>
+            <SafeAreaView style={styles.drawerContent} edges={['top', 'right', 'bottom']}>
               {/* Header do Drawer */}
               <View style={styles.drawerHeader}>
                 <View style={styles.drawerHeaderContent}>
@@ -337,7 +339,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   overlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   drawer: {
@@ -345,6 +347,12 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: colors.bg.elevated,
     ...elevation[3],
+  },
+  drawerRight: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   drawerContent: {
     flex: 1,
