@@ -80,47 +80,36 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # - Suporte a roteamento client-side (SPA)
 # - Compressão gzip
 # - Cache para assets estáticos
-RUN cat > /etc/nginx/conf.d/default.conf << 'EOF'
-server {
-    listen 80;
-    server_name _;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    # Compressão gzip
-    gzip on;
-    gzip_vary on;
-    gzip_min_length 1024;
-    gzip_types
-        text/plain
-        text/css
-        text/xml
-        text/javascript
-        application/x-javascript
-        application/xml+rss
-        application/json
-        application/javascript
-        application/xml;
-
-    # SPA routing - redirecionar todas as rotas para index.html
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Cache para assets estáticos (1 ano)
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Não cachear index.html (sempre buscar versão nova)
-    location = /index.html {
-        add_header Cache-Control "no-cache, no-store, must-revalidate";
-        add_header Pragma "no-cache";
-        add_header Expires "0";
-    }
-}
-EOF
+RUN echo 'server { \
+    listen 80; \
+    server_name _; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    \
+    # Compressão gzip \
+    gzip on; \
+    gzip_vary on; \
+    gzip_min_length 1024; \
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json application/javascript application/xml; \
+    \
+    # SPA routing - redirecionar todas as rotas para index.html \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+    \
+    # Cache para assets estáticos (1 ano) \
+    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ { \
+        expires 1y; \
+        add_header Cache-Control "public, immutable"; \
+    } \
+    \
+    # Não cachear index.html (sempre buscar versão nova) \
+    location = /index.html { \
+        add_header Cache-Control "no-cache, no-store, must-revalidate"; \
+        add_header Pragma "no-cache"; \
+        add_header Expires "0"; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
 
 # Expor porta
 EXPOSE 80
