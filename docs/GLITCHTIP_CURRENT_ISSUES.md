@@ -144,3 +144,4 @@ python resolve_glitchtip_issues.py --issue-id 42
 4. **Depois:** Testar ambos
 5. **Final:** Marcar issues críticos como resolvidos
 
+

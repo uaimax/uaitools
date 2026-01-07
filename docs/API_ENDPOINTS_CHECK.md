@@ -143,3 +143,4 @@ O backend está completo e pronto para ser deployado. O app mobile pode usar tod
 **Última atualização:** 2025-12-27
 **Verificado por:** AI Assistant
 
+

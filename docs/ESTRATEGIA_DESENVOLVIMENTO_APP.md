@@ -135,3 +135,4 @@ React Native (se necessário - reutiliza lógica)
 **TL;DR**: A interface web é a base do app futuro. Não é desperdício, é investimento inteligente. 🚀
 
 
+

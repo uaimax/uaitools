@@ -130,3 +130,4 @@ O storage tem **fallback automático**:
 - [Cloudflare R2 Documentation](https://developers.cloudflare.com/r2/)
 - [django-storages S3 Backend](https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html)
 
+

@@ -467,3 +467,4 @@ tmux pipe-pane -t "$TMUX_SESSION:0.1" -o "cat >> $SCRIPT_DIR/logs/frontend-$(dat
 **Conclusão:** A estrutura atual do `dev-start.sh` **não é ideal** para captura direta de logs, mas pode ser adaptada com modificações moderadas. Recomenda-se implementar em fases, começando com logging estruturado JSON (já parcialmente implementado no backend) e depois adicionar captura via TMUX com stream para arquivos.
 
 
+

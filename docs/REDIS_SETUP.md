@@ -180,3 +180,4 @@ celery -A config inspect ping
 - [django-redis Documentation](https://django-redis.readthedocs.io/)
 - [Celery Redis Backend](https://docs.celeryproject.org/en/stable/getting-started/backends-and-brokers/redis.html)
 
+

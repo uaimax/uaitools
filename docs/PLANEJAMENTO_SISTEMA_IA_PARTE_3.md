@@ -85,3 +85,4 @@ Interface focada em simplicidade:
 **Próxima Ação**: Iniciar Fase 1 (Modelos e Migrations)
 
 
+

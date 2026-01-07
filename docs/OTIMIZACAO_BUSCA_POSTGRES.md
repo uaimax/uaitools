@@ -326,3 +326,4 @@ cache.set(cache_key, result, timeout=3600)  # 1 hora
 - [pgvector - Vector Similarity Search](https://github.com/pgvector/pgvector)
 - [Django Full-Text Search](https://docs.djangoproject.com/en/5.0/ref/contrib/postgres/search/)
 
+

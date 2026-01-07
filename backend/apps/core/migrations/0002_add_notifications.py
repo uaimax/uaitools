@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('core', '0001_initial'),
         ('accounts', '0005_add_updated_at_to_password_reset_token'),
-        ('supbrainnote', '0008_add_box_sharing'),
+        ('supbrainnote', '0001_initial'),  # Box e Note já existem desde 0001_initial
     ]
 
     operations = [

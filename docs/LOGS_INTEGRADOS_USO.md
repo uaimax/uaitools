@@ -311,3 +311,4 @@ JSON.parse(localStorage.getItem('dev_logs'))
 - [ ] Adicionar métricas de performance
 
 
+

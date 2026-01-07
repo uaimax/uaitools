@@ -72,3 +72,4 @@ Quando estiver pronto para usar configuração adequada:
 - [ ] Remover modo permissivo após configuração
 - [ ] Remover `csrf_permissive.py` quando não for mais necessário
 
+

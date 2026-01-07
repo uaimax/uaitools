@@ -169,3 +169,4 @@ CORS_ALLOW_ALL_ORIGINS = True  # Apenas para desenvolvimento!
 
 **Dica:** Use ngrok quando IP local não funcionar ou dispositivo estiver em rede diferente!
 
+

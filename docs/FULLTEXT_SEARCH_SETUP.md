@@ -98,3 +98,4 @@ print(f"Encontradas {notes.count()} notas")
 - Adicionar cache para perguntas frequentes
 - Considerar Vector Store (pgvector) para busca semântica futura
 
+

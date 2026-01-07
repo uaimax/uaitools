@@ -425,3 +425,4 @@ A implementação com **Supervisor** garante robustez e auto-restart, enquanto m
 
 **Próximo passo:** Implementar supervisor no `captain-definition` e testar em produção.
 
+

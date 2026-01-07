@@ -121,3 +121,4 @@ Após o próximo deploy, verificar:
 - `backend/captain-definition` - Configuração do Docker para deploy
 - `backend/requirements.txt` - Dependências (inclui django-celery-beat)
 
+

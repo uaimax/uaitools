@@ -199,3 +199,4 @@ O app inclui automaticamente o header `X-Workspace-ID` em todas as requisições
 - **Exemplo Arquitetural**: `examples/mobile/` (Smart Honey App)
 - **Backend APIs**: `backend/apps/supbrainnote/`
 
+

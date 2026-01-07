@@ -114,3 +114,4 @@ SECRET_KEY=...
 - Verifique os logs do CapRover para mensagens do Sentry
 
 
+

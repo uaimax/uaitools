@@ -310,3 +310,4 @@ Antes de mostrar a recomendação, valida:
 
 **Em resumo:** O sistema não é "mágico", mas é **inteligente e seguro**. Ele usa dados reais, múltiplas camadas de validação, e uma IA que recebe instruções claras. Mas sempre use seu próprio julgamento e questione se algo não fizer sentido.
 
+
