@@ -10,18 +10,21 @@ ARG VITE_APP_URL
 ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_ENVIRONMENT=production
 
-# Definir variáveis de ambiente para o build
+# Definir variáveis de ambiente para o build (exceto NODE_ENV)
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_APP_URL=${VITE_APP_URL}
 ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
 ENV VITE_SENTRY_ENVIRONMENT=${VITE_SENTRY_ENVIRONMENT}
-ENV NODE_ENV=production
 
 # Copiar arquivos de dependências
 COPY package*.json ./
 
 # Instalar dependências (incluindo devDependencies necessárias para o build)
-RUN npm ci
+# NODE_ENV não deve ser production durante npm ci para garantir instalação de devDependencies
+RUN npm ci --include=dev
+
+# Agora definir NODE_ENV=production para o build
+ENV NODE_ENV=production
 
 # Copiar código fonte
 COPY . .
