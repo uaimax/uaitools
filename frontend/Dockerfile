@@ -20,11 +20,8 @@ ENV VITE_SENTRY_ENVIRONMENT=${VITE_SENTRY_ENVIRONMENT}
 COPY package*.json ./
 
 # Instalar dependências (incluindo devDependencies necessárias para o build)
-# NODE_ENV não deve ser production durante npm ci para garantir instalação de devDependencies
-RUN npm ci --include=dev
-
-# Agora definir NODE_ENV=production para o build
-ENV NODE_ENV=production
+# Garantir que NODE_ENV não seja production durante a instalação
+RUN NODE_ENV=development npm ci
 
 # Copiar código fonte
 COPY . .
@@ -34,6 +31,7 @@ COPY . .
 # - Otimiza para produção quando NODE_ENV=production
 # - Carrega variáveis de .env.production se existir (ou ARGs passados como ENV)
 # - Embuti variáveis VITE_* no código JavaScript
+ENV NODE_ENV=production
 RUN npm run build
 
 # Estágio de produção - Nginx
