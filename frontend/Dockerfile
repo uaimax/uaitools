@@ -21,7 +21,7 @@ ENV NODE_ENV=production
 COPY package*.json ./
 
 # Instalar dependências (incluindo devDependencies necessárias para o build)
-RUN npm ci --only=production=false
+RUN npm ci
 
 # Copiar código fonte
 COPY . .
