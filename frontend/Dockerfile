@@ -44,8 +44,15 @@ RUN npm ci --prefer-offline --no-audit
 # Copiar tudo exceto node_modules (que já está instalado)
 COPY . .
 
-# Verificar se arquivos essenciais existem (debug)
-RUN ls -la /app/src/lib/ || echo "WARNING: src/lib não encontrado"
+# Verificações de debug
+RUN echo "=== Verificando estrutura de arquivos ===" && \
+    ls -la /app/src/lib/ && \
+    echo "=== Verificando se console-logger.ts existe ===" && \
+    test -f /app/src/lib/console-logger.ts && echo "✓ console-logger.ts encontrado" || echo "✗ console-logger.ts NÃO encontrado" && \
+    echo "=== Verificando node_modules/vite-tsconfig-paths ===" && \
+    test -d /app/node_modules/vite-tsconfig-paths && echo "✓ vite-tsconfig-paths instalado" || echo "✗ vite-tsconfig-paths NÃO instalado" && \
+    echo "=== Verificando vite.config.ts ===" && \
+    cat /app/vite.config.ts | grep -q "vite-tsconfig-paths" && echo "✓ vite.config.ts tem vite-tsconfig-paths" || echo "✗ vite.config.ts NÃO tem vite-tsconfig-paths"
 
 # Build da aplicação
 # Vite automaticamente:
@@ -84,13 +91,13 @@ server {
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_types 
-        text/plain 
-        text/css 
-        text/xml 
-        text/javascript 
-        application/x-javascript 
-        application/xml+rss 
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/x-javascript
+        application/xml+rss
         application/json
         application/javascript
         application/xml;
