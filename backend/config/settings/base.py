@@ -348,6 +348,20 @@ CORS_ALLOWED_ORIGINS = [
     # Expo tunnel origens são adicionadas automaticamente
     # Para desenvolvimento mobile, considere CORS_ALLOW_ALL_ORIGINS=True temporariamente
 ]
+
+# Adicionar origens de produção via variável de ambiente CORS_ALLOWED_ORIGINS
+# Formato: URL1,URL2,URL3 (sem espaços ou com espaços que serão removidos)
+_CORS_ENV = os.environ.get("CORS_ALLOWED_ORIGINS", "").strip()
+if _CORS_ENV:
+    for origin in _CORS_ENV.split(","):
+        origin = origin.strip().rstrip("/")
+        if origin and origin not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(origin)
+
+# Se FRONTEND_URL estiver configurado, adicionar também
+_FRONTEND_URL = os.environ.get("FRONTEND_URL", "").strip().rstrip("/")
+if _FRONTEND_URL and _FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(_FRONTEND_URL)
 # Headers permitidos
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -377,6 +391,18 @@ if CORS_ALLOWED_ORIGINS:
     CORS_ALLOW_ALL_ORIGINS = False  # Usar lista específica, não permitir todas
 else:
     CORS_ALLOW_ALL_ORIGINS = False
+
+# Log para debug (apenas se logger estiver disponível)
+try:
+    import logging
+    logger = logging.getLogger("django")
+    logger.warning(f"[CORS] ✅ CORS_ALLOWED_ORIGINS configurado com {len(CORS_ALLOWED_ORIGINS)} origens")
+    for origin in CORS_ALLOWED_ORIGINS[:5]:  # Mostrar primeiras 5
+        logger.warning(f"[CORS]   - {origin}")
+    if len(CORS_ALLOWED_ORIGINS) > 5:
+        logger.warning(f"[CORS]   ... e mais {len(CORS_ALLOWED_ORIGINS) - 5} origens")
+except Exception:
+    pass  # Ignorar se logger não estiver disponível ainda
 
 # LGPD - Política de Retenção de Dados (OBRIGATÓRIO)
 # Define quantos dias manter logs de auditoria
