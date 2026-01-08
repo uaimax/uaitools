@@ -44,15 +44,17 @@ RUN npm ci --prefer-offline --no-audit
 # Copiar tudo exceto node_modules (que já está instalado)
 COPY . .
 
-# Verificações de debug
+# Verificações de debug (após copiar código)
 RUN echo "=== Verificando estrutura de arquivos ===" && \
-    ls -la /app/src/lib/ && \
+    (test -d /app/src/lib && ls -la /app/src/lib/ || echo "⚠️ Diretório /app/src/lib/ não existe ainda") && \
     echo "=== Verificando se console-logger.ts existe ===" && \
-    test -f /app/src/lib/console-logger.ts && echo "✓ console-logger.ts encontrado" || echo "✗ console-logger.ts NÃO encontrado" && \
+    (test -f /app/src/lib/console-logger.ts && echo "✓ console-logger.ts encontrado" || echo "✗ console-logger.ts NÃO encontrado") && \
+    echo "=== Verificando se error-logger.ts existe ===" && \
+    (test -f /app/src/lib/error-logger.ts && echo "✓ error-logger.ts encontrado" || echo "✗ error-logger.ts NÃO encontrado") && \
     echo "=== Verificando node_modules/vite-tsconfig-paths ===" && \
-    test -d /app/node_modules/vite-tsconfig-paths && echo "✓ vite-tsconfig-paths instalado" || echo "✗ vite-tsconfig-paths NÃO instalado" && \
+    (test -d /app/node_modules/vite-tsconfig-paths && echo "✓ vite-tsconfig-paths instalado" || echo "✗ vite-tsconfig-paths NÃO instalado") && \
     echo "=== Verificando vite.config.ts ===" && \
-    cat /app/vite.config.ts | grep -q "vite-tsconfig-paths" && echo "✓ vite.config.ts tem vite-tsconfig-paths" || echo "✗ vite.config.ts NÃO tem vite-tsconfig-paths"
+    (cat /app/vite.config.ts | grep -q "vite-tsconfig-paths" && echo "✓ vite.config.ts tem vite-tsconfig-paths" || echo "✗ vite.config.ts NÃO tem vite-tsconfig-paths")
 
 # Build da aplicação
 # Vite automaticamente:

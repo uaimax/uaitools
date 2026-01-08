@@ -25,8 +25,4 @@ export default defineConfig({
     },
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
   },
-  // Garantir que Vite tente resolver extensões em ordem
-  optimizeDeps: {
-    include: ['@/lib/console-logger', '@/lib/error-logger'],
-  },
 })
