@@ -1,4 +1,16 @@
-"""Comando para popular dados iniciais do módulo investments."""
+"""Comando para popular dados iniciais do módulo investments.
+
+Este comando popula:
+- Templates de estratégias (necessário para o sistema funcionar)
+- Mapeamento de setores (necessário para o sistema funcionar)
+- Carteiras e ativos de exemplo (apenas em modo completo, não em --minimal)
+
+Uso:
+    python manage.py seed_investments                    # Modo completo (com mocks)
+    python manage.py seed_investments --minimal          # Modo mínimo (sem mocks)
+    python manage.py seed_investments --clear            # Limpa antes de popular
+    python manage.py seed_investments --workspace-id=xxx # Para workspace específico
+"""
 
 from decimal import Decimal
 
@@ -13,7 +25,10 @@ from apps.investments.services.brapi_provider import BrapiProvider
 class Command(BaseCommand):
     """Comando para popular dados iniciais."""
 
-    help = "Popula templates de estratégias e mapeamento de setores"
+    help = (
+        "Popula templates de estratégias e mapeamento de setores. "
+        "Use --minimal para apenas dados de referência (sem mocks)."
+    )
 
     def add_arguments(self, parser):
         """Adiciona argumentos ao comando."""
@@ -32,12 +47,18 @@ class Command(BaseCommand):
             action="store_true",
             help="Limpa dados existentes antes de popular",
         )
+        parser.add_argument(
+            "--minimal",
+            action="store_true",
+            help="Modo mínimo: apenas dados de referência (templates e mapeamentos), sem mocks (carteiras/ativos)",
+        )
 
     def handle(self, *args, **options):
         """Executa o comando."""
         workspace_id = options.get("workspace_id")
         workspace_name = options.get("workspace_name")
         clear = options.get("clear", False)
+        minimal = options.get("minimal", False)
 
         if workspace_id:
             workspaces = Workspace.objects.filter(id=workspace_id)
@@ -50,16 +71,23 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("Nenhum workspace encontrado."))
             return
 
-        # Popular templates de estratégias
+        if minimal:
+            self.stdout.write(self.style.SUCCESS("Modo mínimo ativado: apenas dados de referência (sem mocks)"))
+
+        # Popular templates de estratégias (necessário para o sistema funcionar)
         self._seed_strategy_templates(workspaces, clear)
 
-        # Popular mapeamento de setores
+        # Popular mapeamento de setores (necessário para o sistema funcionar)
         self._seed_sector_mapping(workspaces, clear)
 
-        # Popular carteira padrão com ativos de exemplo
-        self._seed_default_portfolio(workspaces, clear)
+        # Popular carteira padrão com ativos de exemplo (MOCK - apenas em modo completo)
+        if not minimal:
+            self._seed_default_portfolio(workspaces, clear)
+        else:
+            self.stdout.write(self.style.SUCCESS("Pulando criação de carteiras/ativos (modo mínimo)"))
 
-        self.stdout.write(self.style.SUCCESS("Dados iniciais populados com sucesso!"))
+        mode_text = "mínimo" if minimal else "completo"
+        self.stdout.write(self.style.SUCCESS(f"Dados iniciais populados com sucesso! (modo {mode_text})"))
 
     def _seed_strategy_templates(self, workspaces, clear: bool):
         """Popula templates de estratégias."""

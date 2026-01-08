@@ -22,6 +22,15 @@ seed: ## Popula dados de exemplo (tenants, users, leads)
 seed-clear: ## Limpa e recria dados de exemplo
 	cd backend && source venv/bin/activate 2>/dev/null || true && python manage.py seed --clear
 
+seed-investments: ## Popula dados de investments (templates, mapeamentos, carteiras de exemplo)
+	cd backend && source venv/bin/activate 2>/dev/null || true && python manage.py seed_investments
+
+seed-investments-minimal: ## Popula apenas dados essenciais de investments (sem mocks)
+	cd backend && source venv/bin/activate 2>/dev/null || true && python manage.py seed_investments --minimal
+
+seed-investments-clear: ## Limpa e recria dados de investments
+	cd backend && source venv/bin/activate 2>/dev/null || true && python manage.py seed_investments --clear
+
 clean: ## Remove arquivos temporários
 	find . -type d -name __pycache__ -exec rm -r {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true

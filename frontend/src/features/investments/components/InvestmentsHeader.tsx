@@ -1,6 +1,6 @@
 /** Header fixo com logo, seletor de carteira e menu do usuário. */
 
-import { Sparkles, ChevronDown, Settings, LogOut, User } from "lucide-react";
+import { Sparkles, ChevronDown, Settings, LogOut, User, Plus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -14,6 +14,7 @@ interface InvestmentsHeaderProps {
   selectedPortfolioId: string | null;
   onSelectPortfolio: (portfolioId: string) => void;
   onOpenSettings: () => void;
+  onCreatePortfolio?: () => void;
 }
 
 export function InvestmentsHeader({
@@ -21,6 +22,7 @@ export function InvestmentsHeader({
   selectedPortfolioId,
   onSelectPortfolio,
   onOpenSettings,
+  onCreatePortfolio,
 }: InvestmentsHeaderProps) {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -50,19 +52,32 @@ export function InvestmentsHeader({
 
         {/* Centro - Seletor de Carteira */}
         <div className="flex-1 flex justify-center px-4">
-          <div className="w-full max-w-xs">
+          <div className="w-full max-w-xs flex items-center gap-2">
             {portfolios.length > 0 && (
-              <Select
-                value={selectedPortfolioId || ""}
-                onChange={onSelectPortfolio}
-                placeholder="Selecione uma carteira"
-              >
-                {portfolios.map((portfolio) => (
-                  <SelectItem key={portfolio.id} value={portfolio.id}>
-                    {portfolio.name || "Carteira Principal"}
-                  </SelectItem>
-                ))}
-              </Select>
+              <>
+                <Select
+                  value={selectedPortfolioId || ""}
+                  onChange={onSelectPortfolio}
+                  placeholder="Selecione uma carteira"
+                  className="flex-1"
+                >
+                  {portfolios.map((portfolio) => (
+                    <SelectItem key={portfolio.id} value={portfolio.id}>
+                      {portfolio.name || "Carteira Principal"}
+                    </SelectItem>
+                  ))}
+                </Select>
+                {onCreatePortfolio && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={onCreatePortfolio}
+                    title="Criar nova carteira"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
