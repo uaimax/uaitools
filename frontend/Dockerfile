@@ -78,6 +78,14 @@ LABEL description="Frontend production server (nginx)"
 # Copiar arquivos buildados do estágio anterior
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Verificar se arquivos foram copiados corretamente
+RUN echo "=== Verificando arquivos copiados ===" && \
+    ls -la /usr/share/nginx/html/ && \
+    echo "=== Verificando se index.html existe ===" && \
+    test -f /usr/share/nginx/html/index.html && echo "✓ index.html encontrado" || echo "✗ index.html NÃO encontrado" && \
+    echo "=== Conteúdo de index.html (primeiras 10 linhas) ===" && \
+    head -10 /usr/share/nginx/html/index.html || echo "✗ Erro ao ler index.html"
+
 # Criar configuração do Nginx para SPA
 # - Suporte a roteamento client-side (SPA)
 # - Compressão gzip
@@ -113,12 +121,21 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
+# Verificar configuração do nginx
+RUN echo "=== Verificando configuração do nginx ===" && \
+    cat /etc/nginx/conf.d/default.conf && \
+    echo "=== Testando sintaxe do nginx ===" && \
+    nginx -t || echo "✗ Erro na configuração do nginx"
+
 # Expor porta
 EXPOSE 80
 
-# Healthcheck
+# Healthcheck (usar wget se disponível, caso contrário usar curl)
+# nginx:alpine não tem wget por padrão, então vamos instalar ou usar curl
+RUN apk add --no-cache wget || apk add --no-cache curl
+
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+    CMD wget --quiet --tries=1 --spider http://localhost/ || (curl -f http://localhost/ || exit 1)
 
 # Iniciar Nginx
 CMD ["nginx", "-g", "daemon off;"]
