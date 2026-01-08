@@ -1,6 +1,6 @@
 /**
  * Error Logger - Sistema de logging de erros para Sentry/GlitchTip
- * 
+ *
  * Inicializa o Sentry/GlitchTip se VITE_SENTRY_DSN estiver configurado
  * e fornece função logError para capturar erros.
  */
@@ -19,17 +19,17 @@ function initSentry(): void {
   }
 
   const dsn = import.meta.env.VITE_SENTRY_DSN;
-  
+
   if (!dsn) {
     // Sentry não configurado - modo silencioso
     return;
   }
 
   try {
-    const environment = import.meta.env.VITE_SENTRY_ENVIRONMENT || 
-                       import.meta.env.MODE || 
+    const environment = import.meta.env.VITE_SENTRY_ENVIRONMENT ||
+                       import.meta.env.MODE ||
                        'production';
-    
+
     const release = import.meta.env.VITE_RELEASE;
     const deploymentType = import.meta.env.VITE_DEPLOYMENT_TYPE;
 
@@ -61,7 +61,7 @@ initSentry();
 
 /**
  * Loga um erro para Sentry/GlitchTip ou console
- * 
+ *
  * @param error - Erro a ser logado
  * @param context - Contexto adicional (opcional)
  */
@@ -98,7 +98,7 @@ export function logError(
 
 /**
  * Loga uma mensagem para Sentry/GlitchTip ou console
- * 
+ *
  * @param message - Mensagem a ser logada
  * @param level - Nível do log (info, warning, error)
  * @param context - Contexto adicional (opcional)

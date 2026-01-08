@@ -1,6 +1,6 @@
 /**
  * Console Logger - Captura logs do console e envia para Sentry/GlitchTip
- * 
+ *
  * Opcionalmente captura console.log, console.error, console.warn
  * e envia para Sentry se estiver configurado.
  */
@@ -16,10 +16,10 @@ export function initConsoleLogger(): void {
   // - Capturar console.log/error/warn
   // - Enviar para Sentry com contexto
   // - Filtrar logs sensíveis
-  
+
   // Verificar se Sentry está configurado
   const dsn = import.meta.env.VITE_SENTRY_DSN;
-  
+
   if (!dsn) {
     // Sentry não configurado - não fazer nada
     return;
