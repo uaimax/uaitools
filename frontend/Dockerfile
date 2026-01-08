@@ -64,6 +64,7 @@ RUN echo "=== Verificando estrutura de arquivos ===" && \
 RUN npm run build
 
 # Verificar se build foi bem-sucedido e listar conteúdo
+# Debug: verificar conteúdo do dist após build
 RUN test -d /app/dist || (echo "ERROR: Build failed - dist directory not found" && exit 1) && \
     echo "=== Conteúdo do diretório dist ===" && \
     ls -la /app/dist/ && \
