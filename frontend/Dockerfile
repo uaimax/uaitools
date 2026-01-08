@@ -71,8 +71,12 @@ RUN test -d /app/dist || (echo "ERROR: Build failed - dist directory not found" 
     test -f /app/dist/index.html && echo "✓ index.html encontrado" || echo "✗ index.html NÃO encontrado" && \
     echo "=== Verificando se diretório assets existe ===" && \
     (test -d /app/dist/assets && echo "✓ Diretório assets encontrado" && ls -la /app/dist/assets/ || echo "✗ Diretório assets NÃO encontrado") && \
-    echo "=== Conteúdo de index.html (primeiras 20 linhas) ===" && \
-    head -20 /app/dist/index.html || echo "✗ Erro ao ler index.html"
+    echo "=== Conteúdo COMPLETO de index.html após build ===" && \
+    cat /app/dist/index.html && \
+    echo "=== Verificando se index.html referencia assets ===" && \
+    (grep -q "assets/" /app/dist/index.html && echo "✓ index.html referencia assets" || echo "✗ index.html NÃO referencia assets") && \
+    echo "=== Verificando se index.html tem script tag ===" && \
+    (grep -q "<script" /app/dist/index.html && echo "✓ index.html tem script tag" || echo "✗ index.html NÃO tem script tag")
 
 # ============================================================================
 # STAGE 2: Production (Nginx)
