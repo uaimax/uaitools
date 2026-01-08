@@ -63,8 +63,16 @@ RUN echo "=== Verificando estrutura de arquivos ===" && \
 # - Embuti variáveis VITE_* no código JavaScript
 RUN npm run build
 
-# Verificar se build foi bem-sucedido
-RUN test -d /app/dist || (echo "ERROR: Build failed - dist directory not found" && exit 1)
+# Verificar se build foi bem-sucedido e listar conteúdo
+RUN test -d /app/dist || (echo "ERROR: Build failed - dist directory not found" && exit 1) && \
+    echo "=== Conteúdo do diretório dist ===" && \
+    ls -la /app/dist/ && \
+    echo "=== Verificando se index.html existe ===" && \
+    test -f /app/dist/index.html && echo "✓ index.html encontrado" || echo "✗ index.html NÃO encontrado" && \
+    echo "=== Verificando se diretório assets existe ===" && \
+    (test -d /app/dist/assets && echo "✓ Diretório assets encontrado" && ls -la /app/dist/assets/ || echo "✗ Diretório assets NÃO encontrado") && \
+    echo "=== Conteúdo de index.html (primeiras 20 linhas) ===" && \
+    head -20 /app/dist/index.html || echo "✗ Erro ao ler index.html"
 
 # ============================================================================
 # STAGE 2: Production (Nginx)
@@ -83,8 +91,12 @@ RUN echo "=== Verificando arquivos copiados ===" && \
     ls -la /usr/share/nginx/html/ && \
     echo "=== Verificando se index.html existe ===" && \
     test -f /usr/share/nginx/html/index.html && echo "✓ index.html encontrado" || echo "✗ index.html NÃO encontrado" && \
-    echo "=== Conteúdo de index.html (primeiras 10 linhas) ===" && \
-    head -10 /usr/share/nginx/html/index.html || echo "✗ Erro ao ler index.html"
+    echo "=== Verificando se diretório assets existe ===" && \
+    (test -d /usr/share/nginx/html/assets && echo "✓ Diretório assets encontrado" && ls -la /usr/share/nginx/html/assets/ || echo "✗ Diretório assets NÃO encontrado") && \
+    echo "=== Conteúdo de index.html (primeiras 30 linhas) ===" && \
+    head -30 /usr/share/nginx/html/index.html || echo "✗ Erro ao ler index.html" && \
+    echo "=== Verificando referências a assets no index.html ===" && \
+    (grep -q "assets/" /usr/share/nginx/html/index.html && echo "✓ index.html referencia assets" || echo "✗ index.html NÃO referencia assets")
 
 # Criar configuração do Nginx para SPA
 # - Suporte a roteamento client-side (SPA)
