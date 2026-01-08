@@ -70,7 +70,7 @@ export function logError(
   context?: Record<string, any>
 ): void {
   // Se Sentry estiver inicializado, usar Sentry
-  if (isInitialized && Sentry.getCurrentHub().getClient()) {
+  if (isInitialized) {
     try {
       // Adicionar contexto se fornecido
       if (context) {
@@ -109,7 +109,7 @@ export function logMessage(
   context?: Record<string, any>
 ): void {
   // Se Sentry estiver inicializado, usar Sentry
-  if (isInitialized && Sentry.getCurrentHub().getClient()) {
+  if (isInitialized) {
     try {
       // Adicionar contexto se fornecido
       if (context) {
