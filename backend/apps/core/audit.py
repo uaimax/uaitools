@@ -62,29 +62,50 @@ def log_audit(
     user = get_current_user()
     # Tentar obter workspace
     workspace = None
+    workspace_id = None
+    
+    # Se a ação for delete, não tentar buscar workspace do banco
+    # pois o objeto pode já ter sido deletado
+    is_delete_action = action == "delete"
+    
     try:
         # Primeiro tentar workspace_id (mais seguro, não precisa de query adicional)
         if hasattr(instance, "workspace_id") and instance.workspace_id:
-            from apps.accounts.models import Workspace
-            try:
-                workspace = Workspace.objects.get(pk=instance.workspace_id)
-            except (Workspace.DoesNotExist, ValueError, TypeError):
-                pass
+            workspace_id = instance.workspace_id
+            # Se não for delete, tentar buscar do banco
+            if not is_delete_action:
+                from apps.accounts.models import Workspace
+                try:
+                    workspace = Workspace.objects.get(pk=instance.workspace_id)
+                except (Workspace.DoesNotExist, ValueError, TypeError):
+                    pass
         # Se não tiver workspace_id, tentar acessar workspace diretamente
         elif hasattr(instance, "workspace"):
             try:
                 workspace = getattr(instance, "workspace", None)
                 # Se for um objeto relacionado, garantir que está carregado
-                if workspace and hasattr(workspace, 'pk') and not workspace.pk:
-                    workspace = None
+                if workspace and hasattr(workspace, 'pk'):
+                    if workspace.pk:
+                        workspace_id = workspace.pk
+                    else:
+                        workspace = None
             except Exception:
                 pass
         # Se o usuário for de um workspace específico, usar isso como fallback
         if not workspace and user and hasattr(user, 'workspace') and user.workspace:
             workspace = user.workspace
+            if workspace and hasattr(workspace, 'pk') and workspace.pk:
+                workspace_id = workspace.pk
     except Exception:
         # Se houver qualquer erro ao obter workspace, continuar sem ele
         pass
+    
+    # Se for delete e temos workspace_id mas não o objeto, não tentar buscar do banco
+    # pois o workspace pode já ter sido deletado
+    if is_delete_action and workspace_id and not workspace:
+        # Para delete, não tentar buscar do banco - usar None ou workspace_id direto
+        # Mas como o campo é ForeignKey, precisamos do objeto ou None
+        workspace = None
 
     # Identificar se é dado pessoal
     personal_data_fields = [
@@ -126,11 +147,12 @@ def log_audit(
         ip_address = get_client_ip(request)
         user_agent = request.META.get("HTTP_USER_AGENT", "")[:500]
 
-    # Se workspace for None mas temos workspace_id, tentar obter do banco uma última vez
-    if workspace is None and hasattr(instance, "workspace_id") and instance.workspace_id:
+    # Se workspace for None mas temos workspace_id e NÃO for delete, tentar obter do banco uma última vez
+    # Para delete, não tentar buscar pois o objeto pode já ter sido deletado
+    if workspace is None and workspace_id and not is_delete_action:
         try:
             from apps.accounts.models import Workspace
-            workspace = Workspace.objects.get(pk=instance.workspace_id)
+            workspace = Workspace.objects.get(pk=workspace_id)
         except (Workspace.DoesNotExist, ValueError, TypeError):
             # Se não conseguir obter, deixar como None (campo permite null)
             pass

@@ -176,6 +176,12 @@ def post_delete_handler(sender, instance, **kwargs) -> None:
     if not hasattr(instance, "_meta"):
         return
 
+    # Se a instância sendo deletada É um Workspace, não criar auditlog
+    # pois o workspace já foi deletado e não podemos referenciá-lo
+    from apps.accounts.models import Workspace
+    if isinstance(instance, Workspace):
+        return
+
     # Registrar exclusão com valores finais
     personal_data_fields = [
         "email",
