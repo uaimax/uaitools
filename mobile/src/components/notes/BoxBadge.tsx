@@ -7,7 +7,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors, typography, spacing } from '@/theme';
 
 interface BoxBadgeProps {
-  name: string;
+  name: string | null | undefined;
   color: string | null;
   onPress?: () => void;
 }
@@ -24,14 +24,15 @@ function getBoxColor(name: string): string {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
 
-  const boxKeys = Object.keys(colors.box) as Array<keyof typeof colors.box>;
+  const boxKeys: (keyof typeof colors.box)[] = [1, 2, 3, 4, 5, 6, 7, 8];
   const index = Math.abs(hash) % boxKeys.length;
   return colors.box[boxKeys[index]];
 }
 
 export const BoxBadge: React.FC<BoxBadgeProps> = ({ name, color, onPress }) => {
-  const boxColor = color || getBoxColor(name);
-  const displayName = name.length > 8 ? `${name.slice(0, 8)}.` : name;
+  const safeName = name ?? 'Inbox';
+  const boxColor = color || getBoxColor(safeName);
+  const displayName = safeName.length > 8 ? `${safeName.slice(0, 8)}.` : safeName;
 
   const BadgeContent = (
     <View

@@ -145,7 +145,7 @@ EXPO_PUBLIC_API_URL=http://192.168.1.100:8000
 ### Produção
 ```bash
 # mobile/.env
-EXPO_PUBLIC_API_URL=https://api.supbrainnote.com
+EXPO_PUBLIC_API_URL=https://api.bau_mental.com
 ```
 
 ## Segurança

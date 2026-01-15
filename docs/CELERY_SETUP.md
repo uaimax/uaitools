@@ -3,7 +3,7 @@
 ## 📋 Visão Geral
 
 O Celery Worker é necessário para processar tarefas assíncronas, como:
-- Transcrição de áudio (SupBrainNote)
+- Transcrição de áudio (bau_mental)
 - Classificação de anotações
 - Outras tarefas assíncronas
 
@@ -83,8 +83,8 @@ caprover logs -a ut-be-celery
 Você deve ver:
 ```
 [tasks]
-  . apps.supbrainnote.tasks.transcribe_audio
-  . apps.supbrainnote.tasks.classify_note
+  . apps.bau_mental.tasks.transcribe_audio
+  . apps.bau_mental.tasks.classify_note
 ```
 
 ### 2. Verificar Tasks Pendentes
@@ -105,8 +105,8 @@ print(inspect.reserved())  # Tasks reservadas
 
 ```bash
 # No shell do Django
-from apps.supbrainnote.tasks import transcribe_audio
-from apps.supbrainnote.models import Note
+from apps.bau_mental.tasks import transcribe_audio
+from apps.bau_mental.models import Note
 
 # Pegar uma nota pendente
 note = Note.objects.filter(processing_status='pending').first()

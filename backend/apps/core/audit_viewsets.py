@@ -40,8 +40,17 @@ class AuditLogViewSet(WorkspaceViewSet, ReadOnlyModelViewSet):
         return AuditLogSerializer
 
     def get_queryset(self) -> models.QuerySet[AuditLog]:
-        """Retorna queryset filtrado por workspace e com filtros opcionais."""
+        """Retorna queryset filtrado por workspace e com filtros opcionais.
+        
+        Otimizações de performance:
+        - select_related('user', 'workspace'): Evita N+1 queries ao acessar
+          user.username, user.email e workspace.name nos serializers
+        """
         queryset = super().get_queryset()
+        
+        # Otimização: select_related para evitar N+1 queries
+        # Os serializers acessam user.username, user.email e workspace.name
+        queryset = queryset.select_related('user', 'workspace')
 
         # Filtros opcionais
         action = self.request.query_params.get("action")

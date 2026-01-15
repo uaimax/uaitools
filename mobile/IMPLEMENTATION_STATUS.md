@@ -1,4 +1,4 @@
-# Status de Implementação - SupBrainNote Mobile
+# Status de Implementação - bau_mental Mobile
 
 **Data**: 2025-01-27
 **Status**: ✅ Implementação Completa (Fase 1-5)
@@ -151,17 +151,19 @@
 - [ ] Busca de notas (debounce, highlight)
 - [ ] Refresh token automático
 - [ ] Splash screen nativa customizada
-- [ ] Assets (ícones, splash screens)
+- [x] Assets (ícones, splash screens) - Placeholders configurados, ver `assets/README.md`
 - [ ] EAS Build configurado
 - [ ] Testes automatizados
 
 ### Configuração Necessária
 - [ ] Criar `.env` em `mobile/` com `EXPO_PUBLIC_API_URL`
-- [ ] Adicionar assets em `mobile/assets/`:
-  - `icon.png` (1024x1024)
-  - `splash.png` (1284x2778)
-  - `adaptive-icon.png` (432x432)
-  - `favicon.png`
+- [x] Adicionar assets em `mobile/assets/`:
+  - [x] Estrutura criada e documentada
+  - [ ] `icon.png` (1024x1024) - Baú/tesouro dourado
+  - [ ] `splash.png` (1284x2778) - Splash screen com tema de baú
+  - [ ] `adaptive-icon.png` (432x432) - Ícone adaptativo Android
+  - [ ] `favicon.png` (opcional)
+  - Ver `assets/README.md` para especificações detalhadas
 - [ ] Obter EAS Project ID e adicionar em `app.json`
 
 ## 🎯 Funcionalidades Principais

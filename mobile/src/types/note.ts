@@ -8,6 +8,7 @@ export type SourceType = 'memo' | 'group_audio';
 export interface Note {
   id: string;
   audio_url: string;
+  audio_uri?: string; // Alias para compatibilidade (usado localmente)
   transcript: string | null;
   box_id: string | null;
   box_name: string | null;
@@ -24,6 +25,7 @@ export interface NoteUploadResponse {
   id: string;
   processing_status: ProcessingStatus;
   message?: string;
+  box_name?: string; // Nome da caixinha onde a nota foi salva
 }
 
 

@@ -60,16 +60,16 @@ export const API_ENDPOINTS = {
   passwordResetConfirm: '/api/v1/auth/password-reset-confirm/',
 
   // Notes
-  notes: '/api/v1/supbrainnote/notes/',
-  noteUpload: '/api/v1/supbrainnote/notes/upload/',
-  noteRecord: '/api/v1/supbrainnote/notes/record/',
-  noteMove: (id: string) => `/api/v1/supbrainnote/notes/${id}/move/`,
+  notes: '/api/v1/bau-mental/notes/',
+  noteUpload: '/api/v1/bau-mental/notes/upload/',
+  noteRecord: '/api/v1/bau-mental/notes/record/',
+  noteMove: (id: string) => `/api/v1/bau-mental/notes/${id}/move/`,
 
   // Boxes
-  boxes: '/api/v1/supbrainnote/boxes/',
+  boxes: '/api/v1/bau-mental/boxes/',
 
   // Query
-  query: '/api/v1/supbrainnote/query/',
+  query: '/api/v1/bau-mental/query/',
 
   // Notifications
   notifications: '/api/v1/notifications/',

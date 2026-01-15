@@ -8,7 +8,7 @@
 
 ## 📋 Sumário Executivo
 
-**Conclusão Principal:** Para o contexto atual do projeto (MicroSaaS, baixo/médio tráfego, SupBrainNote), **é viável e recomendado rodar Celery no mesmo container** usando um gerenciador de processos (supervisor ou script bash simples).
+**Conclusão Principal:** Para o contexto atual do projeto (MicroSaaS, baixo/médio tráfego, bau_mental), **é viável e recomendado rodar Celery no mesmo container** usando um gerenciador de processos (supervisor ou script bash simples).
 
 **Recomendação:** Implementar abordagem híbrida com **opção de separação futura**, começando com mesmo container para simplificar deploy e reduzir custos, com migração fácil para serviço separado quando necessário.
 
@@ -134,13 +134,13 @@
 
 1. **Tipo:** MicroSaaS Bootstrap
 2. **Tráfego Esperado:** Baixo a médio (inicial)
-3. **Uso de Celery:** Principalmente SupBrainNote (transcrições)
+3. **Uso de Celery:** Principalmente bau_mental (transcrições)
 4. **Frequência de Tasks:** Sob demanda (upload de áudio)
 5. **Complexidade:** MVP/Produto inicial
 
 ### Casos de Uso de Celery
 
-1. **Transcrição de Áudio (SupBrainNote)**
+1. **Transcrição de Áudio (bau_mental)**
    - Disparada: Upload de áudio
    - Frequência: Baixa a média (depende de uso)
    - Duração: 5-30 segundos por task

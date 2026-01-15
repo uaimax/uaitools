@@ -1,4 +1,4 @@
-# Otimização de Busca no PostgreSQL - SupBrainNote
+# Otimização de Busca no PostgreSQL - bau_mental
 
 ## 📊 Análise da Situação Atual
 
@@ -56,14 +56,14 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 2. **Criar migration para índice GIN**:
 
 ```python
-# backend/apps/supbrainnote/migrations/XXXX_add_fulltext_search.py
+# backend/apps/bau_mental/migrations/XXXX_add_fulltext_search.py
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('supbrainnote', '0001_initial'),  # Ajustar número
+        ('bau_mental', '0001_initial'),  # Ajustar número
     ]
 
     operations = [
@@ -146,13 +146,13 @@ django-pgvector>=0.1.0
 3. **Criar migration**:
 
 ```python
-# backend/apps/supbrainnote/migrations/XXXX_add_vector_embedding.py
+# backend/apps/bau_mental/migrations/XXXX_add_vector_embedding.py
 from django.db import migrations
 import pgvector.django
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('supbrainnote', 'XXXX_add_fulltext_search'),  # Depois do full-text
+        ('bau_mental', 'XXXX_add_fulltext_search'),  # Depois do full-text
     ]
 
     operations = [
@@ -180,7 +180,7 @@ class Migration(migrations.Migration):
 4. **Atualizar model**:
 
 ```python
-# backend/apps/supbrainnote/models.py
+# backend/apps/bau_mental/models.py
 import pgvector.django
 
 class Note(UUIDPrimaryKeyMixin, WorkspaceModel):
@@ -196,7 +196,7 @@ class Note(UUIDPrimaryKeyMixin, WorkspaceModel):
 5. **Gerar embeddings na task de transcrição**:
 
 ```python
-# backend/apps/supbrainnote/tasks.py
+# backend/apps/bau_mental/tasks.py
 from openai import OpenAI
 
 @shared_task

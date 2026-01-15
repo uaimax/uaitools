@@ -37,7 +37,7 @@ Módulos podem e devem possuir **interfaces independentes** quando fazem sentido
 **Uso:** Módulos single-purpose que são produtos por si só.
 
 **Exemplos:**
-- `/supbrainnote` - Anotador por voz (não é admin, é um app)
+- `/bau-mental` - Anotador por voz (não é admin, é um app)
 - `/investments` - Gestor de investimentos (produto standalone)
 - `/chat` - Chat interno (se existir)
 
@@ -53,7 +53,7 @@ Módulos podem e devem possuir **interfaces independentes** quando fazem sentido
 
 ```
 /admin/*          → Funcionalidades administrativas (MainLayout + Sidebar)
-/supbrainnote     → Módulo independente (Layout próprio)
+/bau-mental     → Módulo independente (Layout próprio)
 /investments      → Módulo independente (Layout próprio)
 /*                → Outros módulos independentes
 ```
@@ -113,10 +113,10 @@ Módulos podem e devem possuir **interfaces independentes** quando fazem sentido
 
 ## 📚 Exemplos
 
-### ✅ Correto: SupBrainNote como módulo independente
+### ✅ Correto: bau_mental como módulo independente
 
 ```
-/supbrainnote
+/bau-mental
 ├── Layout próprio (sem sidebar)
 ├── Botão de gravar gigante
 ├── Interface focada na gravação

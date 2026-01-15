@@ -23,7 +23,7 @@ urlpatterns = [
     path("", include("apps.accounts.urls")),  # Autenticação e tenants
     path("leads/", include("apps.leads.urls")),
     path("investments/", include("apps.investments.urls")),
-    path("supbrainnote/", include("apps.supbrainnote.urls")),
+    path("bau-mental/", include("apps.bau_mental.urls")),
     path("notifications/", include("apps.core.notification_urls")),
     # Auditoria LGPD
     path("audit/", include("apps.core.audit_urls")),

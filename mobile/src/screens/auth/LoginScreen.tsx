@@ -82,10 +82,10 @@ export const LoginScreen: React.FC = () => {
           <View style={styles.content}>
             {/* Logo */}
             <View style={styles.logoContainer}>
-              <Text style={styles.logo}>🧠</Text>
+              <Text style={styles.logo}>🏺</Text>
             </View>
 
-            <Text style={styles.title}>SupBrainNote</Text>
+            <Text style={styles.title}>Baú Mental</Text>
             <Text style={styles.subtitle}>
               Grave, jogue, esqueça.{'\n'}Quando precisar, pergunte.
             </Text>

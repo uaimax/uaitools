@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('core', '0001_initial'),
         ('accounts', '0005_add_updated_at_to_password_reset_token'),
-        ('supbrainnote', '0001_initial'),  # Box e Note já existem desde 0001_initial
+        ('bau_mental', '0001_initial'),  # Box e Note já existem desde 0001_initial
     ]
 
     operations = [
@@ -24,8 +24,8 @@ class Migration(migrations.Migration):
                 ('read', models.BooleanField(db_index=True, default=False, verbose_name='Lida')),
                 ('read_at', models.DateTimeField(blank=True, null=True, verbose_name='Lida em')),
                 ('created_at', models.DateTimeField(auto_now_add=True, db_index=True, verbose_name='Criado em')),
-                ('related_box', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='supbrainnote.box', verbose_name='Caixinha relacionada')),
-                ('related_note', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='supbrainnote.note', verbose_name='Nota relacionada')),
+                ('related_box', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='bau_mental.box', verbose_name='Caixinha relacionada')),
+                ('related_note', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='bau_mental.note', verbose_name='Nota relacionada')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='accounts.user', verbose_name='Usuário')),
             ],
             options={

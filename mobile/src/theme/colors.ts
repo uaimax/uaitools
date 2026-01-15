@@ -1,6 +1,6 @@
 /**
  * Design System - Cores
- * Dark theme padrão para SupBrainNote Mobile
+ * Dark theme padrão para Baú Mental Mobile
  */
 
 export const colors = {
@@ -9,13 +9,14 @@ export const colors = {
     base: '#0D0D0F',
     elevated: '#18181B',
     overlay: '#27272A',
+    surface: '#18181B', // Alias para elevated (compatibilidade)
   },
 
-  // Primary (Indigo)
+  // Primary (Gold/Treasure)
   primary: {
-    default: '#6366F1',
-    hover: '#818CF8',
-    pressed: '#4F46E5',
+    default: '#D4AF37', // Gold
+    hover: '#F4D03F',    // Light gold
+    pressed: '#C9A961',  // Dark gold
   },
 
   // Text
@@ -23,6 +24,7 @@ export const colors = {
     primary: '#FAFAFA',
     secondary: '#A1A1AA',
     tertiary: '#71717A',
+    onPrimary: '#0D0D0F', // Texto sobre fundo dourado (escuro para contraste)
   },
 
   // Semantic
@@ -35,20 +37,20 @@ export const colors = {
 
   // Recording states
   recording: {
-    idle: '#6366F1',
-    active: '#EF4444',
+    idle: '#D4AF37', // Gold (idle)
+    active: '#EF4444', // Red (recording)
   },
 
-  // Box colors (8 cores automáticas)
+  // Box colors (8 cores automáticas - tema tesouro)
   box: {
-    1: '#6366F1', // Indigo
-    2: '#8B5CF6', // Violet
-    3: '#EC4899', // Pink
-    4: '#F59E0B', // Amber
-    5: '#10B981', // Emerald
-    6: '#06B6D4', // Cyan
-    7: '#3B82F6', // Blue
-    8: '#F43F5E', // Rose
+    1: '#D4AF37', // Gold
+    2: '#CD7F32', // Bronze
+    3: '#B87333', // Copper
+    4: '#50C878', // Emerald
+    5: '#F4D03F', // Light gold
+    6: '#C9A961', // Dark gold
+    7: '#DAA520', // Goldenrod
+    8: '#FFD700', // Bright gold
   },
 } as const;
 

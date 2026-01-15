@@ -45,7 +45,7 @@ for arg in "$@"; do
     fi
 done
 
-echo -e "${BLUE}📱 SupBrainNote Mobile - Ambiente de Teste${NC}"
+echo -e "${BLUE}📱 bau_mental Mobile - Ambiente de Teste${NC}"
 echo -e "${YELLOW}💡 Padrão: Expo tunnel + ngrok para backend${NC}"
 if [ "$USE_BACKEND_TUNNEL" = false ]; then
     echo -e "${YELLOW}💡 Modo: Backend usando IP local (sem ngrok)${NC}"

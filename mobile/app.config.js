@@ -98,8 +98,8 @@ function withAndroidIntentFilters(config) {
 
 module.exports = {
   expo: {
-    name: 'SupBrainNote',
-    slug: 'supbrainnote-mobile',
+    name: 'Baú Mental',
+    slug: 'bau-mental-mobile',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -111,7 +111,7 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.uaitools.supbrainnote',
+      bundleIdentifier: 'com.uaitools.bau_mental',
       infoPlist: {
         UISupportsDocumentBrowser: true,
         CFBundleDocumentTypes: [
@@ -132,13 +132,13 @@ module.exports = {
         ],
       },
     },
-    scheme: 'supbrainnote',
+    scheme: 'bau-mental',
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#0D0D0F',
       },
-      package: 'com.uaitools.supbrainnote',
+      package: 'com.uaitools.bau_mental',
       permissions: [
         'android.permission.RECORD_AUDIO',
         'android.permission.MODIFY_AUDIO_SETTINGS',
@@ -168,7 +168,7 @@ module.exports = {
         'expo-av',
         {
           microphonePermission:
-            'SupBrainNote precisa acessar o microfone para gravar suas notas por voz.',
+            'Baú Mental precisa acessar o microfone para gravar suas notas por voz.',
         },
       ],
       'expo-secure-store',
@@ -177,7 +177,7 @@ module.exports = {
         'expo-share-intent',
         {
           ios: {
-            appGroupIdentifier: 'group.com.uaitools.supbrainnote',
+            appGroupIdentifier: 'group.com.uaitools.bau_mental',
           },
           android: {
             mimeTypes: ['audio/*'],
@@ -189,7 +189,7 @@ module.exports = {
     ],
     extra: {
       eas: {
-        projectId: '49aa7c31-abfa-4475-92dd-e646698d692a',
+        projectId: '68ced9fe-3c4c-49a2-81a9-c8f78791fdc3',
       },
       EXPO_PUBLIC_API_URL: 'https://ut-be.app.webmaxdigital.com',
     },

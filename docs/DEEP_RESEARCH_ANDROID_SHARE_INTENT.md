@@ -2,7 +2,7 @@
 
 ## 📋 Sumário Executivo
 
-**Problema**: O app SupBrainNote não aparece na lista de apps quando o usuário tenta compartilhar um áudio do WhatsApp.
+**Problema**: O app bau_mental não aparece na lista de apps quando o usuário tenta compartilhar um áudio do WhatsApp.
 
 **Causa Raiz**: Embora os `intentFilters` estejam configurados no `app.json`, o Expo pode não estar aplicando corretamente essas configurações no `AndroidManifest.xml` gerado, especialmente:
 1. Falta de `android:exported="true"` na MainActivity (necessário no Android 12+)

@@ -1,6 +1,6 @@
-# SupBrainNote Mobile
+# bau_mental Mobile
 
-App mobile React Native + Expo para SupBrainNote - gravação de notas por voz com classificação automática em "caixinhas" temáticas.
+App mobile React Native + Expo para bau_mental - gravação de notas por voz com classificação automática em "caixinhas" temáticas.
 
 ## 🚀 Quick Start
 
@@ -160,9 +160,9 @@ O app usa:
 
 ## 📚 Documentação
 
-- **Especificações**: Ver `docs/supbrainnote-mobile/1-interfaces.md` e `2-prd.md`
+- **Especificações**: Ver `docs/bau-mental-mobile/1-interfaces.md` e `2-prd.md`
 - **Exemplo Arquitetural**: Ver `examples/mobile/` (Smart Honey App)
-- **Backend**: Ver `backend/apps/supbrainnote/` para APIs disponíveis
+- **Backend**: Ver `backend/apps/bau_mental/` para APIs disponíveis
 
 ## 🐛 Debug
 

@@ -95,6 +95,115 @@ check_port() {
     fi
 }
 
+# Função para gerenciar PostgreSQL em Docker
+setup_postgres() {
+    echo -e "${BLUE}🐘 Configurando PostgreSQL...${NC}"
+    
+    # Verificar se Docker está instalado
+    if ! command -v docker &> /dev/null; then
+        echo -e "${YELLOW}⚠️  Docker não está instalado. Pulando PostgreSQL em container.${NC}"
+        echo -e "${YELLOW}💡 Para usar PostgreSQL local, instale Docker ou configure DATABASE_URL manualmente.${NC}"
+        return 0
+    fi
+    
+    # Verificar se Docker está rodando
+    if ! docker info &> /dev/null; then
+        echo -e "${YELLOW}⚠️  Docker não está rodando. Pulando PostgreSQL em container.${NC}"
+        echo -e "${YELLOW}💡 Inicie o Docker e execute o script novamente.${NC}"
+        return 0
+    fi
+    
+    # Configurações do PostgreSQL
+    POSTGRES_CONTAINER_NAME="saas-postgres-dev"
+    POSTGRES_PORT=5432
+    POSTGRES_USER="postgres"
+    POSTGRES_PASSWORD="postgres"
+    POSTGRES_DB="saas_dev"
+    
+    # Verificar se container já existe e está rodando
+    if docker ps -a --format '{{.Names}}' | grep -q "^${POSTGRES_CONTAINER_NAME}$"; then
+        # Container existe, verificar se está rodando
+        if docker ps --format '{{.Names}}' | grep -q "^${POSTGRES_CONTAINER_NAME}$"; then
+            echo -e "${GREEN}✅ Container PostgreSQL já está rodando${NC}"
+        else
+            echo -e "${YELLOW}🔄 Iniciando container PostgreSQL existente...${NC}"
+            docker start "$POSTGRES_CONTAINER_NAME" > /dev/null 2>&1
+            sleep 2
+            echo -e "${GREEN}✅ Container PostgreSQL iniciado${NC}"
+        fi
+    else
+        # Container não existe, criar novo
+        echo -e "${YELLOW}📦 Criando container PostgreSQL...${NC}"
+        
+        # Verificar se porta 5432 está livre
+        if lsof -Pi :$POSTGRES_PORT -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+            echo -e "${YELLOW}⚠️  Porta $POSTGRES_PORT já está em uso.${NC}"
+            echo -e "${YELLOW}💡 Se você já tem PostgreSQL rodando, o script usará a DATABASE_URL do .env${NC}"
+            return 0
+        fi
+        
+        # Criar container PostgreSQL
+        docker run -d \
+            --name "$POSTGRES_CONTAINER_NAME" \
+            -e POSTGRES_USER="$POSTGRES_USER" \
+            -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+            -e POSTGRES_DB="$POSTGRES_DB" \
+            -p "$POSTGRES_PORT:5432" \
+            -v "${SCRIPT_DIR}/.postgres-data:/var/lib/postgresql/data" \
+            postgres:15-alpine > /dev/null 2>&1
+        
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✅ Container PostgreSQL criado e iniciado${NC}"
+            echo -e "${YELLOW}⏳ Aguardando PostgreSQL ficar pronto...${NC}"
+            sleep 3
+            
+            # Aguardar PostgreSQL estar pronto (máximo 30 segundos)
+            local max_attempts=30
+            local attempt=0
+            while [ $attempt -lt $max_attempts ]; do
+                if docker exec "$POSTGRES_CONTAINER_NAME" pg_isready -U "$POSTGRES_USER" > /dev/null 2>&1; then
+                    echo -e "${GREEN}✅ PostgreSQL está pronto${NC}"
+                    break
+                fi
+                attempt=$((attempt + 1))
+                sleep 1
+            done
+            
+            if [ $attempt -eq $max_attempts ]; then
+                echo -e "${RED}❌ Timeout aguardando PostgreSQL ficar pronto${NC}"
+                return 1
+            fi
+        else
+            echo -e "${RED}❌ Erro ao criar container PostgreSQL${NC}"
+            return 1
+        fi
+    fi
+    
+    # Configurar DATABASE_URL se não estiver definida no .env
+    if [ -f "$SCRIPT_DIR/.env" ]; then
+        # Verificar se DATABASE_URL já está definida
+        if grep -q "^DATABASE_URL=" "$SCRIPT_DIR/.env" 2>/dev/null; then
+            echo -e "${GREEN}✅ DATABASE_URL já configurada no .env${NC}"
+        else
+            # Adicionar DATABASE_URL ao .env
+            echo "" >> "$SCRIPT_DIR/.env"
+            echo "# PostgreSQL local (Docker)" >> "$SCRIPT_DIR/.env"
+            echo "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}" >> "$SCRIPT_DIR/.env"
+            echo -e "${GREEN}✅ DATABASE_URL adicionada ao .env${NC}"
+        fi
+    else
+        # Criar .env se não existir
+        echo "# PostgreSQL local (Docker)" > "$SCRIPT_DIR/.env"
+        echo "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}" >> "$SCRIPT_DIR/.env"
+        echo -e "${GREEN}✅ Arquivo .env criado com DATABASE_URL${NC}"
+    fi
+    
+    # Exportar DATABASE_URL para o ambiente atual
+    export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}"
+    
+    echo -e "${GREEN}✅ PostgreSQL configurado: postgresql://${POSTGRES_USER}:***@localhost:${POSTGRES_PORT}/${POSTGRES_DB}${NC}"
+}
+
 # Função para setup do backend
 setup_backend() {
     echo -e "${BLUE}📦 Configurando Backend...${NC}"
@@ -159,11 +268,46 @@ EOF
     echo -e "${GREEN}   ✅ Backend configurado${NC}"
 }
 
+# Função para verificar se npm está disponível
+check_npm() {
+    # Tentar encontrar npm de várias formas
+    if command -v npm &> /dev/null; then
+        return 0
+    fi
+    
+    # Tentar carregar .zshrc/.bashrc e verificar novamente
+    if [ -f "$HOME/.zshrc" ]; then
+        source "$HOME/.zshrc" 2>/dev/null
+        if command -v npm &> /dev/null; then
+            return 0
+        fi
+    fi
+    
+    if [ -f "$HOME/.bashrc" ]; then
+        source "$HOME/.bashrc" 2>/dev/null
+        if command -v npm &> /dev/null; then
+            return 0
+        fi
+    fi
+    
+    return 1
+}
+
 # Função para setup do frontend
 setup_frontend() {
     echo -e "${BLUE}📦 Configurando Frontend...${NC}"
 
     cd "$FRONTEND_DIR"
+
+    # Verificar se npm está disponível
+    if ! check_npm; then
+        echo -e "${RED}   ❌ npm não encontrado no sistema${NC}"
+        echo -e "${YELLOW}   💡 Instale Node.js e npm primeiro:${NC}"
+        echo -e "${YELLOW}      - Ubuntu/Debian: sudo apt install nodejs npm${NC}"
+        echo -e "${YELLOW}      - Ou use nvm: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash${NC}"
+        echo -e "${YELLOW}   ⚠️  Pulando instalação de dependências do frontend${NC}"
+        return 1
+    fi
 
     # Verificar se node_modules existe
     if [ ! -d "node_modules" ]; then
@@ -223,6 +367,10 @@ if [ "$HAS_TMUX" = true ]; then
             sleep 1
         else
             echo -e "${YELLOW}📺 Sessão tmux '$TMUX_SESSION' já existe${NC}"
+            # Recarregar configuração do tmux se .tmux.conf existir
+            if [ -f "$HOME/.tmux.conf" ]; then
+                tmux source-file "$HOME/.tmux.conf" 2>/dev/null || true
+            fi
             echo -e "${GREEN}🔌 Fazendo attach à sessão existente...${NC}"
             echo ""
             echo -e "${BLUE}💡 Dica: Use ${YELLOW}./dev-start.sh --restart${NC}${BLUE} para reiniciar tudo${NC}"
@@ -234,6 +382,7 @@ if [ "$HAS_TMUX" = true ]; then
     fi
 
     # Setup
+    setup_postgres
     setup_backend
     setup_frontend
     setup_mobile
@@ -321,6 +470,12 @@ if [ "$HAS_TMUX" = true ]; then
 
     # Aguarda um pouco para garantir que a sessão foi criada
     sleep 1
+    
+    # Recarregar configuração do tmux se .tmux.conf existir
+    if [ -f "$HOME/.tmux.conf" ]; then
+        tmux source-file "$HOME/.tmux.conf" 2>/dev/null || true
+        echo -e "${GREEN}✅ Configuração do tmux carregada (mouse habilitado)${NC}"
+    fi
 
     # #region agent log - DEBUG: Verificando sessão após sleep
     SESSION_CHECK=$(tmux has-session -t "$TMUX_SESSION" 2>&1; echo "exit:$?")
@@ -340,34 +495,62 @@ if [ "$HAS_TMUX" = true ]; then
 
     # Só continua se a sessão foi criada com sucesso
     if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
-        # Dividir janela horizontalmente (Backend | Frontend)
-        tmux split-window -h -t "$TMUX_SESSION:0" -c "$FRONTEND_DIR" \
-            "echo -e '${GREEN}✅ Frontend iniciado!${NC}' && \
-             echo -e '${BLUE}🌐 http://localhost:$FRONTEND_PORT${NC}' && \
-             echo '' && \
-             npm run dev -- --host 0.0.0.0 --port $FRONTEND_PORT" 2>/dev/null || {
-            echo -e "${YELLOW}⚠️  Erro ao dividir janela tmux. Continuando com backend apenas...${NC}"
-        }
-
-        # Dividir painel direito (Frontend) verticalmente (Frontend | Celery Worker)
-        tmux split-window -v -t "$TMUX_SESSION:0.1" -c "$BACKEND_DIR" \
-            "source venv/bin/activate && \
-             echo -e '${GREEN}✅ Celery Worker iniciado!${NC}' && \
-             echo -e '${YELLOW}📌 Processando tasks assíncronas...${NC}' && \
-             echo '' && \
-             celery -A config worker -l info" 2>/dev/null || {
-            echo -e "${YELLOW}⚠️  Erro ao iniciar Celery worker. Continuando sem Celery...${NC}"
-        }
-
-        # Dividir painel do Celery Worker horizontalmente (Worker | Beat)
-        tmux split-window -h -t "$TMUX_SESSION:0.2" -c "$BACKEND_DIR" \
-            "source venv/bin/activate && \
-             echo -e '${GREEN}✅ Celery Beat iniciado!${NC}' && \
-             echo -e '${YELLOW}📌 Agendando tasks periódicas...${NC}' && \
-             echo '' && \
-             celery -A config beat -l info" 2>/dev/null || {
-            echo -e "${YELLOW}⚠️  Erro ao iniciar Celery Beat. Continuando sem Beat...${NC}"
-        }
+        # Aguardar um pouco para garantir que a sessão está totalmente criada
+        sleep 1
+        
+        # Verificar se frontend existe antes de tentar dividir
+        if [ ! -d "$FRONTEND_DIR" ]; then
+            echo -e "${YELLOW}⚠️  Diretório frontend não encontrado. Continuando apenas com backend...${NC}"
+        elif ! check_npm; then
+            echo -e "${YELLOW}⚠️  npm não encontrado. Frontend não será iniciado.${NC}"
+            echo -e "${YELLOW}💡 Instale Node.js e npm primeiro para usar o frontend.${NC}"
+        else
+            # Dividir janela horizontalmente (Backend | Frontend) - 50/50
+            echo -e "${YELLOW}📦 Dividindo janela para iniciar Frontend...${NC}"
+            
+            # Criar o split primeiro (sem comando, apenas dividir)
+            tmux split-window -h -t "$TMUX_SESSION:0" -c "$FRONTEND_DIR" 2>&1
+            SPLIT_EXIT_CODE=$?
+            
+            if [ $SPLIT_EXIT_CODE -ne 0 ]; then
+                echo -e "${RED}❌ Erro ao dividir janela tmux (exit code: $SPLIT_EXIT_CODE)${NC}"
+                echo -e "${YELLOW}⚠️  Continuando com backend apenas...${NC}"
+            else
+                # Aguardar um pouco para o split ser criado
+                sleep 0.5
+                
+                # Verificar se o split foi criado com sucesso
+                PANE_COUNT=$(tmux display-message -t "$TMUX_SESSION:0" -p '#{window_panes}' 2>/dev/null || echo "0")
+                if [ "$PANE_COUNT" -ge 2 ]; then
+                    echo -e "${GREEN}✅ Janela dividida com sucesso (${PANE_COUNT} painéis)${NC}"
+                    
+                    # Ajustar layout para dividir igualmente (50/50)
+                    tmux select-layout -t "$TMUX_SESSION:0" even-horizontal 2>/dev/null || {
+                        echo -e "${YELLOW}⚠️  Não foi possível ajustar layout, mas split foi criado${NC}"
+                    }
+                    
+                    # Agora executar o comando do frontend no painel direito (0.1)
+                    # O problema é que o tmux pode não ter acesso ao npm se não estiver no PATH
+                    # Vamos tentar carregar o ambiente completo do shell
+                    SHELL_NAME=$(basename "$SHELL" 2>/dev/null || echo "bash")
+                    
+                    tmux send-keys -t "$TMUX_SESSION:0.1" "echo -e '${GREEN}✅ Frontend iniciado!${NC}'" C-m
+                    tmux send-keys -t "$TMUX_SESSION:0.1" "echo -e '${BLUE}🌐 http://localhost:$FRONTEND_PORT${NC}'" C-m
+                    tmux send-keys -t "$TMUX_SESSION:0.1" "echo ''" C-m
+                    # Carregar shell interativo completo para ter acesso a npm/nvm/etc
+                    # Primeiro, vamos tentar carregar o ambiente e depois executar npm
+                    if [ "$SHELL_NAME" = "zsh" ]; then
+                        # Para zsh, carregar .zshrc e depois executar
+                        tmux send-keys -t "$TMUX_SESSION:0.1" "source ~/.zshrc 2>/dev/null; cd '$FRONTEND_DIR' && npm run dev -- --host 0.0.0.0 --port $FRONTEND_PORT" C-m
+                    else
+                        # Para bash, carregar .bashrc e depois executar
+                        tmux send-keys -t "$TMUX_SESSION:0.1" "source ~/.bashrc 2>/dev/null; cd '$FRONTEND_DIR' && npm run dev -- --host 0.0.0.0 --port $FRONTEND_PORT" C-m
+                    fi
+                else
+                    echo -e "${YELLOW}⚠️  Aviso: Apenas ${PANE_COUNT} painel(éis) encontrado(s) após split${NC}"
+                fi
+            fi
+        fi
 
         # Adicionar janela para Expo Mobile (se diretório mobile existir)
         if [ -d "$MOBILE_DIR" ]; then
@@ -418,20 +601,6 @@ if [ "$HAS_TMUX" = true ]; then
             }
         fi
 
-        # Capturar logs do Celery Worker (painel 0.2) se existir
-        if tmux list-panes -t "$TMUX_SESSION:0" | grep -q "0.2"; then
-            tmux pipe-pane -t "$TMUX_SESSION:0.2" -o "cat >> $LOGS_DIR/celery-worker-$LOG_DATE.log" 2>/dev/null || {
-                echo -e "${YELLOW}⚠️  Não foi possível configurar captura de logs do Celery Worker${NC}"
-            }
-        fi
-
-        # Capturar logs do Celery Beat (painel 0.3) se existir
-        if tmux list-panes -t "$TMUX_SESSION:0" | grep -q "0.3"; then
-            tmux pipe-pane -t "$TMUX_SESSION:0.3" -o "cat >> $LOGS_DIR/celery-beat-$LOG_DATE.log" 2>/dev/null || {
-                echo -e "${YELLOW}⚠️  Não foi possível configurar captura de logs do Celery Beat${NC}"
-            }
-        fi
-
         # Capturar logs do Expo Mobile (janela mobile) se existir
         if [ -d "$MOBILE_DIR" ] && tmux list-windows -t "$TMUX_SESSION" | grep -q "mobile"; then
             tmux pipe-pane -t "$TMUX_SESSION:mobile" -o "cat >> $LOGS_DIR/expo-mobile-$LOG_DATE.log" 2>/dev/null || {
@@ -448,8 +617,6 @@ if [ "$HAS_TMUX" = true ]; then
         echo -e "${BLUE}📊 Serviços rodando:${NC}"
         echo -e "   ${GREEN}Backend:${NC}      http://localhost:$BACKEND_PORT"
         echo -e "   ${GREEN}Frontend:${NC}     http://localhost:$FRONTEND_PORT"
-        echo -e "   ${GREEN}Celery Worker:${NC} Processando tasks assíncronas"
-        echo -e "   ${GREEN}Celery Beat:${NC}   Agendando tasks periódicas (limpeza de áudios às 3h)"
         if [ -d "$MOBILE_DIR" ]; then
             if [ -f "$MOBILE_DIR/node_modules/expo-dev-client/package.json" ]; then
                 echo -e "   ${GREEN}Expo Dev Client:${NC} Rodando com tunnel (janela 'mobile')"
@@ -462,7 +629,7 @@ if [ "$HAS_TMUX" = true ]; then
         echo ""
         echo -e "${BLUE}💡 Comandos tmux:${NC}"
         echo -e "   ${YELLOW}Ctrl+B + D${NC}     - Detach (sair sem parar serviços)"
-        echo -e "   ${YELLOW}Ctrl+B + ←/→/↑/↓${NC} - Alternar entre painéis (Backend/Frontend/Celery Worker/Celery Beat)"
+        echo -e "   ${YELLOW}Ctrl+B + ←/→${NC}   - Alternar entre painéis (Backend/Frontend)"
         echo -e "   ${YELLOW}Ctrl+B + 0/1${NC}   - Alternar entre janelas (0=dev, 1=mobile)"
         echo -e "   ${YELLOW}Ctrl+B + Q${NC}     - Mostrar números dos painéis"
         echo -e "   ${YELLOW}Ctrl+B + C${NC}     - Criar nova janela"
@@ -511,6 +678,7 @@ if [ "$HAS_TMUX" = false ]; then
     echo -e "${YELLOW}💡 Para melhor experiência, instale: ${NC}sudo apt install tmux${BLUE} (Linux) ou ${NC}brew install tmux${BLUE} (Mac)"
     echo ""
 
+    setup_postgres
     setup_backend
 
     # Obter prefixo do admin

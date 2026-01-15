@@ -39,13 +39,13 @@ Origin checking failed - https://ut-be.app.webmaxdigital.com does not match any 
 **Erro:**
 ```
 ValueError: Erro ao baixar arquivo do storage: [Errno 2] No such file or directory:
-'/app/media/supbrainnote/audios/082d9b0c-20cf-45cf-8bc8-4e5970c84e93/2025/12/28/31bd06e4-5d09-4482-9_zKWv1do.m4a'
+'/app/media/bau_mental/audios/082d9b0c-20cf-45cf-8bc8-4e5970c84e93/2025/12/28/31bd06e4-5d09-4482-9_zKWv1do.m4a'
 ```
 
 **Detalhes:**
 - **Frequência:** 1 ocorrência
 - **Última ocorrência:** 2025-12-28 01:38:43
-- **Task:** `apps.supbrainnote.tasks.transcribe_audio`
+- **Task:** `apps.bau_mental.tasks.transcribe_audio`
 - **Note ID:** `e26e17b9-854c-4ee9-8c7d-2a1d8ce3a272`
 
 **Causa:**
@@ -56,8 +56,8 @@ ValueError: Erro ao baixar arquivo do storage: [Errno 2] No such file or directo
 
 **Stack Trace:**
 ```
-apps/supbrainnote/storage.py:71 - _get_local_storage()._open()
-apps/supbrainnote/tasks.py:175 - note.audio_file.open('rb')
+apps/bau_mental/storage.py:71 - _get_local_storage()._open()
+apps/bau_mental/tasks.py:175 - note.audio_file.open('rb')
 ```
 
 **Solução:**

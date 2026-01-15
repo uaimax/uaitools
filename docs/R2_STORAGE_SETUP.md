@@ -2,7 +2,7 @@
 
 ## 📋 Visão Geral
 
-O SupBrainNote usa Cloudflare R2 para armazenar arquivos de áudio. O storage tem fallback automático para sistema de arquivos local se R2 não estiver configurado.
+O bau_mental usa Cloudflare R2 para armazenar arquivos de áudio. O storage tem fallback automático para sistema de arquivos local se R2 não estiver configurado.
 
 ## 🔧 Variáveis de Ambiente Necessárias
 
@@ -90,9 +90,9 @@ Ou criar um endpoint de teste (temporário):
 
 ```python
 # Em uma view temporária
-from apps.supbrainnote.storage import SupBrainNoteAudioStorage
+from apps.bau_mental.storage import bau_mentalAudioStorage
 
-storage = SupBrainNoteAudioStorage()
+storage = bau_mentalAudioStorage()
 print(f"Storage usando R2: {not storage._use_local}")
 print(f"Bucket: {storage.bucket_name if hasattr(storage, 'bucket_name') else 'N/A'}")
 ```

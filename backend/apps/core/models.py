@@ -230,7 +230,7 @@ class Notification(UUIDPrimaryKeyMixin, models.Model):
     title = models.CharField(max_length=255, verbose_name="Título")
     message = models.TextField(verbose_name="Mensagem")
     related_box = models.ForeignKey(
-        "supbrainnote.Box",
+        "bau_mental.Box",
         null=True,
         blank=True,
         on_delete=models.CASCADE,
@@ -238,7 +238,7 @@ class Notification(UUIDPrimaryKeyMixin, models.Model):
         verbose_name="Caixinha relacionada",
     )
     related_note = models.ForeignKey(
-        "supbrainnote.Note",
+        "bau_mental.Note",
         null=True,
         blank=True,
         on_delete=models.CASCADE,

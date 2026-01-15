@@ -71,7 +71,7 @@ backend/
 
 frontend/             # React SPA + Tailwind CSS (Fase 4)
 
-mobile/               # App React Native + Expo (SupBrainNote Mobile)
+mobile/               # App React Native + Expo (bau_mental Mobile)
 ├── src/              # Código fonte
 │   ├── components/   # Componentes reutilizáveis
 │   ├── screens/     # Telas principais

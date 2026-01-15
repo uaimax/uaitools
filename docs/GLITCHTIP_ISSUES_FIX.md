@@ -7,8 +7,8 @@
 
 | Issue ID | Título | Severidade | Status |
 |----------|--------|-----------|--------|
-| #10, #13 | `ProgrammingError: relation "supbrainnote_note" does not exist` | 🔴 CRÍTICO | ✅ Corrigido |
-| #11, #12, #14, #15 | `HTTP Error 500` (GET/POST `/api/v1/supbrainnote/notes/`) | 🔴 CRÍTICO | ✅ Corrigido |
+| #10, #13 | `ProgrammingError: relation "bau_mental_note" does not exist` | 🔴 CRÍTICO | ✅ Corrigido |
+| #11, #12, #14, #15 | `HTTP Error 500` (GET/POST `/api/v1/bau-mental/notes/`) | 🔴 CRÍTICO | ✅ Corrigido |
 | #7 | `ModuleNotFoundError: No module named 'django_celery_beat'` | 🟡 MÉDIO | ✅ Corrigido |
 | #6 | `AttributeError: 'Workspace' object has no attribute 'members'` | 🟡 MÉDIO | ✅ Já estava corrigido |
 | #5 | `HTTP Error 401: POST /api/v1/auth/login/` | 🟢 BAIXO | ⚠️ Esperado (credenciais inválidas) |
@@ -17,12 +17,12 @@
 
 ### Erro
 ```
-ProgrammingError: relation "supbrainnote_note" does not exist
-LINE 1: INSERT INTO "supbrainnote_note" (...)
+ProgrammingError: relation "bau_mental_note" does not exist
+LINE 1: INSERT INTO "bau_mental_note" (...)
 ```
 
 ### Causa
-As migrations do app `supbrainnote` **não foram aplicadas** no banco de dados de produção.
+As migrations do app `bau_mental` **não foram aplicadas** no banco de dados de produção.
 
 ### Impacto
 - ❌ Upload de notas falha (HTTP 500)
@@ -50,8 +50,8 @@ As migrations do app `supbrainnote` **não foram aplicadas** no banco de dados d
    - Procurar por: `✅ Migrations aplicadas`
 
 3. **Testar endpoints:**
-   - `GET /api/v1/supbrainnote/notes/` deve retornar 200 (mesmo que vazio)
-   - `POST /api/v1/supbrainnote/notes/upload/` deve funcionar
+   - `GET /api/v1/bau-mental/notes/` deve retornar 200 (mesmo que vazio)
+   - `POST /api/v1/bau-mental/notes/upload/` deve funcionar
 
 ## 🟡 Problema Secundário: Workspace Não Encontrado
 
@@ -108,8 +108,8 @@ if not workspace:
 Após o próximo deploy, verificar:
 
 - [ ] Migrations aplicadas (logs do CapRover)
-- [ ] Tabela `supbrainnote_note` existe no banco
-- [ ] Tabela `supbrainnote_box` existe no banco
+- [ ] Tabela `bau_mental_note` existe no banco
+- [ ] Tabela `bau_mental_box` existe no banco
 - [ ] Workspace `c7631f01-9c34-4279-8ea7-d529da3fc31e` existe
 - [ ] App mobile consegue fazer upload
 - [ ] App mobile consegue listar notas

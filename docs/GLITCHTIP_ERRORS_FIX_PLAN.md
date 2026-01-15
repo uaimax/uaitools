@@ -87,7 +87,7 @@ python resolve_glitchtip_issues.py --issue-id 43
 **Descrição:**
 ```
 Erro ao baixar arquivo do storage: [Errno 2] No such file or directory:
-'/app/media/supbrainnote/audios/...'
+'/app/media/bau_mental/audios/...'
 ```
 
 **Causa:**

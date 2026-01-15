@@ -1,0 +1,49 @@
+# EAS Build ignore file (raiz do projeto)
+# Diretórios que não devem ser incluídos no build do mobile
+
+# Dados do PostgreSQL
+.postgres-data/
+.postgres-data
+
+# Backend
+backend/
+
+# Frontend
+frontend/
+
+# Docs
+docs/
+
+# Scripts
+scripts/
+
+# Git
+.git/
+.gitignore
+
+# Node modules (serão instalados no build)
+node_modules/
+
+# Build artifacts
+.expo/
+dist/
+build/
+*.log
+
+# Cache
+.cache/
+.npm/
+.yarn/
+
+# Arquivos de ambiente locais
+.env.local
+.env.*.local
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.cursor/
+.vscode/
+.idea/

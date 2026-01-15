@@ -1,9 +1,9 @@
 #!/bin/bash
-# Script para iniciar Celery Worker do SupBrainNote
+# Script para iniciar Celery Worker do bau_mental
 
 cd "$(dirname "$0")/backend"
 
-echo "🚀 Iniciando Celery Worker para SupBrainNote..."
+echo "🚀 Iniciando Celery Worker para bau_mental..."
 echo ""
 
 # Verificar se venv existe
@@ -36,8 +36,8 @@ fi
 
 echo "✅ Iniciando Celery Worker..."
 echo "📌 Tasks disponíveis:"
-echo "   - apps.supbrainnote.tasks.transcribe_audio"
-echo "   - apps.supbrainnote.tasks.classify_note"
+echo "   - apps.bau_mental.tasks.transcribe_audio"
+echo "   - apps.bau_mental.tasks.classify_note"
 echo ""
 echo "💡 Para parar: Ctrl+C"
 echo ""

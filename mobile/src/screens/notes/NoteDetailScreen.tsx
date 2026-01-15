@@ -232,11 +232,11 @@ export const NoteDetailScreen: React.FC = () => {
         {/* Tag da Caixinha */}
         <View style={styles.boxSection}>
           <BoxBadge
-            name={note.box_name || 'Inbox'}
+            name={note.box_name}
             color={note.box_color || colors.text.tertiary}
             onPress={
               note.box_id
-                ? () => navigation.navigate('NotesList', { boxId: note.box_id })
+                ? () => navigation.navigate('NotesList', { boxId: note.box_id || undefined })
                 : undefined
             }
           />

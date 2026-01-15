@@ -40,19 +40,19 @@ export const Button: React.FC<ButtonProps> = ({
   const buttonStyle: ViewStyle[] = [
     styles.base,
     styles[size],
-    variant === 'primary' && styles.primary,
-    variant === 'secondary' && styles.secondary,
-    variant === 'ghost' && styles.ghost,
-    isDisabled && styles.disabled,
+    variant === 'primary' ? styles.primary : null,
+    variant === 'secondary' ? styles.secondary : null,
+    variant === 'ghost' ? styles.ghost : null,
+    isDisabled ? styles.disabled : null,
     style,
-  ];
+  ].filter((s): s is ViewStyle => s !== null && s !== undefined);
 
-  const textStyle: TextStyle[] = [
+  const textStyle: (TextStyle | null)[] = [
     styles.text,
-    variant === 'primary' && styles.textPrimary,
-    variant === 'secondary' && styles.textSecondary,
-    variant === 'ghost' && styles.textGhost,
-    isDisabled && styles.textDisabled,
+    variant === 'primary' ? styles.textPrimary : null,
+    variant === 'secondary' ? styles.textSecondary : null,
+    variant === 'ghost' ? styles.textGhost : null,
+    isDisabled ? styles.textDisabled : null,
   ];
 
   return (

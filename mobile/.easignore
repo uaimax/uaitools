@@ -1,0 +1,40 @@
+# EAS Build ignore file
+# Diretórios do projeto que não devem ser incluídos no build
+
+# Dados do PostgreSQL
+../.postgres-data
+.postgres-data
+
+# Node modules (serão instalados no build)
+node_modules/
+
+# Build artifacts
+.expo/
+dist/
+build/
+*.log
+
+# Cache
+.cache/
+.npm/
+.yarn/
+
+# Arquivos de ambiente locais
+.env.local
+.env.*.local
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Outros diretórios do projeto raiz
+../backend/
+../frontend/
+../docs/
+../scripts/
+../.git/
+../.cursor/

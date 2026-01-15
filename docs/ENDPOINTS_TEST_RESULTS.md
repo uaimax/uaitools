@@ -46,37 +46,37 @@
 ### 📦 Caixinhas (Boxes)
 
 #### Listar
-- **Endpoint:** `GET /api/v1/supbrainnote/boxes/`
+- **Endpoint:** `GET /api/v1/bau-mental/boxes/`
 - **Status:** ✅ **PASSOU**
 - **Headers:** `Authorization`, `X-Workspace-ID`
 - **Resposta:** Lista de caixinhas do workspace
 
 #### Criar
-- **Endpoint:** `POST /api/v1/supbrainnote/boxes/`
+- **Endpoint:** `POST /api/v1/bau-mental/boxes/`
 - **Status:** ✅ **PASSOU**
 - **Campos testados:** `name`, `description`
 - **Resposta:** Retorna caixinha criada com `id`
 
 #### Obter
-- **Endpoint:** `GET /api/v1/supbrainnote/boxes/{id}/`
+- **Endpoint:** `GET /api/v1/bau-mental/boxes/{id}/`
 - **Status:** ✅ **PASSOU**
 - **Resposta:** Retorna dados completos da caixinha
 
 #### Atualizar
-- **Endpoint:** `PATCH /api/v1/supbrainnote/boxes/{id}/`
+- **Endpoint:** `PATCH /api/v1/bau-mental/boxes/{id}/`
 - **Status:** ✅ **PASSOU**
 - **Campos testados:** `name`
 - **Resposta:** Retorna caixinha atualizada
 
 #### Excluir
-- **Endpoint:** `DELETE /api/v1/supbrainnote/boxes/{id}/`
+- **Endpoint:** `DELETE /api/v1/bau-mental/boxes/{id}/`
 - **Status:** ✅ **PASSOU**
 - **Resposta:** Status 200/204 (sucesso)
 
 ### 📝 Notas (Notes)
 
 #### Listar (com filtros)
-- **Endpoint:** `GET /api/v1/supbrainnote/notes/`
+- **Endpoint:** `GET /api/v1/bau-mental/notes/`
 - **Status:** ✅ **PASSOU**
 - **Filtros testados:**
   - ✅ Sem filtros: Retorna todas as notas
@@ -85,12 +85,12 @@
 - **Resposta:** Lista de notas (pode ser paginada ou array direto)
 
 #### Obter
-- **Endpoint:** `GET /api/v1/supbrainnote/notes/{id}/`
+- **Endpoint:** `GET /api/v1/bau-mental/notes/{id}/`
 - **Status:** ✅ **PASSOU**
 - **Resposta:** Retorna dados completos da nota
 
 #### Mover
-- **Endpoint:** `POST /api/v1/supbrainnote/notes/{id}/move/`
+- **Endpoint:** `POST /api/v1/bau-mental/notes/{id}/move/`
 - **Status:** ✅ **PASSOU**
 - **Campos testados:** `box_id` (UUID ou null para inbox)
 - **Resposta:** Retorna nota atualizada com nova caixinha
@@ -100,22 +100,22 @@
 ## 🔍 Endpoints Não Testados (mas disponíveis)
 
 ### Upload de Áudio
-- **Endpoint:** `POST /api/v1/supbrainnote/notes/upload/`
+- **Endpoint:** `POST /api/v1/bau-mental/notes/upload/`
 - **Motivo:** Requer arquivo de áudio real (multipart/form-data)
 - **Status:** ✅ Disponível no backend (testado manualmente anteriormente)
 
 ### Atualizar Nota
-- **Endpoint:** `PATCH /api/v1/supbrainnote/notes/{id}/`
+- **Endpoint:** `PATCH /api/v1/bau-mental/notes/{id}/`
 - **Motivo:** Não implementado no script (mas endpoint existe)
 - **Status:** ✅ Disponível no backend
 
 ### Excluir Nota
-- **Endpoint:** `DELETE /api/v1/supbrainnote/notes/{id}/`
+- **Endpoint:** `DELETE /api/v1/bau-mental/notes/{id}/`
 - **Motivo:** Não implementado no script (mas endpoint existe)
 - **Status:** ✅ Disponível no backend
 
 ### Consulta IA
-- **Endpoint:** `POST /api/v1/supbrainnote/query/ask/`
+- **Endpoint:** `POST /api/v1/bau-mental/query/ask/`
 - **Motivo:** Não usado pelo mobile ainda
 - **Status:** ✅ Disponível no backend
 

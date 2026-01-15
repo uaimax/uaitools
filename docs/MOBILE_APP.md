@@ -1,8 +1,8 @@
-# SupBrainNote Mobile App
+# bau_mental Mobile App
 
 ## Visão Geral
 
-App mobile React Native + Expo para SupBrainNote, permitindo gravação de notas por voz com classificação automática em "caixinhas" temáticas.
+App mobile React Native + Expo para bau_mental, permitindo gravação de notas por voz com classificação automática em "caixinhas" temáticas.
 
 ## Stack Tecnológica
 
@@ -57,7 +57,7 @@ mobile/
    - `GET /profile/` - Perfil do usuário
    - `POST /password-reset-request/` - Recuperar senha
 
-2. **Notas** (`/api/v1/supbrainnote/notes/`)
+2. **Notas** (`/api/v1/bau-mental/notes/`)
    - `GET /notes/` - Listar notas (com filtros)
    - `POST /notes/upload/` - Upload de áudio
    - `GET /notes/:id/` - Detalhes da nota
@@ -65,7 +65,7 @@ mobile/
    - `DELETE /notes/:id/` - Excluir nota
    - `POST /notes/:id/move/` - Mover para outra caixinha
 
-3. **Caixinhas** (`/api/v1/supbrainnote/boxes/`)
+3. **Caixinhas** (`/api/v1/bau-mental/boxes/`)
    - `GET /boxes/` - Listar caixinhas
    - `POST /boxes/` - Criar caixinha
    - `PATCH /boxes/:id/` - Renomear
@@ -195,8 +195,8 @@ O app inclui automaticamente o header `X-Workspace-ID` em todas as requisições
 
 ## Referências
 
-- **Especificações**: `docs/supbrainnote-mobile/1-interfaces.md` e `2-prd.md`
+- **Especificações**: `docs/bau-mental-mobile/1-interfaces.md` e `2-prd.md`
 - **Exemplo Arquitetural**: `examples/mobile/` (Smart Honey App)
-- **Backend APIs**: `backend/apps/supbrainnote/`
+- **Backend APIs**: `backend/apps/bau_mental/`
 
 

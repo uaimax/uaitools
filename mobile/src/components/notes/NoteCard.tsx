@@ -190,7 +190,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             color={boxColor}
             onPress={
               note.box_id
-                ? () => navigation.navigate('NotesList', { boxId: note.box_id })
+                ? () => navigation.navigate('NotesList', { boxId: note.box_id || undefined })
                 : undefined
             }
           />
@@ -371,7 +371,6 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginBottom: spacing[2],
     minHeight: 40,
-    maxLines: 4,
   },
   player: {
     flexDirection: 'row',

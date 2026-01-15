@@ -35,9 +35,14 @@ db.sqlite3-journal
 /staticfiles
 /static
 
+# PostgreSQL (Docker dev)
+.postgres-data/
+
 # Environment
 .env
 .env.local
+.env.bak
+*.env.bak
 
 # IDE
 .vscode/

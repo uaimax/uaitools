@@ -80,39 +80,6 @@ export const AskBrainModal: React.FC<AskBrainModalProps> = ({
     }
   }, [visible, caixinha_contexto]);
 
-  // Auto-iniciar gravação quando entrar no estado 'recording'
-  useEffect(() => {
-    if (modalState === 'recording' && !recordingStartedRef.current && recordingState === 'idle') {
-      recordingStartedRef.current = true;
-      // Usar setTimeout para garantir que o estado foi atualizado
-      setTimeout(() => {
-        handleStartRecording();
-      }, 100);
-    }
-  }, [modalState, recordingState, handleStartRecording]);
-
-  // Animação de pulso durante gravação
-  useEffect(() => {
-    if (recordingState === 'recording') {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1.0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
-      pulseAnim.setValue(1);
-    }
-  }, [recordingState, pulseAnim]);
-
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);

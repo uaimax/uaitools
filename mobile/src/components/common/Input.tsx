@@ -40,13 +40,15 @@ export const Input: React.FC<InputProps> = ({
       <View
         style={[
           styles.inputContainer,
-          isFocused && styles.inputContainerFocused,
-          error && styles.inputContainerError,
+          { 
+            borderWidth: 1,
+            borderColor: error ? colors.semantic.error : isFocused ? colors.primary.default : 'rgba(255, 255, 255, 0.1)' 
+          },
         ]}
       >
         {icon && <View style={styles.iconContainer}>{icon}</View>}
         <TextInput
-          style={[styles.input, icon && styles.inputWithIcon, style]}
+          style={[styles.input, icon ? styles.inputWithIcon : null, style]}
           placeholderTextColor={colors.text.tertiary}
           secureTextEntry={secureTextEntry && !isPasswordVisible}
           onFocus={() => setIsFocused(true)}
@@ -86,17 +88,8 @@ const styles = StyleSheet.create({
     height: 52,
     backgroundColor: colors.bg.elevated,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
     paddingHorizontal: spacing[4],
     ...elevation[1],
-  },
-  inputContainerFocused: {
-    borderColor: colors.primary.default,
-    borderWidth: 1,
-  },
-  inputContainerError: {
-    borderColor: colors.semantic.error,
   },
   iconContainer: {
     marginRight: spacing[2],

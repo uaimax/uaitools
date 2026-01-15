@@ -15,7 +15,7 @@ import Register from "./features/auth/pages/Register";
 import OAuthCallback from "./features/auth/pages/OAuthCallback";
 import ForgotPassword from "./features/auth/pages/ForgotPassword";
 import ResetPassword from "./features/auth/pages/ResetPassword";
-import AcceptBoxInvitePage from "./features/supbrainnote/pages/AcceptBoxInvitePage";
+import AcceptBoxInvitePage from "./features/bau_mental/pages/AcceptBoxInvitePage";
 // Admin pages
 import DashboardPage from "./features/admin/pages/DashboardPage";
 import LeadsPage from "./features/admin/pages/LeadsPage";
@@ -24,8 +24,9 @@ import SettingsPage from "./features/admin/pages/SettingsPage";
 import DocumentsPage from "./features/admin/pages/DocumentsPage";
 // Investments pages
 import InvestmentsPage from "./features/investments/pages/InvestmentsPage";
-// SupBrainNote pages
-import SupBrainNotePage from "./features/supbrainnote/pages/SupBrainNotePage";
+// bau_mental pages
+import BauMentalPage from "./features/bau_mental/pages/BauMentalPage";
+import BauMentalWebPage from "./features/bau_mental/pages/BauMentalWebPage";
 
 // Componente para redirecionar /leads/:id para /admin/leads/:id
 function LeadsRedirect() {
@@ -169,12 +170,12 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* SupBrainNote - Módulo independente (não é admin) */}
+            {/* bau_mental - Módulo independente (não é admin) */}
             <Route
-              path="/supbrainnote"
+              path="/bau-mental/*"
               element={
                 <ProtectedRoute>
-                  <SupBrainNotePage />
+                  <BauMentalWebPage />
                 </ProtectedRoute>
               }
             />

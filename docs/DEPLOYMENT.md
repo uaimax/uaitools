@@ -124,7 +124,7 @@ Veja o guia completo: [REDIS_SETUP.md](REDIS_SETUP.md)
 
 ## ⚙️ Celery Worker Configuration
 
-**IMPORTANTE:** Se você usar funcionalidades que requerem processamento assíncrono (ex: SupBrainNote), precisa configurar o Celery Worker.
+**IMPORTANTE:** Se você usar funcionalidades que requerem processamento assíncrono (ex: bau_mental), precisa configurar o Celery Worker.
 
 Veja o guia completo: [CELERY_SETUP.md](CELERY_SETUP.md)
 

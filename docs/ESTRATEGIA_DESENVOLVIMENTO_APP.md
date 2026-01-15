@@ -1,7 +1,7 @@
 # Estratégia de Desenvolvimento: Web App → Mobile App
 
 > **Data**: 2025-01-27
-> **Contexto**: SupBrainNote - Anotador por voz com IA
+> **Contexto**: bau_mental - Anotador por voz com IA
 
 ---
 

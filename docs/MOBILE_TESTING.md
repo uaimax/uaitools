@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Este guia explica como testar o app mobile SupBrainNote localmente, especialmente quando usando **WSL (Windows Subsystem for Linux)** com um **dispositivo físico separado** (celular Android/iOS).
+Este guia explica como testar o app mobile bau_mental localmente, especialmente quando usando **WSL (Windows Subsystem for Linux)** com um **dispositivo físico separado** (celular Android/iOS).
 
 ## Como Funciona: Backend vs Expo Tunnel
 

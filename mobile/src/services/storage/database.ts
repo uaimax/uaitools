@@ -25,7 +25,7 @@ export async function initDatabase(): Promise<void> {
   // Inicia nova inicialização
   initPromise = (async () => {
     try {
-      db = await SQLite.openDatabaseAsync('supbrainnote.db');
+      db = await SQLite.openDatabaseAsync('bau_mental.db');
 
       // Cria tabelas
       await db.execAsync(`

@@ -17,7 +17,7 @@
 
 ```bash
 cd backend
-python manage.py migrate supbrainnote
+python manage.py migrate bau_mental
 ```
 
 ### 2. Verificar extensão (opcional)
@@ -38,7 +38,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 -- Verificar se índice foi criado
 SELECT indexname, indexdef
 FROM pg_indexes
-WHERE tablename = 'supbrainnote_note'
+WHERE tablename = 'bau_mental_note'
 AND indexname = 'note_transcript_gin_idx';
 ```
 
@@ -77,7 +77,7 @@ AND indexname = 'note_transcript_gin_idx';
 # No shell do Django
 python manage.py shell
 
-from apps.supbrainnote.models import Note
+from apps.bau_mental.models import Note
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 # Testar busca

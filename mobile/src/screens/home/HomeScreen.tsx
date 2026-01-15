@@ -102,7 +102,7 @@ export const HomeScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>SupBrainNote</Text>
+        <Text style={styles.headerTitle}>Baú Mental</Text>
         <View style={styles.headerActions}>
           {pendingCount > 0 && (
             <View style={styles.syncBadge}>

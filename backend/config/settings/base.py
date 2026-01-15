@@ -137,7 +137,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.leads",
     "apps.investments",
-    "apps.supbrainnote",
+    "apps.bau_mental",
 ]
 
 # MIDDLEWARE - SEMPRE incluir CSRF (simplificado)
@@ -258,8 +258,8 @@ REST_FRAMEWORK = {
         "anon": os.environ.get("API_THROTTLE_ANON", "100/hour"),
         "user": os.environ.get("API_THROTTLE_USER", "1000/hour"),
         "logging": "100/hour",  # Limite para endpoint de logs
-        "supbrainnote_upload": os.environ.get("SUPBRAINNOTE_UPLOAD_RATE", "10/hour"),  # Limite para uploads de áudio (configurável)
-        "supbrainnote_query": os.environ.get("SUPBRAINNOTE_QUERY_RATE", "50/hour"),  # Limite para consultas com IA (configurável)
+        "bau_mental_upload": os.environ.get("BAU_MENTAL_UPLOAD_RATE", "10/hour"),  # Limite para uploads de áudio (configurável)
+        "bau_mental_query": os.environ.get("BAU_MENTAL_QUERY_RATE", "50/hour"),  # Limite para consultas com IA (configurável)
     },
 }
 

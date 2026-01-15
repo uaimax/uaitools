@@ -5,7 +5,7 @@
 ### ✅ O que JÁ está preparado:
 
 1. **Backend - Upload e Classificação**
-   - ✅ Endpoint `/api/v1/supbrainnote/notes/upload/` aceita `box_id` opcional
+   - ✅ Endpoint `/api/v1/bau-mental/notes/upload/` aceita `box_id` opcional
    - ✅ Classificação automática já funciona após transcrição
    - ✅ Task `transcribe_audio` chama `classify_note` automaticamente
    - ✅ Serviço de classificação tem matching fonético e por nome de caixinha
@@ -56,9 +56,9 @@
 // app.json
 {
   "expo": {
-    "scheme": "supbrainnote",
+    "scheme": "bau_mental",
     "ios": {
-      "associatedDomains": ["applinks:supbrainnote.com"]
+      "associatedDomains": ["applinks:bau_mental.com"]
     },
     "android": {
       "intentFilters": [

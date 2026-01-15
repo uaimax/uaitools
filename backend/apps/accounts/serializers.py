@@ -177,8 +177,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         )
 
         # Verificar convites pendentes de caixinhas
-        from apps.supbrainnote.models import BoxShareInvite
-        from apps.supbrainnote.models import BoxShare
+        from apps.bau_mental.models import BoxShareInvite
+        from apps.bau_mental.models import BoxShare
         from django.utils import timezone
 
         pending_invites = BoxShareInvite.objects.filter(

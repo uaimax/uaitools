@@ -23,7 +23,7 @@ django.setup()
 
 from django.contrib.auth import get_user_model
 from apps.accounts.models import Workspace
-from apps.supbrainnote.models import Box, Note
+from apps.bau_mental.models import Box, Note
 
 User = get_user_model()
 
@@ -287,7 +287,7 @@ class EndpointTester:
                 "X-Workspace-ID": self.workspace_uuid or "",
             }
             response = self.session.get(
-                f"{self.api_base}/supbrainnote/boxes/",
+                f"{self.api_base}/bau-mental/boxes/",
                 headers=headers,
                 timeout=10,
             )
@@ -325,7 +325,7 @@ class EndpointTester:
                 "description": "Caixinha de teste criada pelo script",
             }
             response = self.session.post(
-                f"{self.api_base}/supbrainnote/boxes/",
+                f"{self.api_base}/bau-mental/boxes/",
                 json=data,
                 headers=headers,
                 timeout=10,
@@ -364,7 +364,7 @@ class EndpointTester:
                 "X-Workspace-ID": self.workspace_uuid or "",
             }
             response = self.session.get(
-                f"{self.api_base}/supbrainnote/boxes/{self.test_box_id}/",
+                f"{self.api_base}/bau-mental/boxes/{self.test_box_id}/",
                 headers=headers,
                 timeout=10,
             )
@@ -402,7 +402,7 @@ class EndpointTester:
             }
             data = {"name": f"Test Box Updated {os.getpid()}"}
             response = self.session.patch(
-                f"{self.api_base}/supbrainnote/boxes/{self.test_box_id}/",
+                f"{self.api_base}/bau-mental/boxes/{self.test_box_id}/",
                 json=data,
                 headers=headers,
                 timeout=10,
@@ -446,7 +446,7 @@ class EndpointTester:
                 ("filtro status", {"status": "completed"}),
             ]:
                 response = self.session.get(
-                    f"{self.api_base}/supbrainnote/notes/",
+                    f"{self.api_base}/bau-mental/notes/",
                     params=params,
                     headers=headers,
                     timeout=10,
@@ -486,7 +486,7 @@ class EndpointTester:
                 "X-Workspace-ID": self.workspace_uuid or "",
             }
             response = self.session.get(
-                f"{self.api_base}/supbrainnote/notes/{self.test_note_id}/",
+                f"{self.api_base}/bau-mental/notes/{self.test_note_id}/",
                 headers=headers,
                 timeout=10,
             )
@@ -527,7 +527,7 @@ class EndpointTester:
             }
             data = {"box_id": self.test_box_id}
             response = self.session.post(
-                f"{self.api_base}/supbrainnote/notes/{self.test_note_id}/move/",
+                f"{self.api_base}/bau-mental/notes/{self.test_note_id}/move/",
                 json=data,
                 headers=headers,
                 timeout=10,
@@ -565,7 +565,7 @@ class EndpointTester:
                 "X-Workspace-ID": self.workspace_uuid or "",
             }
             response = self.session.delete(
-                f"{self.api_base}/supbrainnote/boxes/{self.test_box_id}/",
+                f"{self.api_base}/bau-mental/boxes/{self.test_box_id}/",
                 headers=headers,
                 timeout=10,
             )

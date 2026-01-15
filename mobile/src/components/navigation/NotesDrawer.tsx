@@ -137,7 +137,7 @@ export const NotesDrawer: React.FC<NotesDrawerProps> = ({
               {/* Header do Drawer */}
               <View style={styles.drawerHeader}>
                 <View style={styles.drawerHeaderContent}>
-                  <Text style={styles.drawerTitle}>SupBrainNote</Text>
+                  <Text style={styles.drawerTitle}>Baú Mental</Text>
                   {user?.email && (
                     <Text style={styles.drawerSubtitle}>{user.email}</Text>
                   )}

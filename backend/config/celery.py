@@ -24,8 +24,8 @@ app.conf.beat_schedule = {
         "task": "apps.core.tasks.logging.cleanup_old_logs",
         "schedule": crontab(hour=2, minute=0),  # Todo dia às 2h
     },
-    "supbrainnote-cleanup-expired-audios": {
-        "task": "apps.supbrainnote.tasks.cleanup_expired_audios",
+    "bau-mental-cleanup-expired-audios": {
+        "task": "apps.bau_mental.tasks.cleanup_expired_audios",
         "schedule": crontab(hour=3, minute=0),  # Todo dia às 3h
     },
     # Background jobs do módulo de investimentos

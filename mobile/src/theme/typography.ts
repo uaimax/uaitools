@@ -52,6 +52,43 @@ export const typography = {
     letterSpacing: 0.2,
     fontWeight: '500' as const,
   },
+  // Aliases para compatibilidade
+  headline6: {
+    fontSize: 20,
+    lineHeight: 28,
+    letterSpacing: -0.2,
+    fontWeight: '600' as const,
+  },
+  headline4: {
+    fontSize: 24,
+    lineHeight: 32,
+    letterSpacing: -0.3,
+    fontWeight: '600' as const,
+  },
+  bodyLarge: {
+    fontSize: 17,
+    lineHeight: 24,
+    letterSpacing: 0,
+    fontWeight: '400' as const,
+  },
+  bodyMedium: {
+    fontSize: 15,
+    lineHeight: 20,
+    letterSpacing: 0,
+    fontWeight: '400' as const,
+  },
+  labelLarge: {
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: 0.1,
+    fontWeight: '500' as const,
+  },
+  labelSmall: {
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: 0.5,
+    fontWeight: '500' as const,
+  },
 } as const;
 
 export type TypographyKey = keyof typeof typography;

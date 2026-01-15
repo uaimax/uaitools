@@ -77,10 +77,10 @@ if "http://127.0.0.1:5173" not in CSRF_TRUSTED_ORIGINS:  # noqa: F405
 
 # Rate limiting DESABILITADO em desenvolvimento para facilitar testes
 # O app mobile pode fazer múltiplas tentativas durante desenvolvimento
-if "SUPBRAINNOTE_UPLOAD_RATE" not in os.environ:
-    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["supbrainnote_upload"] = "10000/hour"  # noqa: F405
-if "SUPBRAINNOTE_QUERY_RATE" not in os.environ:
-    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["supbrainnote_query"] = "10000/hour"  # noqa: F405
+if "BAU_MENTAL_UPLOAD_RATE" not in os.environ:
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["bau_mental_upload"] = "10000/hour"  # noqa: F405
+if "BAU_MENTAL_QUERY_RATE" not in os.environ:
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["bau_mental_query"] = "10000/hour"  # noqa: F405
 # Também aumentar rate limits gerais em dev
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["anon"] = "10000/hour"  # noqa: F405
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["user"] = "10000/hour"  # noqa: F405

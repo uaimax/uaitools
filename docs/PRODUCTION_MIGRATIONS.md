@@ -4,13 +4,13 @@
 
 ### 1. Tabelas Faltando
 
-O banco de dados de produção estava faltando tabelas do app `supbrainnote`:
-- `supbrainnote_note` não existe
-- `supbrainnote_box` pode não existir
+O banco de dados de produção estava faltando tabelas do app `bau_mental`:
+- `bau_mental_note` não existe
+- `bau_mental_box` pode não existir
 
 **Erro no GlitchTip:**
 ```
-ProgrammingError: relation "supbrainnote_note" does not exist
+ProgrammingError: relation "bau_mental_note" does not exist
 ```
 
 ### 2. Conversão de bigint para UUID
@@ -32,7 +32,7 @@ A migration foi reescrita para usar SQL customizado que:
 4. Renomeia a nova coluna para `id`
 5. Recria as constraints necessárias
 
-**Migration corrigida:** `backend/apps/supbrainnote/migrations/0002_alter_box_id_alter_note_id.py`
+**Migration corrigida:** `backend/apps/bau_mental/migrations/0002_alter_box_id_alter_note_id.py`
 
 ## ✅ Solução Implementada
 
@@ -66,7 +66,7 @@ docker exec -it <container_id> python manage.py migrate --noinput
 Para verificar quais migrations estão pendentes:
 
 ```bash
-caprover exec -a ut-be "python manage.py showmigrations supbrainnote"
+caprover exec -a ut-be "python manage.py showmigrations bau_mental"
 ```
 
 ## 📋 Checklist Pós-Deploy
@@ -110,20 +110,20 @@ django.db.utils.ProgrammingError: cannot cast type bigint to uuid
 1. Verificar se a migration `0002_alter_box_id_alter_note_id.py` está usando SQL customizado (não `AlterField` direto)
 2. Se necessário, fazer rollback da migration e reaplicar:
    ```bash
-   caprover exec -a ut-be "python manage.py migrate supbrainnote 0001"
-   caprover exec -a ut-be "python manage.py migrate supbrainnote"
+   caprover exec -a ut-be "python manage.py migrate bau_mental 0001"
+   caprover exec -a ut-be "python manage.py migrate bau_mental"
    ```
 
 ### Verificar Status da Migration
 
 ```bash
 # Ver migrations aplicadas
-caprover exec -a ut-be "python manage.py showmigrations supbrainnote"
+caprover exec -a ut-be "python manage.py showmigrations bau_mental"
 
 # Ver estrutura da tabela (verificar se id é UUID)
 caprover exec -a ut-be "python manage.py dbshell"
 # No psql:
-# \d supbrainnote_box
-# \d supbrainnote_note
+# \d bau_mental_box
+# \d bau_mental_note
 ```
 

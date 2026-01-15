@@ -15,14 +15,18 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Check } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '@/navigation/types';
 import { NoteCard } from '@/components/notes';
 import { FAB } from '@/components/common';
 import { useNotes } from '@/hooks/useNotes';
 import { useBoxes } from '@/hooks/useBoxes';
 import { colors, typography, spacing } from '@/theme';
 
+type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
+
 export const InboxScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const inboxFilter = useMemo(() => ({ inbox: true }), []);
   const { notes, loading, refresh } = useNotes(inboxFilter);
   const { refresh: refreshBoxes } = useBoxes();
@@ -69,7 +73,7 @@ export const InboxScreen: React.FC = () => {
               key={note.id}
               note={note}
               onPress={() =>
-                navigation.navigate('NoteEdit' as never, { noteId: note.id } as never)
+                navigation.navigate('NoteEdit', { noteId: note.id })
               }
               onDelete={handleRefresh}
               onMove={handleRefresh}
@@ -81,7 +85,7 @@ export const InboxScreen: React.FC = () => {
       <FAB
         onPress={() => {
           // TODO: Abrir gravação (mesma lógica da Home)
-          navigation.navigate('Home' as never);
+          navigation.navigate('Home');
         }}
       />
     </SafeAreaView>

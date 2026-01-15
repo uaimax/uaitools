@@ -23,14 +23,14 @@
 
 | Endpoint | Método | Mobile Usa | Backend Tem | Status |
 |----------|--------|------------|-------------|--------|
-| `/api/v1/supbrainnote/notes/` | GET | ✅ (com filtros: `box`, `inbox`, `status`, `search`) | ✅ | ✅ |
-| `/api/v1/supbrainnote/notes/{id}/` | GET | ✅ | ✅ (ViewSet padrão) | ✅ |
-| `/api/v1/supbrainnote/notes/upload/` | POST | ✅ | ✅ (`@action upload_audio`) | ✅ |
-| `/api/v1/supbrainnote/notes/{id}/move/` | POST | ✅ | ✅ (`@action move_to_box`) | ✅ |
-| `/api/v1/supbrainnote/notes/{id}/` | PATCH | ✅ (`updateNote`) | ✅ (ViewSet padrão) | ✅ |
-| `/api/v1/supbrainnote/notes/{id}/` | DELETE | ✅ (`deleteNote`) | ✅ (ViewSet padrão) | ✅ |
+| `/api/v1/bau-mental/notes/` | GET | ✅ (com filtros: `box`, `inbox`, `status`, `search`) | ✅ | ✅ |
+| `/api/v1/bau-mental/notes/{id}/` | GET | ✅ | ✅ (ViewSet padrão) | ✅ |
+| `/api/v1/bau-mental/notes/upload/` | POST | ✅ | ✅ (`@action upload_audio`) | ✅ |
+| `/api/v1/bau-mental/notes/{id}/move/` | POST | ✅ | ✅ (`@action move_to_box`) | ✅ |
+| `/api/v1/bau-mental/notes/{id}/` | PATCH | ✅ (`updateNote`) | ✅ (ViewSet padrão) | ✅ |
+| `/api/v1/bau-mental/notes/{id}/` | DELETE | ✅ (`deleteNote`) | ✅ (ViewSet padrão) | ✅ |
 
-**Arquivo Backend:** `backend/apps/supbrainnote/viewsets.py` (NoteViewSet)
+**Arquivo Backend:** `backend/apps/bau_mental/viewsets.py` (NoteViewSet)
 **Arquivo Mobile:** `mobile/src/services/api/notes.ts`
 
 **Filtros suportados no backend:**
@@ -45,13 +45,13 @@
 
 | Endpoint | Método | Mobile Usa | Backend Tem | Status |
 |----------|--------|------------|-------------|--------|
-| `/api/v1/supbrainnote/boxes/` | GET | ✅ | ✅ | ✅ |
-| `/api/v1/supbrainnote/boxes/{id}/` | GET | ✅ | ✅ (ViewSet padrão) | ✅ |
-| `/api/v1/supbrainnote/boxes/` | POST | ✅ | ✅ (ViewSet padrão) | ✅ |
-| `/api/v1/supbrainnote/boxes/{id}/` | PATCH | ✅ | ✅ (ViewSet padrão) | ✅ |
-| `/api/v1/supbrainnote/boxes/{id}/` | DELETE | ✅ | ✅ (ViewSet padrão) | ✅ |
+| `/api/v1/bau-mental/boxes/` | GET | ✅ | ✅ | ✅ |
+| `/api/v1/bau-mental/boxes/{id}/` | GET | ✅ | ✅ (ViewSet padrão) | ✅ |
+| `/api/v1/bau-mental/boxes/` | POST | ✅ | ✅ (ViewSet padrão) | ✅ |
+| `/api/v1/bau-mental/boxes/{id}/` | PATCH | ✅ | ✅ (ViewSet padrão) | ✅ |
+| `/api/v1/bau-mental/boxes/{id}/` | DELETE | ✅ | ✅ (ViewSet padrão) | ✅ |
 
-**Arquivo Backend:** `backend/apps/supbrainnote/viewsets.py` (BoxViewSet)
+**Arquivo Backend:** `backend/apps/bau_mental/viewsets.py` (BoxViewSet)
 **Arquivo Mobile:** `mobile/src/services/api/boxes.ts`
 
 ---
@@ -60,10 +60,10 @@
 
 | Endpoint | Método | Mobile Usa | Backend Tem | Status |
 |----------|--------|------------|-------------|--------|
-| `/api/v1/supbrainnote/query/ask/` | POST | ❓ (não encontrado no mobile) | ✅ (`@action ask`) | ⚠️ |
+| `/api/v1/bau-mental/query/ask/` | POST | ❓ (não encontrado no mobile) | ✅ (`@action ask`) | ⚠️ |
 
 **Nota:** O endpoint de query existe no backend, mas não foi encontrado uso no mobile.
-**Arquivo Backend:** `backend/apps/supbrainnote/viewsets.py` (QueryViewSet)
+**Arquivo Backend:** `backend/apps/bau_mental/viewsets.py` (QueryViewSet)
 
 ---
 
