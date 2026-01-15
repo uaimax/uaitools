@@ -29,11 +29,31 @@ alwaysApply: true
 
 ### NEVER
 
-1. **NUNCA modificar migrations existentes**
-2. **NUNCA alterar models críticos** (User, Tenant, TenantModel) sem autorização
-3. **NUNCA modificar middleware** de tenant
-4. **NUNCA hardcodar** URLs, secrets ou configurações de deploy
-5. **NUNCA ignorar** zonas de proteção
+1. **NUNCA criar migrations manualmente** - Sempre usar `python manage.py makemigrations`
+2. **NUNCA modificar migrations existentes** - Criar nova migration se necessário
+3. **NUNCA alterar models críticos** (User, Tenant, TenantModel) sem autorização
+4. **NUNCA modificar middleware** de tenant
+5. **NUNCA hardcodar** URLs, secrets ou configurações de deploy
+6. **NUNCA ignorar** zonas de proteção
+
+### ⚠️ REGRA CRÍTICA: Migrations Django
+
+**NUNCA criar ou editar migrations manualmente!**
+
+```bash
+# ✅ CORRETO
+python manage.py makemigrations
+python manage.py migrate
+
+# ❌ ERRADO - Criar arquivo manualmente
+# apps/*/migrations/000X_*.py  # NUNCA fazer isso
+```
+
+**Por quê?**
+- Migrations manuais quebram o histórico do Django
+- Causam `InconsistentMigrationHistory`
+- Em desenvolvimento, `dev-start.sh` reseta banco automaticamente se houver erro
+- Em produção, pode quebrar o banco permanentemente
 
 ## Zonas de Proteção
 

@@ -4,7 +4,7 @@ Este arquivo documenta **erros já enfrentados** e suas soluções para evitar r
 
 ---
 
-## ❌ NUNCA Modificar Migrations Existentes
+## ❌ NUNCA Criar ou Editar Migrations Manualmente
 
 **Data**: 2025-01-27
 **Categoria**: backend
@@ -12,28 +12,51 @@ Este arquivo documenta **erros já enfrentados** e suas soluções para evitar r
 **Severidade**: critical
 
 ### Contexto
-Tentativa de corrigir migration já aplicada em produção ou desenvolvimento.
+Criar ou editar migrations manualmente quebra o histórico do Django e causa `InconsistentMigrationHistory`.
 
 ### Problema
-Modificar migrations existentes quebra o histórico do Django e pode causar inconsistências em ambientes que já aplicaram a migration.
+- Migrations criadas manualmente não seguem o padrão do Django
+- Editar migrations existentes quebra histórico em ambientes que já aplicaram
+- Causa erros de `InconsistentMigrationHistory`
+- Em produção, pode quebrar o banco permanentemente
 
 ### Solução
-**SEMPRE criar nova migration** ao invés de modificar existente:
+**SEMPRE usar comandos do Django**:
 
 ```bash
-# ❌ ERRADO: Editar migration existente
-# ✅ CORRETO: Criar nova migration
+# ✅ CORRETO - Criar migrations
 python manage.py makemigrations
+
+# ✅ CORRETO - Aplicar migrations
+python manage.py migrate
+
+# ✅ CORRETO - Ver estado
+python manage.py showmigrations
+
+# ❌ ERRADO - Criar arquivo manualmente
+# apps/*/migrations/000X_*.py  # NUNCA fazer isso
+
+# ❌ ERRADO - Editar migration existente
+# Editar arquivo em migrations/  # NUNCA fazer isso
 ```
+
+### Em Desenvolvimento
+O `dev-start.sh` agora:
+- Detecta erros de migrations automaticamente
+- Reseta o banco e aplica migrations do zero se houver erro
+- Garante que sempre começamos com banco limpo
 
 ### Lições Aprendidas
 - Migrations são imutáveis após commit
 - Se migration está errada, criar nova que corrige
-- Nunca editar `migrations/` diretamente
+- Nunca criar ou editar arquivos em `migrations/` diretamente
+- Sempre usar `makemigrations` e `migrate` do Django
+- Em desenvolvimento, resetar banco é mais simples que corrigir histórico
 
 ### Referências
-- `docs/context/PROTECTED_AREAS.md`
-- `.cursorrules`
+- `.cursorrules` - Regra crítica sobre migrations
+- `.cursor/rules/backend.mdc` - Regras específicas do backend
+- `.cursor/rules/global.mdc` - Regras globais
 
 ---
 

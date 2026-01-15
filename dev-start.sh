@@ -237,7 +237,43 @@ setup_backend() {
 
     # 4. Rodar migrations
     echo -e "${YELLOW}   🗄️  Aplicando migrations...${NC}"
-    python manage.py migrate --noinput
+    MIGRATE_OUTPUT=$(python manage.py migrate --noinput 2>&1)
+    MIGRATE_EXIT=$?
+    
+    if [ $MIGRATE_EXIT -ne 0 ]; then
+        # Em desenvolvimento, se houver erro de migrations, resetar banco e aplicar do zero
+        echo -e "${YELLOW}   ⚠️  Erro ao aplicar migrations detectado${NC}"
+        echo -e "${YELLOW}   🔄 Resetando banco e aplicando migrations do zero (ambiente de desenvolvimento)...${NC}"
+        
+        # Resetar banco completamente usando Python (não precisa de psql)
+        python <<'PYEOF'
+import os
+import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.dev")
+django.setup()
+from django.db import connection
+
+with connection.cursor() as cursor:
+    cursor.execute("DROP SCHEMA IF EXISTS public CASCADE")
+    cursor.execute("CREATE SCHEMA public")
+    cursor.execute("GRANT ALL ON SCHEMA public TO postgres")
+    cursor.execute("GRANT ALL ON SCHEMA public TO public")
+PYEOF
+        
+        echo -e "${GREEN}   ✅ Banco resetado${NC}"
+        
+        # Aplicar todas as migrations do zero
+        echo -e "${YELLOW}   📦 Aplicando migrations do zero...${NC}"
+        if python manage.py migrate --noinput 2>&1; then
+            echo -e "${GREEN}   ✅ Migrations aplicadas do zero com sucesso${NC}"
+        else
+            echo -e "${RED}   ❌ Erro ao aplicar migrations após reset${NC}"
+            echo -e "${YELLOW}   💡 Verifique se há migrations com problemas${NC}"
+            return 1
+        fi
+    else
+        echo -e "${GREEN}   ✅ Migrations aplicadas${NC}"
+    fi
 
     # 5. Inicializar documentos legais se não existirem
     echo -e "${YELLOW}   📄 Verificando documentos legais...${NC}"
@@ -266,6 +302,28 @@ EOF
     echo -e "${GREEN}   ✅ Dados de exemplo populados${NC}"
 
     echo -e "${GREEN}   ✅ Backend configurado${NC}"
+}
+
+# Função para garantir que migrations estão aplicadas
+# Deve ser chamada com venv ativado e no diretório backend
+ensure_migrations_applied() {
+    echo -e "${YELLOW}   🔍 Verificando migrations pendentes...${NC}"
+    
+    # Verificar se há migrations não aplicadas
+    PENDING_MIGRATIONS=$(python manage.py showmigrations --plan 2>/dev/null | grep -c "\[ \]" || echo "0")
+    
+    if [ "$PENDING_MIGRATIONS" -gt 0 ]; then
+        echo -e "${YELLOW}   ⚠️  Encontradas $PENDING_MIGRATIONS migrations pendentes. Aplicando...${NC}"
+        python manage.py migrate --noinput
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}   ✅ Migrations aplicadas com sucesso${NC}"
+        else
+            echo -e "${RED}   ❌ Erro ao aplicar migrations${NC}"
+            return 1
+        fi
+    else
+        echo -e "${GREEN}   ✅ Todas as migrations estão aplicadas${NC}"
+    fi
 }
 
 # Função para verificar se npm está disponível
@@ -446,6 +504,8 @@ if [ "$HAS_TMUX" = true ]; then
     TMUX_OUTPUT=$(tmux new-session -d -s "$TMUX_SESSION" -n "dev" \
         -c "$BACKEND_DIR" \
         "source venv/bin/activate && \
+         echo -e '${YELLOW}🔍 Verificando migrations...${NC}' && \
+         python manage.py migrate --noinput && \
          echo -e '${GREEN}✅ Backend iniciado!${NC}' && \
          echo -e '${BLUE}🌐 http://localhost:$BACKEND_PORT${NC}' && \
          echo -e '${YELLOW}📌 Admin: http://localhost:$BACKEND_PORT/$ADMIN_PREFIX/${NC}' && \
@@ -658,6 +718,10 @@ if [ "$HAS_TMUX" = true ]; then
         if [ -f "$SCRIPT_DIR/.env" ]; then
             eval "$(load_env_safe "$SCRIPT_DIR/.env")"
         fi
+        
+        # Garantir que migrations estão aplicadas
+        ensure_migrations_applied
+        
         echo -e "${GREEN}✅ Backend iniciado!${NC}"
         echo -e "${BLUE}🌐 http://localhost:$BACKEND_PORT${NC}"
         echo -e "${YELLOW}📌 Admin: http://localhost:$BACKEND_PORT/$ADMIN_PREFIX/${NC}"
@@ -701,5 +765,9 @@ if [ "$HAS_TMUX" = false ]; then
 
     cd "$BACKEND_DIR"
     source venv/bin/activate
+    
+    # Garantir que migrations estão aplicadas
+    ensure_migrations_applied
+    
     python manage.py runserver 0.0.0.0:$BACKEND_PORT
 fi

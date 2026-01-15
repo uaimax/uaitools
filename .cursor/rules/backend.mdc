@@ -81,10 +81,32 @@ path("meumodulo/", ...)  # Não fazer
 
 ## NEVER (Backend)
 
-1. Queries N+1 (sempre otimizar)
-2. Lógica de negócio em views (usar services)
-3. Imports circulares
-4. `objects.all()` sem filtro de tenant
+1. **NUNCA criar migrations manualmente** - Sempre usar `python manage.py makemigrations`
+2. **NUNCA editar migrations existentes** - Criar nova migration se necessário
+3. Queries N+1 (sempre otimizar)
+4. Lógica de negócio em views (usar services)
+5. Imports circulares
+6. `objects.all()` sem filtro de tenant
+
+## ⚠️ REGRA CRÍTICA: Migrations
+
+**NUNCA criar ou editar migrations manualmente!**
+
+```bash
+# ✅ CORRETO - Sempre usar makemigrations
+python manage.py makemigrations
+python manage.py migrate
+
+# ❌ ERRADO - Criar migration manualmente
+# NUNCA criar arquivo em apps/*/migrations/000X_*.py manualmente
+# NUNCA editar migrations existentes
+```
+
+**Por quê?**
+- Migrations criadas manualmente quebram o histórico do Django
+- Causam erros de `InconsistentMigrationHistory`
+- Em desenvolvimento, o `dev-start.sh` reseta o banco automaticamente se houver erro
+- Em produção, migrations manuais podem quebrar o banco
 
 ## Checklist Antes de Commit
 

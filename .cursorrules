@@ -18,6 +18,28 @@ Multi-tenancy por tenant_id em cada model.
 - Docstrings: em classes e funcoes publicas
 - Testes: junto ao app em tests/
 
+## ⚠️ REGRA CRÍTICA: Migrations Django
+
+**NUNCA criar ou editar migrations manualmente!**
+
+- ✅ SEMPRE usar: `python manage.py makemigrations`
+- ❌ NUNCA criar arquivos em `apps/*/migrations/` manualmente
+- ❌ NUNCA editar migrations existentes
+- ✅ Em desenvolvimento, se houver erro de migrations, o `dev-start.sh` reseta o banco automaticamente
+- ✅ Em produção, migrations manuais podem quebrar o banco permanentemente
+
+**Comandos corretos:**
+```bash
+# Criar migrations
+python manage.py makemigrations
+
+# Aplicar migrations
+python manage.py migrate
+
+# Ver estado
+python manage.py showmigrations
+```
+
 ## Comandos Principais
 - ./dev-start.sh - Inicia ambiente de dev
 - ./run-tests.sh - Executa testes
