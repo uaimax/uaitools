@@ -78,14 +78,18 @@ echo "📦 Coletando arquivos estáticos..."\n\
 python manage.py collectstatic --noinput\n\
 echo "✅ Arquivos estáticos coletados"\n\
 \n\
-# Aplicar migrations\n\
+# Aplicar migrations (com tratamento de erro de histórico inconsistente)\n\
 echo "📦 Aplicando migrations..."\n\
+set +e  # Desabilitar exit on error temporariamente\n\
 MIGRATE_OUTPUT=$(python manage.py migrate --noinput 2>&1)\n\
 MIGRATE_EXIT=$?\n\
+set -e  # Reabilitar exit on error\n\
+\n\
 if [ $MIGRATE_EXIT -ne 0 ]; then\n\
     # Se houver erro de histórico inconsistente, corrigir automaticamente\n\
     if echo "$MIGRATE_OUTPUT" | grep -q "InconsistentMigrationHistory"; then\n\
         echo "⚠️  Histórico de migrations inconsistente detectado. Corrigindo..."\n\
+        set +e  # Desabilitar exit on error durante correção\n\
         # Marcar migrations do bau_mental como aplicadas (fake)\n\
         python manage.py migrate bau_mental 0001_initial --fake 2>/dev/null || true\n\
         python manage.py migrate bau_mental 0002_alter_box_id_alter_note_id --fake 2>/dev/null || true\n\
@@ -96,13 +100,12 @@ if [ $MIGRATE_EXIT -ne 0 ]; then\n\
         python manage.py migrate bau_mental 0007_add_note_tracking --fake 2>/dev/null || true\n\
         python manage.py migrate bau_mental 0008_add_box_sharing --fake 2>/dev/null || true\n\
         python manage.py migrate bau_mental 0009_remove_note_note_transcript_gin_idx_and_more --fake 2>/dev/null || true\n\
+        set -e  # Reabilitar exit on error\n\
         echo "✅ Histórico corrigido. Aplicando migrations restantes..."\n\
-        if ! python manage.py migrate --noinput 2>&1; then\n\
-            echo "❌ Erro ao aplicar migrations após correção"\n\
-            exit 1\n\
-        fi\n\
+        python manage.py migrate --noinput\n\
     else\n\
-        echo "❌ Erro ao aplicar migrations: $MIGRATE_OUTPUT"\n\
+        echo "❌ Erro ao aplicar migrations:"\n\
+        echo "$MIGRATE_OUTPUT"\n\
         exit 1\n\
     fi\n\
 fi\n\
