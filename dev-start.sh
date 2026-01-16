@@ -565,49 +565,62 @@ if [ "$HAS_TMUX" = true ]; then
             echo -e "${YELLOW}⚠️  npm não encontrado. Frontend não será iniciado.${NC}"
             echo -e "${YELLOW}💡 Instale Node.js e npm primeiro para usar o frontend.${NC}"
         else
-            # Dividir janela horizontalmente (Backend | Frontend) - 50/50
-            echo -e "${YELLOW}📦 Dividindo janela para iniciar Frontend...${NC}"
+            # Aguardar um pouco mais para garantir que a sessão está totalmente pronta
+            sleep 1
             
-            # Criar o split primeiro (sem comando, apenas dividir)
-            tmux split-window -h -t "$TMUX_SESSION:0" -c "$FRONTEND_DIR" 2>&1
-            SPLIT_EXIT_CODE=$?
-            
-            if [ $SPLIT_EXIT_CODE -ne 0 ]; then
-                echo -e "${RED}❌ Erro ao dividir janela tmux (exit code: $SPLIT_EXIT_CODE)${NC}"
-                echo -e "${YELLOW}⚠️  Continuando com backend apenas...${NC}"
+            # Verificar se a janela existe antes de tentar dividir
+            if ! tmux list-windows -t "$TMUX_SESSION" | grep -q "0:"; then
+                echo -e "${YELLOW}⚠️  Janela 0 não encontrada. Continuando apenas com backend...${NC}"
             else
-                # Aguardar um pouco para o split ser criado
-                sleep 0.5
+                # Dividir janela horizontalmente (Backend | Frontend) - 50/50
+                echo -e "${YELLOW}📦 Dividindo janela para iniciar Frontend...${NC}"
                 
-                # Verificar se o split foi criado com sucesso
-                PANE_COUNT=$(tmux display-message -t "$TMUX_SESSION:0" -p '#{window_panes}' 2>/dev/null || echo "0")
-                if [ "$PANE_COUNT" -ge 2 ]; then
-                    echo -e "${GREEN}✅ Janela dividida com sucesso (${PANE_COUNT} painéis)${NC}"
-                    
-                    # Ajustar layout para dividir igualmente (50/50)
-                    tmux select-layout -t "$TMUX_SESSION:0" even-horizontal 2>/dev/null || {
-                        echo -e "${YELLOW}⚠️  Não foi possível ajustar layout, mas split foi criado${NC}"
-                    }
-                    
-                    # Agora executar o comando do frontend no painel direito (0.1)
-                    # O problema é que o tmux pode não ter acesso ao npm se não estiver no PATH
-                    # Vamos tentar carregar o ambiente completo do shell
-                    SHELL_NAME=$(basename "$SHELL" 2>/dev/null || echo "bash")
-                    
-                    tmux send-keys -t "$TMUX_SESSION:0.1" "echo -e '${GREEN}✅ Frontend iniciado!${NC}'" C-m
-                    tmux send-keys -t "$TMUX_SESSION:0.1" "echo -e '${BLUE}🌐 http://localhost:$FRONTEND_PORT${NC}'" C-m
-                    tmux send-keys -t "$TMUX_SESSION:0.1" "echo ''" C-m
-                    # Carregar shell interativo completo para ter acesso a npm/nvm/etc
-                    # Primeiro, vamos tentar carregar o ambiente e depois executar npm
-                    if [ "$SHELL_NAME" = "zsh" ]; then
-                        # Para zsh, carregar .zshrc e depois executar
-                        tmux send-keys -t "$TMUX_SESSION:0.1" "source ~/.zshrc 2>/dev/null; cd '$FRONTEND_DIR' && npm run dev -- --host 0.0.0.0 --port $FRONTEND_PORT" C-m
-                    else
-                        # Para bash, carregar .bashrc e depois executar
-                        tmux send-keys -t "$TMUX_SESSION:0.1" "source ~/.bashrc 2>/dev/null; cd '$FRONTEND_DIR' && npm run dev -- --host 0.0.0.0 --port $FRONTEND_PORT" C-m
-                    fi
+                # Criar o split primeiro (sem comando, apenas dividir)
+                SPLIT_OUTPUT=$(tmux split-window -h -t "$TMUX_SESSION:0" -c "$FRONTEND_DIR" 2>&1)
+                SPLIT_EXIT_CODE=$?
+                
+                if [ $SPLIT_EXIT_CODE -ne 0 ]; then
+                    echo -e "${RED}❌ Erro ao dividir janela tmux (exit code: $SPLIT_EXIT_CODE)${NC}"
+                    echo -e "${YELLOW}   Output: $SPLIT_OUTPUT${NC}"
+                    echo -e "${YELLOW}⚠️  Continuando com backend apenas...${NC}"
                 else
-                    echo -e "${YELLOW}⚠️  Aviso: Apenas ${PANE_COUNT} painel(éis) encontrado(s) após split${NC}"
+                    # Aguardar um pouco para o split ser criado
+                    sleep 0.5
+                    
+                    # Verificar se o split foi criado com sucesso
+                    PANE_COUNT=$(tmux display-message -t "$TMUX_SESSION:0" -p '#{window_panes}' 2>/dev/null || echo "0")
+                    if [ "$PANE_COUNT" -ge 2 ]; then
+                        echo -e "${GREEN}✅ Janela dividida com sucesso (${PANE_COUNT} painéis)${NC}"
+                        
+                        # Ajustar layout para dividir igualmente (50/50)
+                        tmux select-layout -t "$TMUX_SESSION:0" even-horizontal 2>/dev/null || {
+                            echo -e "${YELLOW}⚠️  Não foi possível ajustar layout, mas split foi criado${NC}"
+                        }
+                        
+                        # Agora executar o comando do frontend no painel direito (0.1)
+                        SHELL_NAME=$(basename "$SHELL" 2>/dev/null || echo "bash")
+                        
+                        # Limpar o painel primeiro
+                        tmux send-keys -t "$TMUX_SESSION:0.1" C-l
+                        sleep 0.2
+                        
+                        tmux send-keys -t "$TMUX_SESSION:0.1" "cd '$FRONTEND_DIR'" C-m
+                        sleep 0.2
+                        tmux send-keys -t "$TMUX_SESSION:0.1" "echo -e '${GREEN}✅ Frontend iniciado!${NC}'" C-m
+                        tmux send-keys -t "$TMUX_SESSION:0.1" "echo -e '${BLUE}🌐 http://localhost:$FRONTEND_PORT${NC}'" C-m
+                        tmux send-keys -t "$TMUX_SESSION:0.1" "echo ''" C-m
+                        
+                        # Executar npm run dev
+                        # Usar caminho absoluto do npm ou garantir que está no PATH
+                        if [ "$SHELL_NAME" = "zsh" ]; then
+                            tmux send-keys -t "$TMUX_SESSION:0.1" "source ~/.zshrc 2>/dev/null; npm run dev -- --host 0.0.0.0 --port $FRONTEND_PORT" C-m
+                        else
+                            tmux send-keys -t "$TMUX_SESSION:0.1" "source ~/.bashrc 2>/dev/null; npm run dev -- --host 0.0.0.0 --port $FRONTEND_PORT" C-m
+                        fi
+                    else
+                        echo -e "${YELLOW}⚠️  Aviso: Apenas ${PANE_COUNT} painel(éis) encontrado(s) após split${NC}"
+                        echo -e "${YELLOW}   Tentando criar painel manualmente...${NC}"
+                    fi
                 fi
             fi
         fi
